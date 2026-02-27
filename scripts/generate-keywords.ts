@@ -19,6 +19,29 @@ const templates = [
   '{keyword} 실생활 영향'
 ];
 
+const PERSON_OR_EVENT_PATTERNS = [
+  /대통령|장관|국회의원|의원|대법원장|검사|판사|총리|대표|감독|선수|배우|가수|유튜버|인플루언서/i,
+  /체포|구속|수사|재판|논란|폭로|사망|사고|추락|화재|참사|총격|살인/i
+];
+
+const LOW_VALUE_PATTERNS = [/^(속보|단독|뉴스|실시간|이슈)$/i];
+const TOKEN_STOPWORDS = new Set([
+  '오늘',
+  '현재',
+  '현장',
+  '논란',
+  '결정',
+  '속보',
+  '단독',
+  '기자',
+  '인터뷰',
+  '발표',
+  '후보',
+  '감독',
+  '대표',
+  '선수'
+]);
+
 const CATEGORY_RULES: Array<{ category: string; patterns: RegExp[] }> = [
   { category: '생산성', patterns: [/시간|루틴|집중|목표|업무|정리|메일|회의|문서|메모/i] },
   { category: '디지털', patterns: [/보안|비밀번호|백업|브라우저|와이파이|스마트폰|노트북|키보드|사진|파일|앱/i] },
@@ -73,6 +96,19 @@ function isUsefulRankKeyword(value: string) {
   return true;
 }
 
+function isPersonNameLike(value: string) {
+  // Very short all-Hangul phrases tend to be person names in real-time rankings.
+  return /^[가-힣]{2,4}$/.test(value);
+}
+
+function isSafeForEvergreen(value: string) {
+  if (!value) return false;
+  if (LOW_VALUE_PATTERNS.some((pattern) => pattern.test(value))) return false;
+  if (PERSON_OR_EVENT_PATTERNS.some((pattern) => pattern.test(value))) return false;
+  if (isPersonNameLike(value)) return false;
+  return true;
+}
+
 async function fetchTextWithTimeout(url: string, timeoutMs: number): Promise<string> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -120,20 +156,71 @@ async function loadSearchRankKeywords(now: Date): Promise<string[]> {
   return keywords;
 }
 
+function normalizeTopic(value: string) {
+  return value
+    .replace(/\s+/g, ' ')
+    .replace(/["'`]/g, '')
+    .trim();
+}
+
+function uniqueKeepOrder(items: string[]) {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of items) {
+    const key = item.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
+}
+
+function extractMeaningfulTokensFromRank(value: string) {
+  const parts = value
+    .split(/[^\p{L}\p{N}]+/u)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return parts.filter((token) => {
+    if (token.length < 2 || token.length > 14) return false;
+    if (TOKEN_STOPWORDS.has(token)) return false;
+    if (isPersonNameLike(token)) return false;
+    if (PERSON_OR_EVENT_PATTERNS.some((pattern) => pattern.test(token))) return false;
+    return true;
+  });
+}
+
 async function main() {
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
   const blacklist = new Set(await readLines(blacklistPath));
 
-  const rankKeywords = await loadSearchRankKeywords(now);
-  if (rankKeywords.length < 5) {
-    throw new Error(`검색순위 키워드 수집 실패: ${rankKeywords.length}개`);
+  const rawRankKeywords = await loadSearchRankKeywords(now);
+  if (rawRankKeywords.length < 5) {
+    throw new Error(`검색순위 키워드 수집 실패: ${rawRankKeywords.length}개`);
+  }
+
+  const safeRankKeywords = uniqueKeepOrder(
+    rawRankKeywords.map(normalizeTopic).filter((keyword) => isSafeForEvergreen(keyword) && !blacklist.has(keyword) && !isUnsafeTopic(keyword))
+  );
+
+  const tokenDerivedRankKeywords = uniqueKeepOrder(
+    rawRankKeywords
+      .flatMap((row) => extractMeaningfulTokensFromRank(normalizeTopic(row)))
+      .map((token) => `${token} 가이드`)
+      .filter((keyword) => isSafeForEvergreen(keyword) && !blacklist.has(keyword) && !isUnsafeTopic(keyword))
+  );
+
+  const rankKeywords = uniqueKeepOrder([...safeRankKeywords, ...tokenDerivedRankKeywords]);
+
+  if (rankKeywords.length < 3) {
+    throw new Error(`안전한 검색순위 키워드가 부족합니다: ${rankKeywords.length}개`);
   }
 
   const usedKeywords = new Set<string>();
   const categoryCount = new Map<string, number>();
   const selected: string[] = [];
-  const maxPerCategory = 30;
+  const maxPerCategory = 20;
   const limit = 30;
 
   function tryAdd(keyword: string) {
@@ -171,7 +258,7 @@ async function main() {
   }
 
   if (selected.length < 10) {
-    throw new Error(`검색순위 기반 키워드가 너무 적습니다: ${selected.length}개`);
+    throw new Error(`검색순위 기반 키워드가 너무 적습니다: ${selected.length}개 (safeRank=${rankKeywords.length})`);
   }
 
   await fs.writeFile(
@@ -181,7 +268,9 @@ async function main() {
         generatedAt: today,
         source: 'search-rank-only',
         sourceProvider: 'nate-live-issue-keyword',
-        rankKeywordCount: rankKeywords.length,
+        rankKeywordCount: rawRankKeywords.length,
+        safeRankKeywordCount: safeRankKeywords.length,
+        tokenDerivedRankKeywordCount: tokenDerivedRankKeywords.length,
         count: selected.length,
         categories: Object.fromEntries(categoryCount.entries()),
         keywords: selected
