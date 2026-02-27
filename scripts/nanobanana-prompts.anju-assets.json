@@ -1,0 +1,82 @@
+[
+  {
+    "id": "bg_01",
+    "size": "1024x1024",
+    "prompt": "Korean street food bar vibe background illustration, cute and funny sticker doodles around the border like sparkles, hearts, stars and tiny food shapes, cozy warm pastel gradient, large clean empty space in the upper-center area for text overlay, square composition, no text, no letters, no logo, no watermark, cute flat sticker illustration style, clean outlines, pastel palette, soft shading, high resolution"
+  },
+  {
+    "id": "bg_02",
+    "size": "1024x1024",
+    "prompt": "Refreshing snack night background illustration, playful bubbly shapes and fizzy sparkles near edges, light pastel gradient, large clean empty space in the upper-center area for text overlay, square composition, no text, no letters, no logo, no watermark, cute flat sticker illustration style, clean outlines, pastel palette, soft shading, high resolution"
+  },
+  {
+    "id": "bg_03",
+    "size": "1024x1024",
+    "prompt": "Energetic spicy vibe background illustration with cute flame and chili pepper doodles around the border, vibrant but pastel tones, large clean empty space in the upper-center area for text overlay, square composition, no text, no letters, no logo, no watermark, cute flat sticker illustration style, clean outlines, pastel palette, soft shading, high resolution"
+  },
+  {
+    "id": "bg_04",
+    "size": "1024x1024",
+    "prompt": "Clean seafood vibe background illustration with soft wave shapes and tiny sea themed doodles around the border, calm ocean pastel palette, large clean empty space in the upper-center area for text overlay, square composition, no text, no letters, no logo, no watermark, cute flat sticker illustration style, clean outlines, pastel palette, soft shading, high resolution"
+  },
+  {
+    "id": "bg_05",
+    "size": "1024x1024",
+    "prompt": "Cozy Korean night snack background illustration with soft creamy pastel gradient and playful food doodles near the edges, large clean empty space in the upper-center area for text overlay, square composition, no text, no letters, no logo, no watermark, cute flat sticker illustration style, clean outlines, pastel palette, soft shading, high resolution"
+  },
+  {
+    "id": "og_bg_1200x630",
+    "size": "1200x630",
+    "prompt": "Cute and funny social share banner background, wide layout, playful sticker doodles near corners like sparkles, hearts and tiny food shapes, large clean empty center-left area for text overlay, pastel gradient background, no text, no letters, no logo, no watermark, cute flat sticker illustration style, clean outlines, pastel palette, soft shading, high resolution"
+  },
+  {"id":"icons/1","size":"512x512","prompt":"Cute sticker icon of grilled samgyeopsal pork belly slices with grill marks, centered, kawaii flat illustration, isolated object, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/2","size":"512x512","prompt":"Cute sticker icon of grilled pork neck slices, centered, kawaii flat illustration, isolated object, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/3","size":"512x512","prompt":"Cute sticker icon of grilled pork jowl pieces, centered, kawaii flat illustration, isolated object, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/4","size":"512x512","prompt":"Cute sticker icon of spicy dakgalbi stir fry, simplified and friendly, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/5","size":"512x512","prompt":"Cute sticker icon of Korean seasoned fried chicken with glossy sauce, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/6","size":"512x512","prompt":"Cute sticker icon of crispy fried chicken pieces, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/7","size":"512x512","prompt":"Cute sticker icon of soy garlic chicken pieces, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/8","size":"512x512","prompt":"Cute sticker icon of boneless chicken bites, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/9","size":"512x512","prompt":"Cute sticker icon of spicy chicken feet stylized friendly version, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/10","size":"512x512","prompt":"Cute sticker icon of grilled pork skin pieces, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/11","size":"512x512","prompt":"Cute sticker icon of grilled gopchang pieces, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/12","size":"512x512","prompt":"Cute sticker icon of grilled makchang pieces, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/13","size":"512x512","prompt":"Cute sticker icon of grilled daechang pieces, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/14","size":"512x512","prompt":"Cute sticker icon of grilled beef rib finger slices, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/15","size":"512x512","prompt":"Cute sticker icon of steak cubes with sear marks, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/16","size":"512x512","prompt":"Cute sticker icon of extra spicy stir fried chicken, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/17","size":"512x512","prompt":"Cute sticker icon of mala soup bowl simplified, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/18","size":"512x512","prompt":"Cute sticker icon of mala stir fry mix ingredients, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/19","size":"512x512","prompt":"Cute sticker icon of spicy stir fried pork jeyuk bokkeum, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/20","size":"512x512","prompt":"Cute sticker icon of spicy stir fried octopus pieces, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/21","size":"512x512","prompt":"Cute sticker icon of spicy fish cake soup bowl, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/22","size":"512x512","prompt":"Cute sticker icon of chicken feet soup stylized friendly, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/23","size":"512x512","prompt":"Cute sticker icon of spicy webfoot octopus stir fry, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/24","size":"512x512","prompt":"Cute sticker icon of sliced flatfish sashimi pieces, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/25","size":"512x512","prompt":"Cute sticker icon of salmon sashimi slices, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/26","size":"512x512","prompt":"Cute sticker icon of squid sashimi slices, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/27","size":"512x512","prompt":"Cute sticker icon of shrimp sashimi simplified, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/28","size":"512x512","prompt":"Cute sticker icon of small octopus appetizer stylized friendly, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/29","size":"512x512","prompt":"Cute sticker icon of seafood pancake slice, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/30","size":"512x512","prompt":"Cute sticker icon of grilled clams shells, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/31","size":"512x512","prompt":"Cute sticker icon of bossam wrap with oyster simplified, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/32","size":"512x512","prompt":"Cute sticker icon of rolled omelette slices, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/33","size":"512x512","prompt":"Cute sticker icon of tofu and kimchi combo, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/34","size":"512x512","prompt":"Cute sticker icon of kimchi pancake slice, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/35","size":"512x512","prompt":"Cute sticker icon of potato pancake slice, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/36","size":"512x512","prompt":"Cute sticker icon of corn cheese melty bowl, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/37","size":"512x512","prompt":"Cute sticker icon of sausage and vegetable stir fry, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/38","size":"512x512","prompt":"Cute sticker icon of grilled spam slices, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/39","size":"512x512","prompt":"Cute sticker icon of spicy whelk salad simplified, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/40","size":"512x512","prompt":"Cute sticker icon of french fries bundle, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/41","size":"512x512","prompt":"Cute sticker icon of nachos chips pile, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/42","size":"512x512","prompt":"Cute sticker icon of a pizza slice, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/43","size":"512x512","prompt":"Cute sticker icon of tteokbokki rice cakes in sauce, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/44","size":"512x512","prompt":"Cute sticker icon of cheese balls three pieces, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/45","size":"512x512","prompt":"Cute sticker icon of buffalo wings pair, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/46","size":"512x512","prompt":"Cute sticker icon of fish cake soup bowl with skewers, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/47","size":"512x512","prompt":"Cute sticker icon of kimchi stew bowl, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/48","size":"512x512","prompt":"Cute sticker icon of budae jjigae bowl with sausage visible, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/49","size":"512x512","prompt":"Cute sticker icon of soft tofu stew bowl with egg swirl, centered, no text, no letters, no logo, no watermark, transparent background"},
+  {"id":"icons/50","size":"512x512","prompt":"Cute sticker icon of fish roe stew bowl simplified, centered, no text, no letters, no logo, no watermark, transparent background"}
+]

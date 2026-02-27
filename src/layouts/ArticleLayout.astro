@@ -1,0 +1,46 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import AdSense from '@/components/AdSense.astro';
+import { formatDate, toDate } from '@/lib/date';
+
+const { post } = Astro.props;
+
+const articleJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: post.data.title,
+  description: post.data.description,
+  datePublished: toDate(post.data.publishedAt).toISOString(),
+  dateModified: toDate(post.data.updatedAt).toISOString(),
+  inLanguage: 'ko-KR',
+  mainEntityOfPage: `${Astro.site}posts/${post.slug}/`,
+  author: {
+    '@type': 'Organization',
+    name: '콘텐츠 허브'
+  }
+};
+---
+<BaseLayout
+  title={post.data.title}
+  description={post.data.description}
+  canonical={`/posts/${post.slug}/`}
+>
+  <article>
+    <h1>{post.data.title}</h1>
+    <p class="meta">
+      발행 {formatDate(post.data.publishedAt)} · 업데이트 {formatDate(post.data.updatedAt)} · {post.data.readingTimeMinutes}분
+    </p>
+    <AdSense slot="top" />
+    <slot />
+    <AdSense slot="mid" />
+    <section>
+      <h2>면책</h2>
+      <p>
+        본 콘텐츠는 일반적인 정보 제공 목적이며 개인 상황에 대한 의료, 법률, 금융 자문을 대체하지 않습니다.
+        중요한 결정은 분야별 전문가와 상담하세요.
+      </p>
+    </section>
+    <AdSense slot="bottom" />
+  </article>
+  <script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
+</BaseLayout>

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="확률 신봉형">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2f1326"/>
+      <stop offset="100%" stop-color="#7d3258"/>
+    </linearGradient>
+    <radialGradient id="spot" cx="0.75" cy="0.3" r="0.65">
+      <stop offset="0%" stop-color="#ffd777" stop-opacity="0.82"/>
+      <stop offset="100%" stop-color="#ffd777" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="coins" width="70" height="70" patternUnits="userSpaceOnUse">
+      <circle cx="8" cy="9" r="4" fill="#ffd86a" opacity="0.55"/>
+      <circle cx="35" cy="49" r="5" fill="#ffcf57" opacity="0.5"/>
+      <circle cx="60" cy="21" r="3" fill="#ffe18f" opacity="0.5"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#coins)" opacity="0.3"/>
+  <rect width="1200" height="630" fill="url(#spot)"/>
+
+  <g opacity="0.35" stroke="#ffbb55" stroke-width="2" fill="none">
+    <path d="M40 540 C 210 340, 350 560, 530 360"/>
+    <path d="M300 560 C 500 380, 700 570, 910 350"/>
+    <path d="M760 570 C 920 450, 1030 560, 1180 420"/>
+  </g>
+
+  <rect x="48" y="46" width="1104" height="538" rx="28" fill="#0f1119" fill-opacity="0.58" stroke="#ffd27c" stroke-opacity="0.45"/>
+
+  <g transform="translate(760,132)">
+    <ellipse cx="176" cy="370" rx="145" ry="42" fill="#090b11" opacity="0.42"/>
+    <path d="M80 230 C85 154, 258 154, 270 230 L270 370 L80 370 Z" fill="#8c3e69" stroke="#f7e6c3" stroke-opacity="0.38"/>
+    <ellipse cx="176" cy="188" rx="95" ry="88" fill="#8be38f" stroke="#e8ffd8" stroke-opacity="0.6"/>
+    <ellipse cx="142" cy="176" rx="13" ry="12" fill="#111"/>
+    <ellipse cx="210" cy="176" rx="13" ry="12" fill="#111"/>
+    <path d="M145 214 Q176 252 208 214" stroke="#20231d" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <circle cx="120" cy="206" r="10" fill="#ff9fb0" opacity="0.75"/>
+    <circle cx="232" cy="206" r="10" fill="#ff9fb0" opacity="0.75"/>
+    <path d="M120 120 L148 80 L165 122 Z" fill="#78cc7c"/>
+    <path d="M233 120 L205 80 L188 122 Z" fill="#78cc7c"/>
+    <text x="176" y="304" text-anchor="middle" font-size="52" font-family="Pretendard, Arial, sans-serif">✨</text>
+  </g>
+
+  <g transform="translate(96,94)">
+    <text x="0" y="44" fill="#ffd88f" font-size="36" font-family="Pretendard, Arial, sans-serif" font-weight="700">kuru.co.kr</text>
+    <text x="0" y="144" fill="#ffffff" font-size="66" font-family="Pretendard, Arial, sans-serif" font-weight="800">확률 신봉형</text>
+    <text x="0" y="208" fill="#ffe5b2" font-size="34" font-family="Pretendard, Arial, sans-serif" font-weight="650">실패는 과정일 뿐</text>
+
+    <g transform="translate(0,255)">
+      <rect x="0" y="0" width="530" height="118" rx="22" fill="#ffffff" fill-opacity="0.13" stroke="#ffe0a8" stroke-opacity="0.6"/>
+      <text x="26" y="50" fill="#fff7e8" font-size="30" font-family="Pretendard, Arial, sans-serif" font-weight="700">NPC 한마디</text>
+      <text x="26" y="93" fill="#ffe4a3" font-size="28" font-family="Pretendard, Arial, sans-serif" font-weight="600">다음엔 뜬다. 진짜로 뜬다.</text>
+    </g>
+  </g>
+</svg>

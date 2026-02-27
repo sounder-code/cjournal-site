@@ -1,0 +1,10 @@
+node_modules
+.dist
+.astro
+dist
+.env
+.env.*
+logs/*
+!logs/.gitkeep
+coverage
+.DS_Store

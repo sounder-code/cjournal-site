@@ -1,0 +1,78 @@
+name: Daily Content Generate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check generation toggle
+        id: toggle
+        env:
+          GENERATION_ENABLED: ${{ secrets.GENERATION_ENABLED }}
+        run: |
+          if [ "${GENERATION_ENABLED:-true}" != "true" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate keywords
+        if: steps.toggle.outputs.enabled == 'true'
+        run: npm run gen:keywords
+
+      - name: Generate articles
+        if: steps.toggle.outputs.enabled == 'true'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: gpt-4.1-mini
+          ARTICLE_COUNT: 10
+        run: npm run gen:articles
+
+      - name: Quality gate
+        if: steps.toggle.outputs.enabled == 'true'
+        run: npm run quality
+
+      - name: Build post index
+        if: steps.toggle.outputs.enabled == 'true'
+        run: npm run build:index
+
+      - name: Build site
+        if: steps.toggle.outputs.enabled == 'true'
+        run: npm run build
+
+      - name: Commit and push
+        if: steps.toggle.outputs.enabled == 'true'
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "content-bot"
+          git config user.email "content-bot@users.noreply.github.com"
+          git add src/content/posts src/content/keywords/today.json src/content/posts-index.json logs
+          git commit -m "chore(content): daily article generation"
+          git push origin main
+
+      - name: Upload generation logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generation-logs
+          path: logs/
+          if-no-files-found: ignore

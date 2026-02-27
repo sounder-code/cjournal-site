@@ -1,0 +1,39 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  publishedTime?: string;
+  updatedTime?: string;
+}
+
+const {
+  title,
+  description,
+  canonical,
+  image = '/favicon.svg',
+  type = 'website',
+  publishedTime,
+  updatedTime
+} = Astro.props;
+
+const site = Astro.site?.toString().replace(/\/$/, '') ?? '';
+const url = canonical ? `${site}${canonical}` : Astro.url.href;
+const imageUrl = image.startsWith('http') ? image : `${site}${image}`;
+---
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={url} />
+<meta property="og:type" content={type} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={url} />
+<meta property="og:image" content={imageUrl} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={imageUrl} />
+{publishedTime && <meta property="article:published_time" content={publishedTime} />}
+{updatedTime && <meta property="article:modified_time" content={updatedTime} />}

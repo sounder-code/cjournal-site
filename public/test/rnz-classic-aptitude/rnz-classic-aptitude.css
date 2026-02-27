@@ -1,0 +1,379 @@
+body[data-test-id="rnz_classic_aptitude"] {
+  --bg: #090c14;
+  --bg-soft: #0f1526;
+  --surface: #121b2ee6;
+  --surface-strong: #18233a;
+  --text: #e8edf8;
+  --muted: #a7b2cc;
+  --accent: #ffad43;
+  --accent-strong: #ff7b37;
+  --ring: #f9bc63;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 10% 10%, #25324e 0%, transparent 36%),
+    radial-gradient(circle at 86% 8%, #2d1f3f 0%, transparent 30%),
+    radial-gradient(circle at 50% 95%, #1f2f46 0%, transparent 34%),
+    linear-gradient(180deg, #090c14 0%, #0e1627 100%);
+}
+
+body[data-test-id="rnz_classic_aptitude"] .bg-glow-1 {
+  background: linear-gradient(135deg, #ff9c43, #ff6a3d);
+  opacity: 0.35;
+}
+
+body[data-test-id="rnz_classic_aptitude"] .bg-glow-2 {
+  background: linear-gradient(135deg, #5f8cff, #5ee7d0);
+  opacity: 0.28;
+}
+
+body[data-test-id="rnz_classic_aptitude"] .hero .badge {
+  background: linear-gradient(135deg, #ff9b4f, #ff5f3d);
+  color: #fff6eb;
+  box-shadow: 0 14px 30px -18px #ff7032;
+}
+
+body[data-test-id="rnz_classic_aptitude"] .home-link {
+  color: #f5c472;
+  border-bottom-color: #9d6d2b;
+}
+
+body[data-test-id="rnz_classic_aptitude"] h1 {
+  color: #f6f8ff;
+  text-shadow: 0 10px 30px #00000080;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  font-size: clamp(1.5rem, 5.4vw, 3.2rem);
+}
+
+body[data-test-id="rnz_classic_aptitude"] .subtitle {
+  color: #b9c6e2;
+}
+
+body[data-test-id="rnz_classic_aptitude"] .step-pill {
+  color: #d6e2ff;
+  border-color: #2f4065;
+  background: linear-gradient(135deg, #1c2842, #1d2d4a);
+}
+
+body[data-test-id="rnz_classic_aptitude"] .step-pill.is-active {
+  color: #fff7ec;
+  border-color: #ffb06a;
+  background: linear-gradient(135deg, #ff9f45, #ff6d3f);
+}
+
+.intro-lines {
+  margin: 14px 0 0;
+  color: #b0bdd8;
+  display: grid;
+  gap: 4px;
+}
+
+.hero-title-image {
+  display: block;
+  width: min(100%, 980px);
+  height: auto;
+  margin: 14px auto 0;
+  border-radius: 16px;
+  border: 1px solid #2e466a;
+  background: #111a2a;
+  box-shadow: 0 20px 38px -28px #000;
+}
+
+body[data-stage="result"] .hero .badge,
+body[data-stage="result"] .hero .subtitle,
+body[data-stage="result"] .hero-title-image,
+body[data-stage="result"] .hero .intro-lines {
+  display: none;
+}
+
+body[data-stage="result"] .hero {
+  padding-bottom: 0;
+}
+
+body[data-test-id="rnz_classic_aptitude"] .name-panel,
+.question-panel,
+body[data-test-id="rnz_classic_aptitude"] .result-panel {
+  margin-top: 24px;
+  background: linear-gradient(180deg, #121b2ed6, #18233a);
+  border: 1px solid #324972;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow:
+    0 26px 42px -34px #000,
+    inset 0 1px 0 #ffffff14;
+  position: relative;
+  overflow: hidden;
+  animation: pop-in 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+body[data-test-id="rnz_classic_aptitude"] .name-panel h2 {
+  color: #f6f8ff;
+}
+
+body[data-test-id="rnz_classic_aptitude"] .name-help {
+  color: #b8c5df;
+}
+
+.question-panel::before,
+body[data-test-id="rnz_classic_aptitude"] .result-panel::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 18px;
+  border: 1px dashed #36507f;
+  pointer-events: none;
+}
+
+.progress-row {
+  position: relative;
+  z-index: 1;
+}
+
+.progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  color: #c8d4ec;
+}
+
+.progress-track {
+  margin-top: 8px;
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #111a2b;
+  border: 1px solid #2c4064;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #ffc163, #ff7d42);
+  width: 0%;
+  transition: width 0.25s ease;
+}
+
+.question-text {
+  position: relative;
+  z-index: 1;
+  margin: 16px 0 0;
+  font-size: clamp(1.2rem, 3.4vw, 1.6rem);
+  color: #f1f5ff;
+}
+
+.choice-list {
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.choice-btn {
+  width: 100%;
+  text-align: left;
+  border-radius: 14px;
+  border: 1px solid #3c5381;
+  padding: 13px 14px;
+  background: linear-gradient(135deg, #1a2740, #1f314f);
+  color: #e6eeff;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: transform 0.12s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.choice-btn:hover {
+  transform: translateY(-1px);
+  border-color: #f0ad55;
+  background: linear-gradient(135deg, #203357, #27426f);
+}
+
+.question-nav {
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+
+body[data-test-id="rnz_classic_aptitude"] .primary-btn {
+  background: linear-gradient(135deg, #ffb54f, #ff7f44);
+  color: #27160d;
+  box-shadow: 0 14px 24px -18px #ff8f45;
+}
+
+body[data-test-id="rnz_classic_aptitude"] .primary-btn:hover {
+  background: linear-gradient(135deg, #ffc66d, #ff9258);
+}
+
+body[data-test-id="rnz_classic_aptitude"] .secondary-btn,
+body[data-test-id="rnz_classic_aptitude"] .kakao-btn {
+  background: #18253c;
+  border: 1px solid #344f7f;
+  color: #e3ebff;
+}
+
+body[data-test-id="rnz_classic_aptitude"] .secondary-btn:hover,
+body[data-test-id="rnz_classic_aptitude"] .kakao-btn:hover {
+  border-color: #ffb45e;
+  background: #223657;
+}
+
+.result-title {
+  margin: 14px 0 0;
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  font-weight: 800;
+  color: var(--result-accent, #f2c065);
+  text-align: center;
+}
+
+.result-summary {
+  margin: 10px 0 0;
+  color: #d4def2;
+  text-align: center;
+  font-size: 1.03rem;
+}
+
+.result-one-liner {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--result-accent, #7c4b68) 45%, #101722);
+  background: color-mix(in srgb, var(--result-soft, #1b2536) 65%, #0f1624);
+  font-weight: 700;
+  color: #f3f6ff;
+  text-align: center;
+}
+
+.result-bullets {
+  margin: 12px 0 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  color: #d2def4;
+}
+
+.result-bullets li {
+  position: relative;
+  padding: 10px 12px 10px 38px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--result-accent, #7c4b68) 38%, #18243a);
+  background: #152134;
+  font-weight: 600;
+}
+
+.result-bullets li::before {
+  content: "✓";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: #111;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: var(--result-accent, #f0ba5a);
+}
+
+.result-recommend {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--result-accent, #7c4b68) 36%, #172238);
+  border-radius: 12px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--result-soft, #18263f) 70%, #101828),
+    color-mix(in srgb, var(--result-tint, #244269) 30%, #101722)
+  );
+  color: #d7e1f7;
+  line-height: 1.55;
+}
+
+.result-card {
+  background: linear-gradient(180deg, #142037, #10192b);
+  border: 1px solid #35517f;
+  box-shadow:
+    inset 0 1px 0 #ffffff14,
+    0 22px 32px -26px #000;
+}
+
+#resultImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  object-position: center 52%;
+  background: #131722;
+  border: 1px solid #314970;
+  box-shadow: 0 8px 18px -12px #000;
+}
+
+.recommend-tests {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid #334b74;
+  background: linear-gradient(145deg, #132036, #101a2d);
+}
+
+.recommend-tests h3 {
+  margin: 0 0 10px;
+  color: #f0f4ff;
+}
+
+.recommend-links {
+  display: grid;
+  gap: 8px;
+}
+
+.recommend-link {
+  text-decoration: none;
+  color: #dee7fb;
+  font-weight: 700;
+  padding: 12px 13px;
+  border-radius: 10px;
+  background: #182742;
+  border: 1px solid #365281;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.recommend-link:hover {
+  transform: translateY(-1px);
+  border-color: #f0af57;
+  box-shadow: 0 10px 16px -14px #000;
+}
+
+body[data-test-id="rnz_classic_aptitude"] .hint {
+  color: #acbad6;
+}
+
+@media (max-width: 720px) {
+  body[data-test-id="rnz_classic_aptitude"] h1 {
+    font-size: clamp(1.18rem, 6.2vw, 1.45rem);
+  }
+
+  body[data-test-id="rnz_classic_aptitude"] .name-panel,
+  .question-panel,
+  body[data-test-id="rnz_classic_aptitude"] .result-panel {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .question-panel::before,
+  body[data-test-id="rnz_classic_aptitude"] .result-panel::before {
+    inset: 8px;
+    border-radius: 12px;
+  }
+
+  #resultImage {
+    aspect-ratio: 1200 / 630;
+    object-fit: cover;
+    object-position: center 52%;
+  }
+}

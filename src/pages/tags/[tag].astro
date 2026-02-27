@@ -1,0 +1,28 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ArticleCard from '@/components/ArticleCard.astro';
+import { getCollection } from 'astro:content';
+import { toDate } from '@/lib/date';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  const tags = new Set(posts.flatMap((post) => post.data.tags));
+  return [...tags].map((tag) => ({ params: { tag } }));
+}
+
+const tag = decodeURIComponent(Astro.params.tag ?? '');
+const posts = (await getCollection('posts'))
+  .filter((post) => post.data.tags.includes(tag))
+  .sort((a, b) => toDate(b.data.publishedAt).getTime() - toDate(a.data.publishedAt).getTime());
+---
+<BaseLayout
+  title={`태그: ${tag}`}
+  description={`${tag} 관련 글 목록`}
+  canonical={`/tags/${tag}/`}
+>
+  <h1>#{tag}</h1>
+  <p>{posts.length}개의 글</p>
+  <section style="display:grid;gap:12px;">
+    {posts.map((post) => <ArticleCard post={post} />)}
+  </section>
+</BaseLayout>

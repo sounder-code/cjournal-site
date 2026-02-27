@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-02-24T05:29:21.173Z",
+  "latest": [
+    {
+      "slug": "시간-관리-기초",
+      "title": "시간 관리 기초: 일상 루틴을 안정적으로 만드는 방법",
+      "description": "시간 관리의 기본 원리와 실천 체크리스트를 정리한 입문 가이드입니다.",
+      "tags": [
+        "시간관리",
+        "루틴",
+        "생산성"
+      ],
+      "category": "라이프",
+      "publishedAt": "Tue Feb 24 2026 09:00:00 GMT+0900 (Korean Standard Time)",
+      "updatedAt": "Tue Feb 24 2026 09:00:00 GMT+0900 (Korean Standard Time)",
+      "readingTimeMinutes": 8
+    }
+  ],
+  "tagCounts": {
+    "시간관리": 1,
+    "루틴": 1,
+    "생산성": 1
+  },
+  "related": {
+    "시간-관리-기초": []
+  }
+}

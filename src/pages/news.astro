@@ -1,0 +1,64 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ArticleCard from '@/components/ArticleCard.astro';
+import { getLatestPosts, getTagCounts } from '@/lib/content';
+
+const latestPosts = await getLatestPosts(18);
+const trendingTags = (await getTagCounts()).slice(0, 12);
+const searchIndex = latestPosts.map((post) => ({
+  slug: post.slug,
+  title: post.data.title,
+  description: post.data.description,
+  tags: post.data.tags
+}));
+---
+<BaseLayout
+  title="콘텐츠 허브 | 최신 정보 아카이브"
+  description="매일 업데이트되는 정적 SEO 콘텐츠 허브"
+  canonical="/"
+>
+  <section>
+    <h1>최신 콘텐츠</h1>
+    <p>검증된 형식으로 정리한 정보형 글을 매일 발행합니다.</p>
+  </section>
+
+  <section>
+    <h2>검색</h2>
+    <input id="searchInput" type="search" placeholder="제목, 설명, 태그 검색" style="width:100%;padding:12px;border:1px solid #cbd7e7;border-radius:8px;" />
+  </section>
+
+  <section>
+    <h2>인기 태그</h2>
+    <div class="tags">
+      {trendingTags.map((row) => <a href={`/tags/${encodeURIComponent(row.tag)}/`}>#{row.tag} ({row.count})</a>)}
+    </div>
+  </section>
+
+  <section>
+    <div id="cards" style="display:grid;gap:12px;">
+      {latestPosts.map((post) => <ArticleCard post={post} />)}
+    </div>
+  </section>
+
+  <script type="application/json" id="search-index" set:html={JSON.stringify(searchIndex)}></script>
+  <script>
+    const input = document.getElementById('searchInput');
+    const cards = [...document.querySelectorAll('#cards .article-card')];
+    const index = JSON.parse(document.getElementById('search-index')?.textContent || '[]');
+
+    if (!(input instanceof HTMLInputElement)) {
+      throw new Error('search input not found');
+    }
+
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      cards.forEach((card, i) => {
+        const target = index[i];
+        const hay = [target.title, target.description, ...(target.tags || [])].join(' ').toLowerCase();
+        if (card instanceof HTMLElement) {
+          card.style.display = q && !hay.includes(q) ? 'none' : '';
+        }
+      });
+    });
+  </script>
+</BaseLayout>

@@ -1,0 +1,47 @@
+[
+  {
+    "id": "test-your-slug-main",
+    "prompt": "main cover illustration for personality test, cute pastel style, no text, no watermark",
+    "size": "1200x630"
+  },
+  {
+    "id": "test-your-slug-result-1",
+    "prompt": "result 1 illustration, same art direction and palette as main, no text, no watermark",
+    "size": "1024x1024"
+  },
+  {
+    "id": "test-your-slug-result-2",
+    "prompt": "result 2 illustration, same art direction and palette as main, no text, no watermark",
+    "size": "1024x1024"
+  },
+  {
+    "id": "test-your-slug-result-3",
+    "prompt": "result 3 illustration, same art direction and palette as main, no text, no watermark",
+    "size": "1024x1024"
+  },
+  {
+    "id": "test-your-slug-result-4",
+    "prompt": "result 4 illustration, same art direction and palette as main, no text, no watermark",
+    "size": "1024x1024"
+  },
+  {
+    "id": "test-your-slug-result-5",
+    "prompt": "result 5 illustration, same art direction and palette as main, no text, no watermark",
+    "size": "1024x1024"
+  },
+  {
+    "id": "test-your-slug-result-6",
+    "prompt": "result 6 illustration, same art direction and palette as main, no text, no watermark",
+    "size": "1024x1024"
+  },
+  {
+    "id": "test-your-slug-result-7",
+    "prompt": "result 7 illustration, same art direction and palette as main, no text, no watermark",
+    "size": "1024x1024"
+  },
+  {
+    "id": "test-your-slug-result-8",
+    "prompt": "result 8 illustration, same art direction and palette as main, no text, no watermark",
+    "size": "1024x1024"
+  }
+]

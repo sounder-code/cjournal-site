@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffe4d6" />
+      <stop offset="50%" stop-color="#f3e7ff" />
+      <stop offset="100%" stop-color="#dff4ff" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#6f4a3a" flood-opacity="0.2" />
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)" />
+
+  <g filter="url(#shadow)">
+    <rect x="72" y="70" rx="34" ry="34" width="1056" height="490" fill="#ffffff" fill-opacity="0.76" />
+  </g>
+
+  <text x="600" y="185" text-anchor="middle" font-size="56" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif" font-weight="800" fill="#3b2d2a">
+    재미있는 테스트 세상 '쿠루'
+  </text>
+  <text x="600" y="255" text-anchor="middle" font-size="42" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif" font-weight="700" fill="#4b3a36">
+    나와 닮은 도마뱀 찾기
+  </text>
+
+  <g transform="translate(130 310)">
+    <ellipse cx="120" cy="170" rx="110" ry="48" fill="#f2c8a7" fill-opacity="0.4" />
+    <circle cx="120" cy="86" r="72" fill="#ffd39f" />
+    <circle cx="90" cy="76" r="22" fill="#2f2320" />
+    <circle cx="150" cy="76" r="22" fill="#2f2320" />
+    <circle cx="84" cy="70" r="7" fill="#ffffff" />
+    <circle cx="144" cy="70" r="7" fill="#ffffff" />
+    <path d="M78 110 Q120 132 162 110" stroke="#8a5c4c" stroke-width="8" fill="none" stroke-linecap="round" />
+  </g>
+
+  <g transform="translate(405 295)">
+    <ellipse cx="130" cy="185" rx="118" ry="50" fill="#d7c8f6" fill-opacity="0.35" />
+    <circle cx="130" cy="94" r="78" fill="#eee1ff" />
+    <circle cx="98" cy="82" r="24" fill="#3a2c58" />
+    <circle cx="162" cy="82" r="24" fill="#3a2c58" />
+    <circle cx="92" cy="76" r="7" fill="#ffffff" />
+    <circle cx="156" cy="76" r="7" fill="#ffffff" />
+    <path d="M84 118 Q130 146 176 118" stroke="#785d95" stroke-width="8" fill="none" stroke-linecap="round" />
+  </g>
+
+  <g transform="translate(705 265)">
+    <ellipse cx="170" cy="210" rx="138" ry="58" fill="#a6e4b6" fill-opacity="0.35" />
+    <circle cx="170" cy="102" r="92" fill="#9ddf6c" />
+    <circle cx="132" cy="88" r="28" fill="#2b2f1f" />
+    <circle cx="208" cy="88" r="28" fill="#2b2f1f" />
+    <circle cx="124" cy="80" r="8" fill="#ffffff" />
+    <circle cx="200" cy="80" r="8" fill="#ffffff" />
+    <path d="M120 132 Q170 170 220 132" stroke="#58774a" stroke-width="9" fill="none" stroke-linecap="round" />
+    <path d="M258 76 Q330 20 420 102" stroke="#8bd0ff" stroke-width="24" fill="none" stroke-linecap="round" opacity="0.72" />
+  </g>
+</svg>

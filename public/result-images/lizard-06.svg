@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e2d1c1" />
+      <stop offset="100%" stop-color="#bba591" />
+    </linearGradient>
+    <filter id="soft">
+      <feGaussianBlur stdDeviation="12" />
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <ellipse cx="900" cy="520" rx="210" ry="70" fill="#ffffff" opacity="0.45" filter="url(#soft)" />
+
+  <g transform="translate(80,38)">
+    <path d="M220,450 C410,500 740,510 900,430 C980,390 980,320 900,290 C760,235 500,250 320,300 C210,330 170,405 220,450Z" fill="#a99174" stroke="#6f6358" stroke-width="8" />
+    <ellipse cx="560" cy="378" rx="250" ry="130" fill="#d7c7af" opacity="0.88" />
+    <circle cx="608" cy="322" r="16" fill="#a17759" opacity="0.78" />
+    <circle cx="679" cy="375" r="11" fill="#a17759" opacity="0.78" />
+    <circle cx="750" cy="228" r="18" fill="#a17759" opacity="0.78" />
+    <circle cx="511" cy="281" r="13" fill="#a17759" opacity="0.78" />
+    <circle cx="582" cy="334" r="20" fill="#a17759" opacity="0.78" />
+    <circle cx="653" cy="387" r="15" fill="#a17759" opacity="0.78" />
+    <circle cx="724" cy="240" r="10" fill="#a17759" opacity="0.78" />
+    <circle cx="485" cy="293" r="17" fill="#a17759" opacity="0.78" />
+    <circle cx="556" cy="346" r="12" fill="#a17759" opacity="0.78" />
+    <circle cx="627" cy="399" r="19" fill="#a17759" opacity="0.78" />
+
+    <ellipse cx="920" cy="282" rx="130" ry="105" fill="#a99174" stroke="#6f6358" stroke-width="8" />
+    <ellipse cx="875" cy="275" rx="34" ry="42" fill="#ffffff" />
+    <ellipse cx="963" cy="278" rx="34" ry="42" fill="#ffffff" />
+    <circle cx="878" cy="286" r="13" fill="#222831" />
+    <circle cx="966" cy="288" r="13" fill="#222831" />
+    <circle cx="883" cy="281" r="4.5" fill="#ffffff" />
+    <circle cx="971" cy="283" r="4.5" fill="#ffffff" />
+    <ellipse cx="850" cy="315" rx="20" ry="13" fill="#ac7f68" opacity="0.75" />
+    <ellipse cx="995" cy="318" rx="20" ry="13" fill="#ac7f68" opacity="0.75" />
+    <path d="M902,317 Q920,330 940,317" stroke="#554449" stroke-width="5.5" stroke-linecap="round" fill="none" />
+    <path d="M910,237 q20,-18 42,-6" stroke="#6f6358" stroke-width="6" stroke-linecap="round" fill="none" />
+    <path d="M834,237 q18,-18 40,-8" stroke="#6f6358" stroke-width="6" stroke-linecap="round" fill="none" />
+
+    <path d="M225,446 C120,470 80,515 110,548 C130,570 180,566 250,528" fill="none" stroke="#6f6358" stroke-width="10" stroke-linecap="round" />
+  </g>
+
+  <text x="68" y="82" font-size="40" font-family="Pretendard, Apple SD Gothic Neo, sans-serif" fill="#294332" font-weight="700">나와 닮은 도마뱀</text>
+  <text x="68" y="138" font-size="56" font-family="Pretendard, Apple SD Gothic Neo, sans-serif" fill="#16251d" font-weight="800">크레스티드 게코 플레임</text>
+  <text x="70" y="190" font-size="30" font-family="Pretendard, Apple SD Gothic Neo, sans-serif" fill="#355949">크레스티드 게코 · 플레임</text>
+</svg>

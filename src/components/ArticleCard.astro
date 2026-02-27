@@ -1,0 +1,28 @@
+---
+import { formatDate } from '@/lib/date';
+
+interface Props {
+  post: {
+    data: {
+      title: string;
+      description: string;
+      publishedAt: string | Date;
+      tags: string[];
+      readingTimeMinutes: number;
+    };
+    slug: string;
+  };
+}
+
+const { post } = Astro.props;
+---
+<article class="article-card">
+  <h2><a href={`/posts/${post.slug}/`}>{post.data.title}</a></h2>
+  <p>{post.data.description}</p>
+  <p class="meta">
+    {formatDate(post.data.publishedAt)} · 읽는 시간 {post.data.readingTimeMinutes}분
+  </p>
+  <div class="tags">
+    {post.data.tags.slice(0, 3).map((tag) => <a href={`/tags/${encodeURIComponent(tag)}/`}>#{tag}</a>)}
+  </div>
+</article>
