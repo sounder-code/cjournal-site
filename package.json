@@ -8,11 +8,9 @@
   },
   "scripts": {
     "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev",
-    "prepare:legacy-static": "./scripts/prepare_legacy_static_for_astro.sh",
-    "build": "npm run prepare:legacy-static && ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
     "typecheck": "ASTRO_TELEMETRY_DISABLED=1 astro check",
-    "sync:linclassic-monsters": "python3 scripts/sync_linclassic_monsters.py",
     "gen:keywords": "tsx scripts/generate-keywords.ts",
     "gen:articles": "tsx scripts/generate-article.ts",
     "quality": "tsx scripts/quality-gate.ts",

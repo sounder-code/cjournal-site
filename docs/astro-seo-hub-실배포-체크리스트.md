@@ -23,8 +23,8 @@ Repository Settings -> Secrets and variables -> Actions
 - 실패 시 artifact의 `logs/` 다운로드 확인
 
 스케줄:
-- 매일 08:10 KST
-- cron: `10 23 * * *` (UTC 기준 전일 23:10)
+- 매일 06:00 KST
+- cron: `0 21 * * *` (UTC 기준 전일 21:00)
 
 ## 4) Cloudflare Pages 연결
 Cloudflare Dashboard -> Workers & Pages -> Create -> Pages -> Connect to Git

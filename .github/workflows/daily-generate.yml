@@ -1,6 +1,8 @@
 name: Daily Content Generate
 
 on:
+  schedule:
+    - cron: "0 21 * * *" # 06:00 Asia/Seoul
   workflow_dispatch:
 
 jobs:
@@ -40,7 +42,7 @@ jobs:
         if: steps.toggle.outputs.enabled == 'true'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: gpt-4.1-mini
+          OPENAI_MODEL: gpt-4.1
           ARTICLE_COUNT: 10
         run: npm run gen:articles
 

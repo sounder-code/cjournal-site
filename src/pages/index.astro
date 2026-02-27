@@ -1,5 +1,5 @@
 ---
-const target = '/hub.html';
+const target = '/news/';
 const gtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-TXMPF75Z').trim();
 ---
 <!doctype html>
@@ -19,7 +19,7 @@ const gtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-TXMPF75Z').trim();
     <meta http-equiv="refresh" content={`0;url=${target}`} />
     <link rel="canonical" href={target} />
     <script>
-      window.location.replace('/hub.html');
+      window.location.replace('/news/');
     </script>
   </head>
   <body>
