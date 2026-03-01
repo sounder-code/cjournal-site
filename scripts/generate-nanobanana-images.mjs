@@ -210,8 +210,8 @@ async function main() {
     let provider = IMAGE_PROVIDER;
     if (provider === "auto") {
       if (hasCustomMode) provider = "custom";
-      else if (hasOpenAiMode) provider = "openai";
-      else provider = "gemini";
+      else if (hasGeminiMode) provider = "gemini";
+      else provider = "openai";
     }
     let buffer;
     if (provider === "custom") {
