@@ -65,7 +65,7 @@ function pickGeminiInlineImage(payload) {
   for (const candidate of candidates) {
     const parts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
     for (const part of parts) {
-      const inlineData = part?.inlineData;
+      const inlineData = part?.inlineData || part?.inline_data;
       if (inlineData?.data) {
         return {
           mimeType: inlineData.mimeType || "image/png",
@@ -238,26 +238,52 @@ async function main() {
     const prompt = String(item.prompt || "").trim();
     if (!id || !prompt) throw new Error("Each prompt item needs id and prompt");
     console.log(`Generating ${id}...`);
-    let provider = IMAGE_PROVIDER;
+    const provider = IMAGE_PROVIDER;
+    let providerOrder;
     if (provider === "auto") {
-      if (hasCustomMode) provider = "custom";
-      else if (hasGeminiMode) provider = "gemini";
-      else provider = "openai";
-    }
-
-    let buffer;
-    if (provider === "custom") {
-      if (!hasCustomMode) throw new Error("IMAGE_PROVIDER=custom but NANOBANANA_API_URL/NANOBANANA_API_KEY is missing");
-      buffer = await generateOneViaCustomApi({ id, prompt, size: item.size });
-    } else if (provider === "openai") {
-      if (!hasOpenAiMode) throw new Error("IMAGE_PROVIDER=openai but OPENAI_API_KEY is missing");
-      buffer = await generateOneViaOpenAI({ id, prompt, size: item.size }, OPENAI_API_KEY);
+      providerOrder = ["gemini", "openai", "custom"];
     } else if (provider === "gemini") {
-      if (!hasGeminiMode) throw new Error("IMAGE_PROVIDER=gemini but GEMINI_API_KEY is missing");
-      buffer = await generateOneViaGeminiWithRetry({ id, prompt, size: item.size }, effectiveGeminiKey);
+      providerOrder = ["gemini", "openai"];
+    } else if (provider === "openai") {
+      providerOrder = ["openai"];
+    } else if (provider === "custom") {
+      providerOrder = ["custom"];
     } else {
       throw new Error(`Unsupported IMAGE_PROVIDER: ${provider}`);
     }
+    const errors = [];
+    let buffer = null;
+    for (const current of providerOrder) {
+      try {
+        if (current === "gemini") {
+          if (!hasGeminiMode) {
+            errors.push("gemini: missing GEMINI_API_KEY");
+            continue;
+          }
+          buffer = await generateOneViaGeminiWithRetry({ id, prompt, size: item.size }, effectiveGeminiKey);
+          break;
+        }
+        if (current === "openai") {
+          if (!hasOpenAiMode) {
+            errors.push("openai: missing OPENAI_API_KEY");
+            continue;
+          }
+          buffer = await generateOneViaOpenAI({ id, prompt, size: item.size }, OPENAI_API_KEY);
+          break;
+        }
+        if (current === "custom") {
+          if (!hasCustomMode) {
+            errors.push("custom: missing NANOBANANA_API_URL/NANOBANANA_API_KEY");
+            continue;
+          }
+          buffer = await generateOneViaCustomApi({ id, prompt, size: item.size });
+          break;
+        }
+      } catch (error) {
+        errors.push(`${current}: ${error?.message || String(error)}`);
+      }
+    }
+    if (!buffer) throw new Error(`all providers failed for ${id} -> ${errors.join(" / ")}`);
 
     const filePath = path.join(outputDir, `${id}.png`);
     await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -265,16 +291,28 @@ async function main() {
     console.log(`Saved: ${filePath}`);
   }
 
+  const failures = [];
   let cursor = 0;
   const workers = Array.from({ length: Math.min(IMAGE_PARALLELISM, prompts.length) }, async () => {
     while (cursor < prompts.length) {
       const index = cursor;
       cursor += 1;
-      await runOne(prompts[index]);
+      try {
+        await runOne(prompts[index]);
+      } catch (error) {
+        const id = String(prompts[index]?.id || `index-${index}`);
+        const message = error?.message || String(error);
+        failures.push({ id, message });
+        console.error(`skip image (error): ${id} (${message})`);
+      }
     }
   });
 
   await Promise.all(workers);
+  if (failures.length > 0) {
+    const sample = failures.slice(0, 5).map((row) => `${row.id}: ${row.message}`).join(" | ");
+    throw new Error(`image generation failed for ${failures.length} prompts. sample=${sample}`);
+  }
 }
 
 main().catch((err) => {
