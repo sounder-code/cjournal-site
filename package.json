@@ -13,6 +13,8 @@
     "typecheck": "ASTRO_TELEMETRY_DISABLED=1 astro check",
     "gen:keywords": "tsx scripts/generate-keywords.ts",
     "gen:articles": "tsx scripts/generate-article.ts",
+    "gen:post-images": "tsx scripts/generate-post-images.ts",
+    "check:images": "tsx scripts/check-post-images.ts",
     "quality": "tsx scripts/quality-gate.ts",
     "build:index": "tsx scripts/build-index.ts"
   },
