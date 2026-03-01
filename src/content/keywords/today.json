@@ -7,8 +7,8 @@
   "cachedRankKeywordCount": 5,
   "previousOutputKeywordCount": 30,
   "seedKeywordCount": 50,
-  "safeRankKeywordCount": 32,
-  "relaxedRankKeywordCount": 33,
+  "safeRankKeywordCount": 28,
+  "relaxedRankKeywordCount": 28,
   "usingRelaxedKeywords": false,
   "usingSeedFallback": false,
   "tokenDerivedRankKeywordCount": 1,
@@ -18,11 +18,14 @@
     "사회/이슈": 1
   },
   "keywords": [
+    "미쓰홍 박신혜 알고",
+    "1등들",
+    "무산 책임은 국민의힘",
+    "외교부 국민 없어",
     "언더커버 미쓰홍",
     "부천 챔피언 전북",
     "장항준 넘치는 행운",
     "한일전 패배 마줄스",
-    "1등들",
     "승격팀 부천 전북",
     "정지선 안성재 모수",
     "전남 광주 국회",
@@ -44,9 +47,6 @@
     "그것이 알고 싶다 비교 뜻",
     "국세청 유출 사과 비교 뜻",
     "중동 상황점검 긴급 방법 뜻 뜻",
-    "언더커버 미쓰홍 방법 뜻 뜻",
-    "그것이 알고 싶다 방법 뜻 뜻",
-    "국세청 유출 사과 방법 뜻 뜻",
-    "중동 상황점검 긴급 기준 뜻 뜻"
+    "언더커버 미쓰홍 방법 뜻 뜻"
   ]
 }
