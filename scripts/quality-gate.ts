@@ -29,6 +29,7 @@ function faqCount(content: string) {
 }
 
 const MIN_WORD_COUNT = Number(process.env.MIN_WORD_COUNT ?? '900');
+const MIN_KEPT_COUNT = Math.max(1, Number(process.env.MIN_KEPT_COUNT ?? '5'));
 
 async function main() {
   await ensureDir(LOG_DIR);
@@ -110,7 +111,7 @@ async function main() {
   }
 
   results.sort((a, b) => b.score - a.score);
-  const keep = results.filter((r) => r.passed).slice(0, 5);
+  const keep = results.filter((r) => r.passed);
   const keepSet = new Set(keep.map((r) => r.file));
 
   for (const row of results) {
@@ -130,8 +131,8 @@ async function main() {
   await fs.writeFile(reportPath, JSON.stringify(report, null, 2), 'utf8');
   console.log(`quality keep: ${keep.length} / ${targets.length}`);
 
-  if (keep.length === 0) {
-    throw new Error('No article passed quality gate');
+  if (keep.length < MIN_KEPT_COUNT) {
+    throw new Error(`Quality gate kept ${keep.length}, requires at least ${MIN_KEPT_COUNT}`);
   }
 }
 

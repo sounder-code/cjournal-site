@@ -10,6 +10,7 @@ const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || "").trim();
 const OPENAI_IMAGE_MODEL = (process.env.OPENAI_IMAGE_MODEL || "gpt-image-1").trim();
 const OPENAI_IMAGE_QUALITY = (process.env.OPENAI_IMAGE_QUALITY || "medium").trim();
 const IMAGE_PROVIDER = (process.env.IMAGE_PROVIDER || "auto").trim().toLowerCase();
+const IMAGE_PARALLELISM = Math.max(1, Number(process.env.IMAGE_PARALLELISM || "3"));
 
 function usage() {
   console.log("Usage: node scripts/generate-nanobanana-images.mjs <prompt-json> <output-dir>");
@@ -220,7 +221,7 @@ async function main() {
 
   await fs.mkdir(outputDir, { recursive: true });
 
-  for (const item of prompts) {
+  async function runOne(item) {
     const id = String(item.id || "").trim();
     const prompt = String(item.prompt || "").trim();
     if (!id || !prompt) throw new Error("Each prompt item needs id and prompt");
@@ -231,6 +232,7 @@ async function main() {
       else if (hasGeminiMode) provider = "gemini";
       else provider = "openai";
     }
+
     let buffer;
     if (provider === "custom") {
       if (!hasCustomMode) throw new Error("IMAGE_PROVIDER=custom but NANOBANANA_API_URL/NANOBANANA_API_KEY is missing");
@@ -244,11 +246,23 @@ async function main() {
     } else {
       throw new Error(`Unsupported IMAGE_PROVIDER: ${provider}`);
     }
+
     const filePath = path.join(outputDir, `${id}.png`);
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     await fs.writeFile(filePath, buffer);
     console.log(`Saved: ${filePath}`);
   }
+
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(IMAGE_PARALLELISM, prompts.length) }, async () => {
+    while (cursor < prompts.length) {
+      const index = cursor;
+      cursor += 1;
+      await runOne(prompts[index]);
+    }
+  });
+
+  await Promise.all(workers);
 }
 
 main().catch((err) => {

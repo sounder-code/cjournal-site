@@ -41,6 +41,8 @@ function countFaqItems(content: string) {
 }
 
 const MIN_WORD_COUNT = Number(process.env.MIN_WORD_COUNT ?? '900');
+const ARTICLE_PARALLELISM = Math.max(1, Number(process.env.ARTICLE_PARALLELISM ?? '3'));
+const MAX_ATTEMPTS_PER_KEYWORD = Math.max(1, Number(process.env.ARTICLE_MAX_ATTEMPTS ?? '2'));
 
 type Provider = 'gemini' | 'openai';
 
@@ -85,12 +87,10 @@ async function generateWithGemini(prompt: string) {
   return text;
 }
 
-function validateDraft(
+function validateDraftLight(
   markdown: string,
   forbidden: string[],
-  baseSlug: string,
-  existingTitles: string[],
-  existingSlugs: Set<string>
+  baseSlug: string
 ) {
   let parsed: matter.GrayMatterFile<string>;
   try {
@@ -111,21 +111,9 @@ function validateDraft(
     return { ok: false as const, reason: 'missing required frontmatter fields' };
   }
 
-  if (wordCount(content) < MIN_WORD_COUNT) {
-    return { ok: false as const, reason: `word count < ${MIN_WORD_COUNT}` };
-  }
-  if (countH2(content) < 4) {
-    return { ok: false as const, reason: 'h2 count < 4' };
-  }
-  if (countFaqItems(content) < 3) {
-    return { ok: false as const, reason: 'faq count < 3' };
-  }
-  if (!/업데이트:\s*\d{4}-\d{2}-\d{2}/.test(content)) {
-    return { ok: false as const, reason: 'missing update line' };
-  }
-  if (!content.includes('<!-- RELATED_POSTS -->')) {
-    return { ok: false as const, reason: 'missing related placeholder' };
-  }
+  // Keep generation-stage validation light for throughput.
+  if (!/업데이트:\s*\d{4}-\d{2}-\d{2}/.test(content)) return { ok: false as const, reason: 'missing update line' };
+  if (!content.includes('<!-- RELATED_POSTS -->')) return { ok: false as const, reason: 'missing related placeholder' };
   if (/(AI가|인공지능이|생성형\s*AI|GPT|ChatGPT)/i.test(content)) {
     return { ok: false as const, reason: 'mentions AI generation' };
   }
@@ -133,11 +121,6 @@ function validateDraft(
   const hitForbidden = forbidden.find((word) => `${title}\n${content}`.includes(word));
   if (hitForbidden) {
     return { ok: false as const, reason: `forbidden word: ${hitForbidden}` };
-  }
-
-  const similarity = Math.max(...existingTitles.map((t) => jaccardSimilarity(t, title)), 0);
-  if (similarity >= 0.7 || existingSlugs.has(slug)) {
-    return { ok: false as const, reason: `duplicate similarity/slug (${similarity.toFixed(2)})` };
   }
 
   return { ok: true as const, parsed, slug, title };
@@ -159,19 +142,16 @@ async function main() {
   const openaiClient = provider === 'openai' ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
   const created: string[] = [];
   const logLines: string[] = [];
+  const selectedTitles: string[] = [...existingTitles];
+  const selectedSlugs = new Set(existingSlugs);
+  const keywordQueue = [...rawKeywords.keywords];
 
-  for (const keyword of rawKeywords.keywords) {
-    if (created.length >= count) break;
-    if (isUnsafeTopic(keyword)) {
-      logLines.push(`skip unsafe keyword: ${keyword}`);
-      continue;
-    }
+  async function processKeyword(keyword: string) {
+    if (isUnsafeTopic(keyword)) return { keyword, ok: false as const, reason: 'unsafe keyword' };
 
     const baseSlug = slugify(keyword);
-    if (!baseSlug || existingSlugs.has(baseSlug)) {
-      logLines.push(`skip duplicate slug keyword: ${keyword}`);
-      continue;
-    }
+    if (!baseSlug) return { keyword, ok: false as const, reason: 'invalid slug keyword' };
+    if (selectedSlugs.has(baseSlug)) return { keyword, ok: false as const, reason: 'duplicate slug keyword' };
 
     const basePrompt = [
       '한국어 정보형 블로그 글을 Markdown으로 작성하라.',
@@ -187,15 +167,11 @@ async function main() {
       '본문 마지막에 "<!-- RELATED_POSTS -->" 플레이스홀더를 반드시 포함.',
       'AI 생성 언급 금지.',
       `금지어: ${forbidden.join(', ')}`,
-      shouldAddDisclaimer(keyword)
-        ? '민감 주제 가능성이 있으므로 면책 문장을 한 단락 포함.'
-        : '일반 정보 주제로 작성.'
+      shouldAddDisclaimer(keyword) ? '민감 주제 가능성이 있으므로 면책 문장을 한 단락 포함.' : '일반 정보 주제로 작성.'
     ].join('\n');
 
-    let accepted: { parsed: matter.GrayMatterFile<string>; slug: string; title: string } | null = null;
     let lastReason = '';
-
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS_PER_KEYWORD; attempt += 1) {
       const prompt = attempt === 1 ? basePrompt : `${basePrompt}\n이전 결과 실패 이유: ${lastReason}\n실패 원인을 수정해 다시 작성하라.`;
       let markdown = '';
       try {
@@ -219,38 +195,62 @@ async function main() {
         continue;
       }
 
-      const result = validateDraft(markdown, forbidden, baseSlug, existingTitles, existingSlugs);
+      const result = validateDraftLight(markdown, forbidden, baseSlug);
       if (!result.ok) {
         lastReason = result.reason;
         continue;
       }
 
-      accepted = {
-        parsed: result.parsed,
-        slug: result.slug,
-        title: result.title
-      };
-      break;
+      return { keyword, ok: true as const, slug: result.slug, title: result.title, parsed: result.parsed };
     }
 
-    if (!accepted) {
-      logLines.push(`skip after retries: ${keyword} (${lastReason || 'unknown'})`);
-      continue;
+    return { keyword, ok: false as const, reason: lastReason || 'unknown' };
+  }
+
+  while (created.length < count && keywordQueue.length > 0) {
+    const batch = keywordQueue.splice(0, ARTICLE_PARALLELISM);
+    const candidates = await Promise.all(batch.map((keyword) => processKeyword(keyword)));
+
+    for (const candidate of candidates) {
+      if (created.length >= count) break;
+      if (!candidate.ok) {
+        logLines.push(`skip: ${candidate.keyword} (${candidate.reason})`);
+        continue;
+      }
+
+      const similarity = Math.max(...selectedTitles.map((t) => jaccardSimilarity(t, candidate.title)), 0);
+      if (similarity >= 0.7 || selectedSlugs.has(candidate.slug)) {
+        logLines.push(`skip duplicate: ${candidate.keyword} (sim=${similarity.toFixed(2)}, slug=${candidate.slug})`);
+        continue;
+      }
+
+      if (wordCount(candidate.parsed.content) < MIN_WORD_COUNT) {
+        logLines.push(`skip short: ${candidate.keyword} (${wordCount(candidate.parsed.content)} < ${MIN_WORD_COUNT})`);
+        continue;
+      }
+      if (countH2(candidate.parsed.content) < 4) {
+        logLines.push(`skip weak-h2: ${candidate.keyword}`);
+        continue;
+      }
+      if (countFaqItems(candidate.parsed.content) < 3) {
+        logLines.push(`skip weak-faq: ${candidate.keyword}`);
+        continue;
+      }
+
+      candidate.parsed.data.slug = candidate.slug;
+      candidate.parsed.data.publishedAt = todayKST();
+      candidate.parsed.data.updatedAt = todayKST();
+      candidate.parsed.data.autoGenerated = true;
+
+      const finalDoc = matter.stringify(candidate.parsed.content, candidate.parsed.data);
+      const filePath = path.join(POSTS_DIR, `${candidate.slug}.md`);
+      await fs.writeFile(filePath, finalDoc, 'utf8');
+
+      created.push(filePath);
+      selectedTitles.push(candidate.title);
+      selectedSlugs.add(candidate.slug);
+      logLines.push(`created: ${candidate.slug}`);
     }
-
-    accepted.parsed.data.slug = accepted.slug;
-    accepted.parsed.data.publishedAt = todayKST();
-    accepted.parsed.data.updatedAt = todayKST();
-    accepted.parsed.data.autoGenerated = true;
-
-    const finalDoc = matter.stringify(accepted.parsed.content, accepted.parsed.data);
-    const filePath = path.join(POSTS_DIR, `${accepted.slug}.md`);
-    await fs.writeFile(filePath, finalDoc, 'utf8');
-
-    created.push(filePath);
-    existingTitles.push(accepted.title);
-    existingSlugs.add(accepted.slug);
-    logLines.push(`created: ${accepted.slug}`);
   }
 
   const logPath = path.join(LOG_DIR, `generate-${Date.now()}.log`);

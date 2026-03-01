@@ -4,6 +4,7 @@ import { isUnsafeTopic } from './policy';
 import { readLines } from './utils';
 
 const blacklistPath = path.join(process.cwd(), 'src/content/keywords/blacklist.txt');
+const seedsPath = path.join(process.cwd(), 'src/content/keywords/seeds.txt');
 const outPath = path.join(process.cwd(), 'src/content/keywords/today.json');
 const rankCachePath = path.join(process.cwd(), 'logs/search-rank-cache.json');
 
@@ -235,6 +236,7 @@ async function main() {
 
   const cachedRankKeywords = await loadCachedRankKeywords();
   const previousOutputKeywords = await loadPreviousOutputKeywords();
+  const seedKeywords = await readLines(seedsPath);
   const rawRankKeywords = uniqueKeepOrder([...liveRankKeywords, ...cachedRankKeywords, ...previousOutputKeywords]).slice(0, 50);
 
   if (rawRankKeywords.length < 5) {
@@ -267,6 +269,12 @@ async function main() {
   );
 
   const finalRankKeywords = rankKeywords.length > 0 ? rankKeywords : relaxedRankKeywords;
+  const finalBaseKeywords =
+    finalRankKeywords.length >= 5
+      ? finalRankKeywords
+      : uniqueKeepOrder([...finalRankKeywords, ...seedKeywords.map(normalizeTopic)]).filter(
+          (keyword) => !blacklist.has(keyword) && !isUnsafeTopic(keyword)
+        );
 
   const usedKeywords = new Set<string>();
   const stemCount = new Map<string, number>();
@@ -300,7 +308,7 @@ async function main() {
   }
 
   // 1) 검색순위 원문 우선 반영
-  for (const rank of finalRankKeywords) {
+  for (const rank of finalBaseKeywords) {
     if (selected.length >= limit) break;
     tryAdd(rank);
   }
@@ -308,7 +316,7 @@ async function main() {
   // 2) 검색순위 기반 확장 키워드 생성(라운드로빈으로 주제 편중 완화)
   for (const tpl of templates) {
     if (selected.length >= limit) break;
-    for (const rank of finalRankKeywords) {
+    for (const rank of finalBaseKeywords) {
       if (selected.length >= limit) break;
       tryAdd(tpl.replace('{keyword}', rank).trim());
     }
@@ -329,9 +337,11 @@ async function main() {
         liveRankKeywordCount: liveRankKeywords.length,
         cachedRankKeywordCount: cachedRankKeywords.length,
         previousOutputKeywordCount: previousOutputKeywords.length,
+        seedKeywordCount: seedKeywords.length,
         safeRankKeywordCount: safeRankKeywords.length,
         relaxedRankKeywordCount: relaxedRankKeywords.length,
         usingRelaxedKeywords: rankKeywords.length === 0,
+        usingSeedFallback: finalRankKeywords.length < 5,
         tokenDerivedRankKeywordCount: tokenDerivedRankKeywords.length,
         count: selected.length,
         categories: Object.fromEntries(categoryCount.entries()),
