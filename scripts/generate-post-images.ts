@@ -128,10 +128,9 @@ async function main() {
     const slug = String(row.data.slug ?? '');
     const title = String(row.data.title ?? '').trim();
     if (!slug || !title) continue;
-    const parsed = matter(row.body);
-    const nextContent = insertImages(parsed.content, slug, title);
-    if (nextContent === parsed.content) continue;
-    const updatedDoc = matter.stringify(nextContent, parsed.data);
+    const nextContent = insertImages(row.content, slug, title);
+    if (nextContent === row.content) continue;
+    const updatedDoc = matter.stringify(nextContent, row.data);
     await fs.writeFile(row.file, updatedDoc, 'utf8');
   }
 
