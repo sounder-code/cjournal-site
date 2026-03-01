@@ -86,8 +86,10 @@ function pickGeminiInlineImage(payload) {
 function normalizePrompt(item) {
   const prompt = String(item.prompt || "").trim();
   const size = String(item.size || "").trim();
-  if (!size) return prompt;
-  return `${prompt}\n\nTarget image size: ${size}.`;
+  const hardRule =
+    "Hard output constraints: image only; absolutely no visible text/letters/numbers/symbols in any language; no logos; no watermarks; no captions; no poster/title-card/banner/infographic layout.";
+  if (!size) return `${prompt}\n\n${hardRule}`;
+  return `${prompt}\n\nTarget image size: ${size}.\n${hardRule}`;
 }
 
 function normalizeOpenAiSize(inputSize) {
@@ -134,7 +136,7 @@ async function generateOneViaCustomApi(item) {
 }
 
 async function generateOneViaGemini(item, apiKey) {
-  const prompt = `${normalizePrompt(item)}\n\nOutput rule: Return image only. Do not return text.`;
+  const prompt = `${normalizePrompt(item)}\n\nOutput rule: Return image only.`;
   const endpoint = `${GEMINI_API_BASE}/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`;
   const body = {
     contents: [
@@ -170,9 +172,9 @@ async function generateOneViaGemini(item, apiKey) {
 
 async function generateOneViaGeminiWithRetry(item, apiKey) {
   const variants = [
-    `${String(item.prompt || "").trim()}\n\nSimple composition, no text, no logo, no watermark.`,
-    `${String(item.prompt || "").trim()}\n\nPhoto-like scene, avoid typography, avoid poster layout, avoid signs.`,
-    `${String(item.prompt || "").trim()}\n\nSingle subject, clean background, no characters, no symbols.`
+    `${String(item.prompt || "").trim()}\n\nSimple photojournalistic composition. Absolutely no text, no logo, no watermark.`,
+    `${String(item.prompt || "").trim()}\n\nNatural camera scene, not a poster. Avoid typography, signs, labels, UI, and overlays.`,
+    `${String(item.prompt || "").trim()}\n\nObject/people scene only. No written characters (Korean/English/number), no symbols, no branding.`
   ];
   let lastError = null;
   for (const variant of variants) {

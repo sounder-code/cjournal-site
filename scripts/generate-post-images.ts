@@ -34,8 +34,9 @@ function buildPrompt(title: string, description: string, index: number) {
     `Concept: ${title}.`,
     `Context: ${description}.`,
     `Scene: ${scene}.`,
-    `STRICT NEGATIVE RULES: no text, no letters, no numbers, no symbols, no logo, no watermark, no caption, no UI mockup, no poster layout, no banner layout.`,
-    `Style: calm newsroom magazine tone, natural composition, clean colors, 16:9 landscape.`
+    `STRICT NEGATIVE RULES: no text, no letters, no numbers, no symbols, no logo, no watermark, no caption, no title card, no subtitle, no UI mockup, no poster layout, no banner layout, no infographic, no signage, no labels.`,
+    `Korean/English text must not appear anywhere in the image.`,
+    `Style: calm newsroom magazine tone, natural composition, clean colors, 16:9 landscape, photojournalistic scene only.`
   ].join('\n');
 }
 
