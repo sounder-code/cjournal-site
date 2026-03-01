@@ -251,7 +251,7 @@ async function main() {
     if (provider === "auto") {
       providerOrder = ["gemini", "openai", "custom"];
     } else if (provider === "gemini") {
-      providerOrder = ["gemini", "openai"];
+      providerOrder = ["gemini"];
     } else if (provider === "openai") {
       providerOrder = ["openai"];
     } else if (provider === "custom") {
