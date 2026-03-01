@@ -121,7 +121,7 @@ async function generateOneViaCustomApi(item) {
 }
 
 async function generateOneViaGemini(item, apiKey) {
-  const prompt = normalizePrompt(item);
+  const prompt = `${normalizePrompt(item)}\n\nOutput rule: Return image only. Do not return text.`;
   const endpoint = `${GEMINI_API_BASE}/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`;
   const body = {
     contents: [
@@ -131,7 +131,7 @@ async function generateOneViaGemini(item, apiKey) {
       },
     ],
     generationConfig: {
-      responseModalities: ["TEXT", "IMAGE"],
+      responseModalities: ["IMAGE"],
     },
   };
 
@@ -150,6 +150,24 @@ async function generateOneViaGemini(item, apiKey) {
   const inline = pickGeminiInlineImage(payload);
   if (!inline?.data) throw new Error("No inline image returned by Gemini API");
   return toBufferFromBase64(inline.data);
+}
+
+async function generateOneViaGeminiWithRetry(item, apiKey) {
+  try {
+    return await generateOneViaGemini(item, apiKey);
+  } catch (firstError) {
+    const fallbackItem = {
+      ...item,
+      prompt: `${String(item.prompt || "").trim()}\n\nSimple composition, no text, no logo, no watermark.`
+    };
+    try {
+      return await generateOneViaGemini(fallbackItem, apiKey);
+    } catch (secondError) {
+      const firstMsg = firstError?.message || String(firstError);
+      const secondMsg = secondError?.message || String(secondError);
+      throw new Error(`Gemini image retry failed: ${firstMsg} / ${secondMsg}`);
+    }
+  }
 }
 
 async function generateOneViaOpenAI(item, apiKey) {
@@ -222,7 +240,7 @@ async function main() {
       buffer = await generateOneViaOpenAI({ id, prompt, size: item.size }, OPENAI_API_KEY);
     } else if (provider === "gemini") {
       if (!hasGeminiMode) throw new Error("IMAGE_PROVIDER=gemini but GEMINI_API_KEY is missing");
-      buffer = await generateOneViaGemini({ id, prompt, size: item.size }, effectiveGeminiKey);
+      buffer = await generateOneViaGeminiWithRetry({ id, prompt, size: item.size }, effectiveGeminiKey);
     } else {
       throw new Error(`Unsupported IMAGE_PROVIDER: ${provider}`);
     }
