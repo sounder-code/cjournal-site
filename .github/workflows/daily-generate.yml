@@ -41,6 +41,9 @@ jobs:
       - name: Generate articles
         if: steps.toggle.outputs.enabled == 'true'
         env:
+          ARTICLE_PROVIDER: auto
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: gemini-2.5-flash
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: gpt-4.1
           ARTICLE_COUNT: 10

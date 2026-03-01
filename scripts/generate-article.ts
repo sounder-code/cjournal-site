@@ -41,6 +41,49 @@ function countFaqItems(content: string) {
 
 const MIN_WORD_COUNT = Number(process.env.MIN_WORD_COUNT ?? '900');
 
+type Provider = 'gemini' | 'openai';
+
+function selectProvider(): Provider {
+  const preferred = (process.env.ARTICLE_PROVIDER ?? 'auto').toLowerCase();
+  const hasGemini = Boolean(process.env.GEMINI_API_KEY);
+  const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+
+  if (preferred === 'gemini' && hasGemini) return 'gemini';
+  if (preferred === 'openai' && hasOpenAI) return 'openai';
+
+  // auto: prefer Gemini first for this project
+  if (hasGemini) return 'gemini';
+  if (hasOpenAI) return 'openai';
+  throw new Error('Either GEMINI_API_KEY or OPENAI_API_KEY is required');
+}
+
+async function generateWithGemini(prompt: string) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY is required');
+  const model = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash';
+
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.7 }
+    })
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Gemini ${res.status}: ${body.slice(0, 300)}`);
+  }
+
+  const json = (await res.json()) as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+  };
+  const text = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('').trim();
+  if (!text) throw new Error('empty output');
+  return text;
+}
+
 function validateDraft(
   markdown: string,
   forbidden: string[],
@@ -100,9 +143,6 @@ function validateDraft(
 }
 
 async function main() {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error('OPENAI_API_KEY is required');
-
   await ensureDir(POSTS_DIR);
   await ensureDir(LOG_DIR);
 
@@ -114,7 +154,8 @@ async function main() {
   const existingTitles = existing.map((row) => String(row.data.title ?? ''));
   const existingSlugs = new Set(existing.map((row) => String(row.data.slug ?? '')));
 
-  const client = new OpenAI({ apiKey });
+  const provider = selectProvider();
+  const openaiClient = provider === 'openai' ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
   const created: string[] = [];
   const logLines: string[] = [];
 
@@ -155,13 +196,23 @@ async function main() {
 
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       const prompt = attempt === 1 ? basePrompt : `${basePrompt}\n이전 결과 실패 이유: ${lastReason}\n실패 원인을 수정해 다시 작성하라.`;
-      const response = await client.responses.create({
-        model: process.env.OPENAI_MODEL ?? 'gpt-4.1-mini',
-        temperature: 0.7,
-        input: prompt
-      });
+      let markdown = '';
+      try {
+        if (provider === 'gemini') {
+          markdown = await generateWithGemini(prompt);
+        } else {
+          const response = await openaiClient!.responses.create({
+            model: process.env.OPENAI_MODEL ?? 'gpt-4.1-mini',
+            temperature: 0.7,
+            input: prompt
+          });
+          markdown = response.output_text?.trim() ?? '';
+        }
+      } catch (e) {
+        lastReason = e instanceof Error ? e.message : 'provider call failed';
+        continue;
+      }
 
-      const markdown = response.output_text?.trim();
       if (!markdown) {
         lastReason = 'empty output';
         continue;
@@ -202,6 +253,7 @@ async function main() {
   }
 
   const logPath = path.join(LOG_DIR, `generate-${Date.now()}.log`);
+  logLines.unshift(`provider: ${provider}`);
   await fs.writeFile(logPath, logLines.join('\n'), 'utf8');
   console.log(`created articles: ${created.length}`);
 }
