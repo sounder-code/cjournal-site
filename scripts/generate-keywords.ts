@@ -51,6 +51,16 @@ const CATEGORY_RULES: Array<{ category: string; patterns: RegExp[] }> = [
   { category: '사회/이슈', patterns: [/선거|정책|공천|사건|사고|법안|공공|행정|국회/i] }
 ];
 
+const CATEGORY_CAPS: Record<string, number> = {
+  생산성: 7,
+  디지털: 7,
+  생활관리: 7,
+  건강생활: 5,
+  '교통/이동': 4,
+  '사회/이슈': 2,
+  기타: 4
+};
+
 function topicStem(keyword: string) {
   return keyword
     .toLowerCase()
@@ -218,9 +228,11 @@ async function main() {
   }
 
   const usedKeywords = new Set<string>();
+  const stemCount = new Map<string, number>();
   const categoryCount = new Map<string, number>();
   const selected: string[] = [];
-  const maxPerCategory = 20;
+  // When today's safe ranking pool is small, relax stem cap to avoid pipeline failure.
+  const maxPerStem = rankKeywords.length < 6 ? 4 : 2;
   const limit = 30;
 
   function tryAdd(keyword: string) {
@@ -231,12 +243,16 @@ async function main() {
     const stem = topicStem(cleaned);
     if (!stem) return false;
     if (usedKeywords.has(cleaned.toLowerCase())) return false;
+    const stemHits = stemCount.get(stem) ?? 0;
+    if (stemHits >= maxPerStem) return false;
 
     const category = classifyCategory(cleaned);
     const current = categoryCount.get(category) ?? 0;
+    const maxPerCategory = CATEGORY_CAPS[category] ?? CATEGORY_CAPS.기타;
     if (current >= maxPerCategory) return false;
 
     usedKeywords.add(cleaned.toLowerCase());
+    stemCount.set(stem, stemHits + 1);
     categoryCount.set(category, current + 1);
     selected.push(cleaned);
     return true;
@@ -257,8 +273,9 @@ async function main() {
     }
   }
 
-  if (selected.length < 10) {
-    throw new Error(`검색순위 기반 키워드가 너무 적습니다: ${selected.length}개 (safeRank=${rankKeywords.length})`);
+  const minRequired = rankKeywords.length < 6 ? 4 : 10;
+  if (selected.length < minRequired) {
+    throw new Error(`검색순위 기반 키워드가 너무 적습니다: ${selected.length}개 (safeRank=${rankKeywords.length}, min=${minRequired})`);
   }
 
   await fs.writeFile(
