@@ -166,6 +166,28 @@ async function loadSearchRankKeywords(now: Date): Promise<string[]> {
   return keywords;
 }
 
+async function loadCachedRankKeywords(): Promise<string[]> {
+  try {
+    const raw = await fs.readFile(rankCachePath, 'utf-8');
+    const parsed = JSON.parse(raw) as { keywords?: unknown };
+    if (!Array.isArray(parsed.keywords)) return [];
+    return parsed.keywords.filter((v): v is string => typeof v === 'string' && v.trim().length > 0);
+  } catch {
+    return [];
+  }
+}
+
+async function loadPreviousOutputKeywords(): Promise<string[]> {
+  try {
+    const raw = await fs.readFile(outPath, 'utf-8');
+    const parsed = JSON.parse(raw) as { keywords?: unknown };
+    if (!Array.isArray(parsed.keywords)) return [];
+    return parsed.keywords.filter((v): v is string => typeof v === 'string' && v.trim().length > 0);
+  } catch {
+    return [];
+  }
+}
+
 function normalizeTopic(value: string) {
   return value
     .replace(/\s+/g, ' ')
@@ -204,10 +226,19 @@ async function main() {
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
   const blacklist = new Set(await readLines(blacklistPath));
+  let liveRankKeywords: string[] = [];
+  try {
+    liveRankKeywords = await loadSearchRankKeywords(now);
+  } catch (error) {
+    console.warn(`[warn] live rank fetch failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
 
-  const rawRankKeywords = await loadSearchRankKeywords(now);
+  const cachedRankKeywords = await loadCachedRankKeywords();
+  const previousOutputKeywords = await loadPreviousOutputKeywords();
+  const rawRankKeywords = uniqueKeepOrder([...liveRankKeywords, ...cachedRankKeywords, ...previousOutputKeywords]).slice(0, 50);
+
   if (rawRankKeywords.length < 5) {
-    throw new Error(`검색순위 키워드 수집 실패: ${rawRankKeywords.length}개`);
+    console.warn(`[warn] sparse ranking pool: ${rawRankKeywords.length} keywords`);
   }
 
   const safeRankKeywords = uniqueKeepOrder(
@@ -223,16 +254,26 @@ async function main() {
 
   const rankKeywords = uniqueKeepOrder([...safeRankKeywords, ...tokenDerivedRankKeywords]);
 
-  if (rankKeywords.length < 3) {
-    throw new Error(`안전한 검색순위 키워드가 부족합니다: ${rankKeywords.length}개`);
-  }
+  const relaxedRankKeywords = uniqueKeepOrder(
+    rawRankKeywords
+      .map(normalizeTopic)
+      .filter(
+        (keyword) =>
+          keyword.length > 1 &&
+          !LOW_VALUE_PATTERNS.some((pattern) => pattern.test(keyword)) &&
+          !blacklist.has(keyword) &&
+          !isUnsafeTopic(keyword)
+      )
+  );
+
+  const finalRankKeywords = rankKeywords.length > 0 ? rankKeywords : relaxedRankKeywords;
 
   const usedKeywords = new Set<string>();
   const stemCount = new Map<string, number>();
   const categoryCount = new Map<string, number>();
   const selected: string[] = [];
   // When today's safe ranking pool is small, relax stem cap to avoid pipeline failure.
-  const maxPerStem = rankKeywords.length < 6 ? 4 : 2;
+  const maxPerStem = finalRankKeywords.length < 6 ? 4 : 2;
   const limit = 30;
 
   function tryAdd(keyword: string) {
@@ -259,7 +300,7 @@ async function main() {
   }
 
   // 1) 검색순위 원문 우선 반영
-  for (const rank of rankKeywords) {
+  for (const rank of finalRankKeywords) {
     if (selected.length >= limit) break;
     tryAdd(rank);
   }
@@ -267,15 +308,14 @@ async function main() {
   // 2) 검색순위 기반 확장 키워드 생성(라운드로빈으로 주제 편중 완화)
   for (const tpl of templates) {
     if (selected.length >= limit) break;
-    for (const rank of rankKeywords) {
+    for (const rank of finalRankKeywords) {
       if (selected.length >= limit) break;
       tryAdd(tpl.replace('{keyword}', rank).trim());
     }
   }
 
-  const minRequired = rankKeywords.length < 6 ? 4 : 10;
-  if (selected.length < minRequired) {
-    throw new Error(`검색순위 기반 키워드가 너무 적습니다: ${selected.length}개 (safeRank=${rankKeywords.length}, min=${minRequired})`);
+  if (selected.length === 0) {
+    throw new Error('키워드를 생성할 수 없습니다: live/cache/previous 모두 비어 있습니다');
   }
 
   await fs.writeFile(
@@ -286,7 +326,12 @@ async function main() {
         source: 'search-rank-only',
         sourceProvider: 'nate-live-issue-keyword',
         rankKeywordCount: rawRankKeywords.length,
+        liveRankKeywordCount: liveRankKeywords.length,
+        cachedRankKeywordCount: cachedRankKeywords.length,
+        previousOutputKeywordCount: previousOutputKeywords.length,
         safeRankKeywordCount: safeRankKeywords.length,
+        relaxedRankKeywordCount: relaxedRankKeywords.length,
+        usingRelaxedKeywords: rankKeywords.length === 0,
         tokenDerivedRankKeywordCount: tokenDerivedRankKeywords.length,
         count: selected.length,
         categories: Object.fromEntries(categoryCount.entries()),
@@ -297,7 +342,7 @@ async function main() {
     )
   );
 
-  console.log(`generated keywords: ${selected.length} (rank=${rankKeywords.length})`);
+  console.log(`generated keywords: ${selected.length} (rank=${finalRankKeywords.length}, live=${liveRankKeywords.length}, cache=${cachedRankKeywords.length})`);
 }
 
 main().catch((error) => {
