@@ -133,6 +133,8 @@ function normalizeContent(content: string, keyword: string, today: string) {
     next += `\n\n## FAQ\nQ1. ${keyword}를 시작할 때 무엇부터 점검해야 하나요?\nA1. 현재 상황, 목표, 제약 조건을 먼저 정리한 뒤 작은 단위로 적용하는 것이 좋습니다.\n\nQ2. 효과를 빠르게 확인하는 방법이 있나요?\nA2. 단기 지표 하나만 정해 일주일 단위로 비교하면 변화 여부를 파악하기 쉽습니다.\n\nQ3. 정보가 충돌하면 어떻게 판단하나요?\nA3. 출처와 맥락을 확인하고, 확실하지 않음인 정보는 보수적으로 해석하는 것이 안전합니다.`;
   }
 
+  // Always normalize body-level update line to today's date.
+  next = next.replace(/^\s*업데이트:\s*\d{4}-\d{2}-\d{2}\s*$/gim, '').trimEnd();
   if (!/업데이트:\s*\d{4}-\d{2}-\d{2}/.test(next)) {
     next += `\n\n업데이트: ${today}`;
   }
