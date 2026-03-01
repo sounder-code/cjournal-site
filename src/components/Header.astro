@@ -1,10 +1,100 @@
+---
+const today = new Intl.DateTimeFormat('ko-KR', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  weekday: 'short'
+}).format(new Date());
+---
 <header class="site-header">
+  <div class="utility-bar">
+    <div class="container utility-inner">
+      <p>{today}</p>
+      <div class="utility-links">
+        <a href="/about">서비스 소개</a>
+        <a href="/privacy">개인정보처리방침</a>
+        <a href="/terms">이용약관</a>
+      </div>
+    </div>
+  </div>
   <div class="container header-inner">
-    <a href="/" class="logo">콘텐츠 허브</a>
-    <nav>
-      <a href="/about">소개</a>
-      <a href="/privacy">개인정보처리방침</a>
-      <a href="/terms">이용약관</a>
-    </nav>
+    <div class="masthead">
+      <a href="/news/" class="logo">CJOURNAL</a>
+      <p class="edition">cjournal.kr · 실용 뉴스룸</p>
+    </div>
+  </div>
+  <div class="menu-bar">
+    <div class="container">
+      <nav aria-label="주요 섹션">
+        <a href="/news/">종합</a>
+        <a href="/tags/%EC%8B%9C%EA%B0%84%EA%B4%80%EB%A6%AC/">라이프</a>
+        <a href="/tags/%EC%97%85%EB%AC%B4/">업무</a>
+        <a href="/tags/%EB%94%94%EC%A7%80%ED%84%B8/">디지털</a>
+        <a href="/tags/%EC%83%9D%EC%82%B0%EC%84%B1/">생산성</a>
+        <a href="/tags/%EB%B3%B4%EC%95%88/">보안</a>
+        <a href="/tags/%EC%83%9D%ED%99%9C%EA%B4%80%EB%A6%AC/">생활관리</a>
+      </nav>
+    </div>
   </div>
 </header>
+
+<style>
+  .utility-bar {
+    border-bottom: 1px solid #e3e3df;
+    background: #fbfbfa;
+  }
+  .utility-inner {
+    min-height: 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .utility-inner p {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #5f5f5f;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    font-weight: 600;
+  }
+  .utility-links {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .utility-links a {
+    font-size: 0.78rem;
+    color: #4e4e4e;
+    text-decoration: none;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .utility-links a:hover { text-decoration: underline; }
+  .header-inner {
+    display: grid;
+    place-items: center;
+    padding: 18px 0 14px;
+  }
+  .masthead { display: grid; gap: 4px; }
+  .edition {
+    margin: 0;
+    color: #5d5d5d;
+    font-size: 0.85rem;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    font-weight: 600;
+    text-align: center;
+  }
+  .menu-bar {
+    border-top: 1px solid #e3e3df;
+    border-bottom: 1px solid #d5d5d1;
+    background: #fff;
+  }
+  nav {
+    min-height: 44px;
+    align-items: center;
+  }
+  @media (max-width: 768px) {
+    .utility-inner { min-height: 32px; }
+    .utility-links { display: none; }
+    .header-inner { padding: 12px 0; }
+  }
+</style>

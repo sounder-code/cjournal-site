@@ -1,11 +1,31 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import ArticleCard from '@/components/ArticleCard.astro';
-import { getLatestPosts, getTagCounts } from '@/lib/content';
+import { getAllPosts, getTagCounts } from '@/lib/content';
 
-const latestPosts = await getLatestPosts(18);
-const trendingTags = (await getTagCounts()).slice(0, 12);
-const searchIndex = latestPosts.map((post) => ({
+const posts = await getAllPosts();
+const leadPost = posts[0];
+const topStories = posts.slice(1, 7);
+const leadRelated = posts.slice(1, 13);
+const mostRead = posts.slice(0, 15);
+const latestFeed = posts.slice(0, 36);
+const latestNews = latestFeed.slice(0, 10);
+const mixLeft = posts.slice(6, 11);
+const mixCenter = posts[11];
+const mixCenterHeadlines = posts.slice(12, 15);
+const mixRight = posts.slice(15, 20);
+const trendingTags = (await getTagCounts()).slice(0, 10);
+
+const byCategory = new Map<string, typeof posts>();
+for (const post of posts) {
+  const key = post.data.category;
+  const list = byCategory.get(key) ?? [];
+  if (list.length < 2) list.push(post);
+  byCategory.set(key, list);
+}
+const categorySections = [...byCategory.entries()].slice(0, 8);
+
+const searchIndex = latestNews.map((post) => ({
   slug: post.slug,
   title: post.data.title,
   description: post.data.description,
@@ -13,37 +33,159 @@ const searchIndex = latestPosts.map((post) => ({
 }));
 ---
 <BaseLayout
-  title="콘텐츠 허브 | 최신 정보 아카이브"
-  description="매일 업데이트되는 정적 SEO 콘텐츠 허브"
+  title="CJOURNAL | 종합 뉴스룸"
+  description="생활·생산성·디지털 분야의 실용 정보 콘텐츠를 뉴스룸 형태로 제공합니다."
   canonical="/"
 >
-  <section>
-    <h1>최신 콘텐츠</h1>
-    <p>검증된 형식으로 정리한 정보형 글을 매일 발행합니다.</p>
-  </section>
-
-  <section>
-    <h2>검색</h2>
-    <input id="searchInput" type="search" placeholder="제목, 설명, 태그 검색" style="width:100%;padding:12px;border:1px solid #cbd7e7;border-radius:8px;" />
-  </section>
-
-  <section>
-    <h2>인기 태그</h2>
-    <div class="tags">
-      {trendingTags.map((row) => <a href={`/tags/${encodeURIComponent(row.tag)}/`}>#{row.tag} ({row.count})</a>)}
+  <section class="issue-strip" aria-label="주요 이슈">
+    <p class="label">주요 이슈</p>
+    <div class="issue-links">
+      {mostRead.slice(0, 8).map((post) => (
+        <a href={`/posts/${post.slug}/`}>{post.data.title}</a>
+      ))}
     </div>
   </section>
 
-  <section>
-    <div id="cards" style="display:grid;gap:12px;">
-      {latestPosts.map((post) => <ArticleCard post={post} />)}
+  <section class="home-grid">
+    <div class="main-column">
+      <section class="top-stage">
+        {leadPost && (
+          <article class="lead-story">
+            <a class="lead-image" href={`/posts/${leadPost.slug}/`}>
+              <img src={`/assets/posts/${leadPost.slug}.png`} alt={`${leadPost.data.title} 대표 이미지`} />
+            </a>
+            <p class="kicker">{leadPost.data.category}</p>
+            <h1><a href={`/posts/${leadPost.slug}/`}>{leadPost.data.title}</a></h1>
+            <p class="summary">{leadPost.data.description}</p>
+            <p class="meta">읽는 시간 {leadPost.data.readingTimeMinutes}분</p>
+          </article>
+        )}
+
+        <section class="headline-strip">
+          <h2>헤드라인 브리프</h2>
+          <ul>
+            {leadRelated.map((post) => (
+              <li><a href={`/posts/${post.slug}/`}>{post.data.title}</a></li>
+            ))}
+          </ul>
+        </section>
+      </section>
+
+      <section class="search-area">
+        <h2>기사 검색</h2>
+        <input id="searchInput" type="search" placeholder="제목, 설명, 태그 검색" />
+      </section>
+    </div>
+
+    <aside class="side-column">
+      <section class="top-stories">
+        <h2>주요 기사</h2>
+        {topStories.map((post) => <ArticleCard post={post} compact={true} />)}
+      </section>
+    </aside>
+  </section>
+
+  <section class="latest-area">
+    <h2>편집 뉴스</h2>
+    <div class="news-mix-grid">
+      <section class="news-rail">
+        {mixLeft.map((post, idx) => (
+          <article class={`rail-item ${idx === 0 ? 'with-thumb' : ''}`}>
+            {idx === 0 && (
+              <a class="rail-thumb" href={`/posts/${post.slug}/`}>
+                <img src={`/assets/posts/${post.slug}.png`} alt={`${post.data.title} 썸네일`} loading="lazy" />
+              </a>
+            )}
+            <h3><a href={`/posts/${post.slug}/`}>{post.data.title}</a></h3>
+          </article>
+        ))}
+      </section>
+
+      <section class="news-focus">
+        {mixCenter && (
+          <>
+            <a class="focus-image" href={`/posts/${mixCenter.slug}/`}>
+              <img src={`/assets/posts/${mixCenter.slug}.png`} alt={`${mixCenter.data.title} 대표 이미지`} loading="lazy" />
+            </a>
+            <h3><a href={`/posts/${mixCenter.slug}/`}>{mixCenter.data.title}</a></h3>
+            <p>{mixCenter.data.description}</p>
+          </>
+        )}
+        <ul>
+          {mixCenterHeadlines.map((post) => (
+            <li><a href={`/posts/${post.slug}/`}>{post.data.title}</a></li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="news-rail">
+        {mixRight.map((post, idx) => (
+          <article class={`rail-item ${idx === 0 ? 'with-thumb' : ''}`}>
+            {idx === 0 && (
+              <a class="rail-thumb" href={`/posts/${post.slug}/`}>
+                <img src={`/assets/posts/${post.slug}.png`} alt={`${post.data.title} 썸네일`} loading="lazy" />
+              </a>
+            )}
+            <h3><a href={`/posts/${post.slug}/`}>{post.data.title}</a></h3>
+          </article>
+        ))}
+      </section>
+    </div>
+  </section>
+
+  <section class="latest-list-area">
+    <h2>최신 뉴스</h2>
+    <div id="cards" class="latest-news-grid">
+      {latestNews.map((post) => (
+        <article class="latest-news-item search-card">
+          <a class="latest-thumb" href={`/posts/${post.slug}/`}>
+            <img src={`/assets/posts/${post.slug}.png`} alt={`${post.data.title} 썸네일`} loading="lazy" />
+          </a>
+          <div class="latest-copy">
+            <h3><a href={`/posts/${post.slug}/`}>{post.data.title}</a></h3>
+            <p>{post.data.description}</p>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="sections-row">
+    <div class="section-groups">
+      {categorySections.map(([category, sectionPosts]) => (
+        <section class="category-area">
+          <h2>{category}</h2>
+          <div class="cards-grid category-cards">
+            {sectionPosts.map((post) => <ArticleCard post={post} compact={true} />)}
+          </div>
+        </section>
+      ))}
+    </div>
+
+    <aside class="most-read">
+      <h2>많이 본 기사</h2>
+      <ol>
+        {mostRead.slice(0, 10).map((post, idx) => (
+          <li>
+            <span>{idx + 1}</span>
+            <a href={`/posts/${post.slug}/`}>{post.data.title}</a>
+          </li>
+        ))}
+      </ol>
+    </aside>
+  </section>
+
+  <section class="tag-area">
+    <h2>트렌딩 태그</h2>
+    <div class="tags">
+      {trendingTags.map((row) => <a href={`/tags/${encodeURIComponent(row.tag)}/`}>#{row.tag} ({row.count})</a>)}
     </div>
   </section>
 
   <script type="application/json" id="search-index" set:html={JSON.stringify(searchIndex)}></script>
   <script>
     const input = document.getElementById('searchInput');
-    const cards = [...document.querySelectorAll('#cards .article-card')];
+    const cards = [...document.querySelectorAll('#cards .search-card')];
     const index = JSON.parse(document.getElementById('search-index')?.textContent || '[]');
 
     if (!(input instanceof HTMLInputElement)) {
@@ -54,11 +196,382 @@ const searchIndex = latestPosts.map((post) => ({
       const q = input.value.trim().toLowerCase();
       cards.forEach((card, i) => {
         const target = index[i];
+        if (!target || !(card instanceof HTMLElement)) return;
         const hay = [target.title, target.description, ...(target.tags || [])].join(' ').toLowerCase();
-        if (card instanceof HTMLElement) {
-          card.style.display = q && !hay.includes(q) ? 'none' : '';
-        }
+        card.style.display = q && !hay.includes(q) ? 'none' : '';
       });
     });
   </script>
 </BaseLayout>
+
+<style>
+  :root {
+    --section-gap: 18px;
+  }
+  .issue-strip {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid #d9d9d5;
+    padding: 10px 14px;
+    margin-bottom: var(--section-gap);
+  }
+  .issue-strip .label {
+    margin: 0;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #183c66;
+  }
+  .issue-links {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .issue-links a {
+    color: #222;
+    text-decoration: none;
+    font-size: 0.93rem;
+  }
+  .issue-links a:hover { text-decoration: underline; }
+
+  .home-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.75fr) minmax(320px, 1fr);
+    gap: var(--section-gap);
+    margin-bottom: var(--section-gap);
+    align-items: start;
+  }
+  .main-column,
+  .side-column {
+    display: grid;
+    gap: var(--section-gap);
+    align-content: start;
+  }
+  .top-stage {
+    display: grid;
+    gap: var(--section-gap);
+    align-content: start;
+  }
+  .lead-story,
+  .headline-strip,
+  .top-stories,
+  .most-read,
+  .search-area,
+  .latest-area,
+  .latest-list-area,
+  .tag-area,
+  .category-area {
+    background: #fff;
+    border: 1px solid #d9d9d5;
+    padding: 14px;
+  }
+  .lead-image {
+    display: block;
+    border: 1px solid #d8d8d4;
+    margin-bottom: 12px;
+  }
+  .lead-image img {
+    width: 100%;
+    max-height: 380px;
+    object-fit: cover;
+    display: block;
+  }
+  .kicker {
+    margin: 0 0 6px;
+    color: #37597d;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+  .lead-story h1 {
+    margin: 0 0 10px;
+    line-height: 1.35;
+    font-size: clamp(1.35rem, 2.8vw, 2.05rem);
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    letter-spacing: -0.02em;
+  }
+  .lead-story h1 a { color: #111; text-decoration: none; }
+  .lead-story h1 a:hover { text-decoration: underline; }
+  .lead-story .summary { margin: 0 0 10px; font-size: 1.03rem; color: #262626; }
+  .headline-strip ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    columns: 2;
+    column-gap: 18px;
+    gap: 6px;
+  }
+  .headline-strip li {
+    break-inside: avoid;
+    border-bottom: 1px solid #ecece7;
+    padding: 7px 0;
+  }
+  .headline-strip a {
+    color: #1f1f1f;
+    text-decoration: none;
+    line-height: 1.45;
+  }
+  .headline-strip a:hover { text-decoration: underline; }
+  .headline-strip h2 {
+    margin: 0 0 10px;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 900;
+    border-bottom: 2px solid #1f3f67;
+    padding-bottom: 7px;
+  }
+  .top-stories {
+    padding: 12px;
+  }
+  .top-stories .article-card {
+    border: 0;
+    border-bottom: 1px solid #e6e6e1;
+    padding: 10px 2px;
+    background: transparent;
+  }
+  .top-stories .article-card:last-child {
+    border-bottom: 0;
+    padding-bottom: 2px;
+  }
+  .top-stories h2,
+  .most-read h2,
+  .search-area h2,
+  .latest-area h2,
+  .latest-list-area h2,
+  .tag-area h2,
+  .category-area h2 {
+    margin: 0 0 10px;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 900;
+    border-bottom: 2px solid #1f3f67;
+    padding-bottom: 7px;
+  }
+  .search-area input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #bfc8d5;
+    font-size: 0.98rem;
+    border-radius: 6px;
+    background: #fff;
+  }
+
+  .news-mix-grid {
+    display: grid;
+    grid-template-columns: 1fr minmax(280px, 1.2fr) 1fr;
+    gap: 14px;
+  }
+  .news-rail {
+    border-right: 1px solid #ecece7;
+    padding-right: 12px;
+    display: grid;
+    gap: 10px;
+  }
+  .news-mix-grid .news-rail:last-child {
+    border-right: 0;
+    padding-right: 0;
+  }
+  .rail-item {
+    border-bottom: 1px solid #ecece7;
+    padding-bottom: 9px;
+  }
+  .rail-item:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+  .rail-item h3 {
+    margin: 0;
+    font-size: 1.02rem;
+    line-height: 1.44;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    font-weight: 800;
+  }
+  .rail-item h3 a { color: #171717; text-decoration: none; }
+  .rail-item h3 a:hover { text-decoration: underline; }
+  .rail-thumb {
+    display: block;
+    margin-bottom: 8px;
+    border: 1px solid #d8d8d4;
+  }
+  .rail-thumb img {
+    width: 100%;
+    height: 92px;
+    object-fit: cover;
+    display: block;
+  }
+  .news-focus .focus-image {
+    display: block;
+    border: 1px solid #d8d8d4;
+    margin-bottom: 10px;
+  }
+  .news-focus .focus-image img {
+    width: 100%;
+    height: 245px;
+    object-fit: cover;
+    display: block;
+  }
+  .news-focus h3 {
+    margin: 0 0 8px;
+    font-size: 1.4rem;
+    line-height: 1.35;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    font-weight: 900;
+  }
+  .news-focus h3 a { color: #111; text-decoration: none; }
+  .news-focus h3 a:hover { text-decoration: underline; }
+  .news-focus p {
+    margin: 0 0 10px;
+    color: #333;
+  }
+  .news-focus ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .news-focus li {
+    padding: 8px 0;
+    border-top: 1px solid #ecece7;
+  }
+  .news-focus li a {
+    text-decoration: none;
+    color: #1a1a1a;
+    font-weight: 700;
+  }
+  .news-focus li a:hover { text-decoration: underline; }
+
+  .sections-row {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(290px, 1fr);
+    gap: var(--section-gap);
+    align-items: start;
+    margin-bottom: var(--section-gap);
+  }
+  .section-groups {
+    display: grid;
+    gap: var(--section-gap);
+  }
+  .category-cards {
+    display: grid;
+    gap: 10px;
+  }
+  .most-read ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .most-read li {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #ecece7;
+    align-items: start;
+  }
+  .most-read li:last-child { border-bottom: 0; }
+  .most-read li span {
+    color: #1f4f84;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    font-weight: 900;
+    line-height: 1.2;
+  }
+  .most-read li a {
+    color: #1b1b1b;
+    text-decoration: none;
+    line-height: 1.46;
+  }
+  .most-read li a:hover { text-decoration: underline; }
+
+  .latest-list-area {
+    margin-bottom: var(--section-gap);
+  }
+  .latest-news-grid {
+    display: grid;
+    gap: 8px;
+  }
+  .latest-news-item {
+    border-bottom: 1px solid #e8e8e4;
+    padding-bottom: 8px;
+    display: grid;
+    grid-template-columns: 145px 1fr;
+    gap: 12px;
+    align-items: start;
+  }
+  .latest-news-item:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+  .latest-thumb {
+    display: block;
+    border: 1px solid #d8d8d4;
+  }
+  .latest-thumb img {
+    width: 100%;
+    height: 95px;
+    object-fit: cover;
+    display: block;
+  }
+  .latest-copy h3 {
+    margin: 0 0 6px;
+    font-size: 1.07rem;
+    line-height: 1.42;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    font-weight: 800;
+  }
+  .latest-copy h3 a {
+    color: #1a1a1a;
+    text-decoration: none;
+  }
+  .latest-copy h3 a:hover { text-decoration: underline; }
+  .latest-copy p {
+    margin: 0;
+    color: #333;
+    line-height: 1.45;
+  }
+  .tag-area {
+    margin-bottom: var(--section-gap);
+  }
+
+  @media (max-width: 1120px) {
+    .home-grid,
+    .sections-row {
+      grid-template-columns: 1fr;
+    }
+    .side-column {
+      order: 2;
+    }
+  }
+  @media (max-width: 980px) {
+    .news-mix-grid {
+      grid-template-columns: 1fr;
+    }
+    .news-rail {
+      border-right: 0;
+      padding-right: 0;
+      border-top: 1px solid #ecece7;
+      padding-top: 10px;
+    }
+    .news-focus .focus-image img {
+      height: 210px;
+    }
+    .headline-strip ul {
+      columns: 1;
+    }
+  }
+  @media (max-width: 768px) {
+    .issue-strip {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .latest-news-item {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .lead-image img {
+      max-height: 260px;
+    }
+  }
+</style>
