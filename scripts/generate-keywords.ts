@@ -65,7 +65,7 @@ const CATEGORY_CAPS: Record<string, number> = {
 function topicStem(keyword: string) {
   return keyword
     .toLowerCase()
-    .replace(/(뜻|방법|기준|비교|추천|주의사항|체크리스트|요약|실생활 영향)\s*$/g, '')
+    .replace(/(뜻|방법|기준|비교|추천|주의사항|체크리스트|요약|실생활 영향|가이드|정리|분석)\s*$/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -190,10 +190,17 @@ async function loadPreviousOutputKeywords(): Promise<string[]> {
 }
 
 function normalizeTopic(value: string) {
-  return value
+  const cleaned = value
     .replace(/\s+/g, ' ')
     .replace(/["'`]/g, '')
     .trim();
+  const tokens = cleaned.split(' ').filter(Boolean);
+  const compact: string[] = [];
+  for (const token of tokens) {
+    if (compact.length > 0 && compact[compact.length - 1] === token) continue;
+    compact.push(token);
+  }
+  return compact.join(' ').trim();
 }
 
 function uniqueKeepOrder(items: string[]) {
@@ -281,7 +288,7 @@ async function main() {
   const categoryCount = new Map<string, number>();
   const selected: string[] = [];
   // When today's safe ranking pool is small, relax stem cap to avoid pipeline failure.
-  const maxPerStem = finalRankKeywords.length < 6 ? 4 : 2;
+  const maxPerStem = finalRankKeywords.length < 6 ? 2 : 1;
   const limit = 30;
 
   function tryAdd(keyword: string) {

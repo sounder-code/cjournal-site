@@ -49,17 +49,25 @@ const GEMINI_TIMEOUT_MS = Math.max(5000, Number(process.env.GEMINI_TIMEOUT_MS ??
 function topicStem(value: string) {
   return value
     .toLowerCase()
-    .replace(/(뜻|방법|기준|비교|추천|주의사항|체크리스트|요약|실생활 영향|가이드|실무|전략|정리)\s*$/g, '')
+    .replace(/(뜻|방법|기준|비교|추천|주의사항|체크리스트|요약|실생활 영향|가이드|실무|전략|정리|분석)\s*$/g, '')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 type Provider = 'gemini' | 'openai';
 
+function isLikelyRealOpenAiKey(key: string | undefined) {
+  const value = String(key ?? '').trim();
+  if (!value) return false;
+  if (value.includes('OPENAI') || value.includes('YOUR_') || value.includes('***')) return false;
+  return /^sk-[A-Za-z0-9_\-]{20,}$/.test(value);
+}
+
 function selectProvider(): Provider {
   const preferred = (process.env.ARTICLE_PROVIDER ?? 'auto').toLowerCase();
   const hasGemini = Boolean(process.env.GEMINI_API_KEY);
-  const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+  const hasOpenAI = isLikelyRealOpenAiKey(process.env.OPENAI_API_KEY);
 
   if (preferred === 'gemini' && hasGemini) return 'gemini';
   if (preferred === 'openai' && hasOpenAI) return 'openai';
@@ -243,7 +251,12 @@ async function main() {
   const logLines: string[] = [];
   const selectedTitles: string[] = [...existingTitles];
   const selectedSlugs = new Set(existingSlugs);
-  const selectedTopicStems = new Set(existingTitles.map((t) => topicStem(t)).filter(Boolean));
+  const selectedTopicStems = new Set(
+    [
+      ...existingTitles.map((t) => topicStem(t)),
+      ...[...existingSlugs].map((s) => topicStem(String(s).replace(/-/g, ' ')))
+    ].filter(Boolean)
+  );
   const keywordQueue = [...rawKeywords.keywords];
 
   async function processKeyword(keyword: string) {
@@ -321,9 +334,15 @@ async function main() {
         logLines.push(`skip duplicate: ${candidate.keyword} (sim=${similarity.toFixed(2)})`);
         continue;
       }
-      const candidateStem = topicStem(candidate.keyword);
-      if (candidateStem && selectedTopicStems.has(candidateStem)) {
-        logLines.push(`skip same-topic: ${candidate.keyword} (stem=${candidateStem})`);
+      const candidateKeywordStem = topicStem(candidate.keyword);
+      const candidateTitleStem = topicStem(candidate.title);
+      if (
+        (candidateKeywordStem && selectedTopicStems.has(candidateKeywordStem)) ||
+        (candidateTitleStem && selectedTopicStems.has(candidateTitleStem))
+      ) {
+        logLines.push(
+          `skip same-topic: ${candidate.keyword} (keywordStem=${candidateKeywordStem || '-'}, titleStem=${candidateTitleStem || '-'})`
+        );
         continue;
       }
       candidate.parsed.data.slug = deriveUniqueSlug(candidate.slug, selectedSlugs);
@@ -353,7 +372,8 @@ async function main() {
       created.push(filePath);
       selectedTitles.push(candidate.title);
       selectedSlugs.add(finalSlug);
-      if (candidateStem) selectedTopicStems.add(candidateStem);
+      if (candidateKeywordStem) selectedTopicStems.add(candidateKeywordStem);
+      if (candidateTitleStem) selectedTopicStems.add(candidateTitleStem);
       logLines.push(`created: ${finalSlug}`);
     }
   }

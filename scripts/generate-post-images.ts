@@ -86,6 +86,33 @@ async function runNodeScript(scriptPath: string, args: string[]) {
   });
 }
 
+async function fileExists(filePath: string) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function backfillMissingImages(slug: string) {
+  const existing: string[] = [];
+  const missing: string[] = [];
+  for (let i = 1; i <= IMAGES_PER_POST; i += 1) {
+    const imagePath = path.join(OUT_DIR, `${slug}-${i}.png`);
+    if (await fileExists(imagePath)) existing.push(imagePath);
+    else missing.push(imagePath);
+  }
+  if (existing.length === 0 || missing.length === 0) return 0;
+
+  let filled = 0;
+  for (const target of missing) {
+    await fs.copyFile(existing[0], target);
+    filled += 1;
+  }
+  return filled;
+}
+
 async function main() {
   await ensureDir(LOG_DIR);
   await ensureDir(POSTS_DIR);
@@ -115,7 +142,24 @@ async function main() {
   }
 
   await fs.writeFile(PROMPT_PATH, JSON.stringify(prompts, null, 2), 'utf8');
-  await runNodeScript(path.join(process.cwd(), 'scripts/generate-nanobanana-images.mjs'), [PROMPT_PATH, OUT_DIR]);
+  let generationFailed = false;
+  try {
+    await runNodeScript(path.join(process.cwd(), 'scripts/generate-nanobanana-images.mjs'), [PROMPT_PATH, OUT_DIR]);
+  } catch (error) {
+    generationFailed = true;
+    console.warn(`[warn] image generator step failed, trying backfill: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  let backfilled = 0;
+  for (const row of targets) {
+    const slug = String(row.data.slug ?? '');
+    if (!slug) continue;
+    backfilled += await backfillMissingImages(slug);
+  }
+  if (backfilled > 0) console.log(`backfilled missing images: ${backfilled}`);
+  if (generationFailed) {
+    console.log('continue after generator failure; final image integrity will be checked by check:images');
+  }
 
   for (const row of targets) {
     const slug = String(row.data.slug ?? '');

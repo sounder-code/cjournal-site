@@ -13,6 +13,12 @@ const IMAGE_PROVIDER = (process.env.IMAGE_PROVIDER || "auto").trim().toLowerCase
 const IMAGE_PARALLELISM = Math.max(1, Number(process.env.IMAGE_PARALLELISM || "3"));
 const IMAGE_TIMEOUT_MS = Math.max(5000, Number(process.env.IMAGE_TIMEOUT_MS || "30000"));
 
+function isLikelyRealOpenAiKey(key) {
+  if (!key) return false;
+  if (key.includes("OPENAI") || key.includes("YOUR_") || key.includes("***")) return false;
+  return /^sk-[A-Za-z0-9_\-]{20,}$/.test(key);
+}
+
 function usage() {
   console.log("Usage: node scripts/generate-nanobanana-images.mjs <prompt-json> <output-dir>");
   console.log("Mode A (custom endpoint): NANOBANANA_API_URL + NANOBANANA_API_KEY");
@@ -163,21 +169,21 @@ async function generateOneViaGemini(item, apiKey) {
 }
 
 async function generateOneViaGeminiWithRetry(item, apiKey) {
-  try {
-    return await generateOneViaGemini(item, apiKey);
-  } catch (firstError) {
-    const fallbackItem = {
-      ...item,
-      prompt: `${String(item.prompt || "").trim()}\n\nSimple composition, no text, no logo, no watermark.`
-    };
+  const variants = [
+    `${String(item.prompt || "").trim()}\n\nSimple composition, no text, no logo, no watermark.`,
+    `${String(item.prompt || "").trim()}\n\nPhoto-like scene, avoid typography, avoid poster layout, avoid signs.`,
+    `${String(item.prompt || "").trim()}\n\nSingle subject, clean background, no characters, no symbols.`
+  ];
+  let lastError = null;
+  for (const variant of variants) {
     try {
-      return await generateOneViaGemini(fallbackItem, apiKey);
-    } catch (secondError) {
-      const firstMsg = firstError?.message || String(firstError);
-      const secondMsg = secondError?.message || String(secondError);
-      throw new Error(`Gemini image retry failed: ${firstMsg} / ${secondMsg}`);
+      return await generateOneViaGemini({ ...item, prompt: variant }, apiKey);
+    } catch (error) {
+      lastError = error;
     }
   }
+  const msg = lastError?.message || String(lastError);
+  throw new Error(`Gemini image retry failed: ${msg}`);
 }
 
 async function generateOneViaOpenAI(item, apiKey) {
@@ -220,7 +226,7 @@ async function main() {
   const hasCustomMode = Boolean(CUSTOM_API_URL && CUSTOM_API_KEY);
   const effectiveGeminiKey = GEMINI_API_KEY || (CUSTOM_API_URL ? "" : CUSTOM_API_KEY);
   const hasGeminiMode = Boolean(effectiveGeminiKey);
-  const hasOpenAiMode = Boolean(OPENAI_API_KEY);
+  const hasOpenAiMode = isLikelyRealOpenAiKey(OPENAI_API_KEY);
   if (!hasCustomMode && !hasGeminiMode && !hasOpenAiMode) {
     throw new Error(
       "Missing credentials: set NANOBANANA_API_URL+NANOBANANA_API_KEY OR GEMINI_API_KEY OR OPENAI_API_KEY.",
