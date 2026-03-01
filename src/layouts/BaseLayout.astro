@@ -11,7 +11,6 @@ interface Props {
 
 const { title, description, canonical } = Astro.props;
 const gtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-TXMPF75Z').trim();
-const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
 ---
 <!doctype html>
 <html lang="ko">
@@ -23,15 +22,6 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
         <script
           is:inline
           set:html={`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmId}');`}
-        />
-      )
-    }
-    {gaId && <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}></script>}
-    {
-      gaId && (
-        <script
-          is:inline
-          set:html={`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}',{anonymize_ip:true,send_page_view:true});`}
         />
       )
     }
