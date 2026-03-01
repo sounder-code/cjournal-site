@@ -59,7 +59,7 @@ const CATEGORY_CAPS: Record<string, number> = {
   건강생활: 5,
   '교통/이동': 4,
   '사회/이슈': 2,
-  기타: 4
+  기타: 30
 };
 
 function topicStem(keyword: string) {

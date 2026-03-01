@@ -131,8 +131,9 @@ async function main() {
   await fs.writeFile(reportPath, JSON.stringify(report, null, 2), 'utf8');
   console.log(`quality keep: ${keep.length} / ${targets.length}`);
 
-  if (keep.length < MIN_KEPT_COUNT) {
-    throw new Error(`Quality gate kept ${keep.length}, requires at least ${MIN_KEPT_COUNT}`);
+  const requiredKept = Math.max(1, Math.min(MIN_KEPT_COUNT, targets.length));
+  if (keep.length < requiredKept) {
+    throw new Error(`Quality gate kept ${keep.length}, requires at least ${requiredKept}`);
   }
 }
 

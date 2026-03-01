@@ -52,8 +52,10 @@ jobs:
           OPENAI_MODEL: gpt-4.1
           ARTICLE_COUNT: 10
           ARTICLE_PARALLELISM: 3
-          ARTICLE_MAX_ATTEMPTS: 2
+          ARTICLE_MAX_ATTEMPTS: 1
           MIN_WORD_COUNT: 900
+          GEMINI_TIMEOUT_MS: 25000
+          OPENAI_TIMEOUT_MS: 25000
         run: npm run gen:articles
 
       - name: Quality gate
@@ -72,6 +74,7 @@ jobs:
           NANO_BANANA_MODEL: gemini-2.5-flash-image
           IMAGES_PER_POST: 3
           IMAGE_PARALLELISM: 3
+          IMAGE_TIMEOUT_MS: 30000
         run: npm run gen:post-images
 
       - name: Validate post images

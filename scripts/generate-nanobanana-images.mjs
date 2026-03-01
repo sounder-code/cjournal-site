@@ -11,6 +11,7 @@ const OPENAI_IMAGE_MODEL = (process.env.OPENAI_IMAGE_MODEL || "gpt-image-1").tri
 const OPENAI_IMAGE_QUALITY = (process.env.OPENAI_IMAGE_QUALITY || "medium").trim();
 const IMAGE_PROVIDER = (process.env.IMAGE_PROVIDER || "auto").trim().toLowerCase();
 const IMAGE_PARALLELISM = Math.max(1, Number(process.env.IMAGE_PARALLELISM || "3"));
+const IMAGE_TIMEOUT_MS = Math.max(5000, Number(process.env.IMAGE_TIMEOUT_MS || "30000"));
 
 function usage() {
   console.log("Usage: node scripts/generate-nanobanana-images.mjs <prompt-json> <output-dir>");
@@ -49,7 +50,9 @@ function pickImageFromResponse(payload) {
 async function fetchImageBuffer(imageRef) {
   if (imageRef.type === "b64") return toBufferFromBase64(imageRef.value);
   if (imageRef.type === "url") {
-    const res = await fetch(imageRef.value);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), IMAGE_TIMEOUT_MS);
+    const res = await fetch(imageRef.value, { signal: controller.signal }).finally(() => clearTimeout(timer));
     if (!res.ok) throw new Error(`Image download failed: ${res.status}`);
     const arr = await res.arrayBuffer();
     return Buffer.from(arr);
@@ -101,6 +104,8 @@ async function generateOneViaCustomApi(item) {
     size: item.size || "1024x1024",
   };
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), IMAGE_TIMEOUT_MS);
   const res = await fetch(CUSTOM_API_URL, {
     method: "POST",
     headers: {
@@ -108,7 +113,8 @@ async function generateOneViaCustomApi(item) {
       Authorization: `Bearer ${CUSTOM_API_KEY}`,
     },
     body: JSON.stringify(body),
-  });
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timer));
 
   if (!res.ok) {
     const text = await res.text();
@@ -136,11 +142,14 @@ async function generateOneViaGemini(item, apiKey) {
     },
   };
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), IMAGE_TIMEOUT_MS);
   const res = await fetch(`${endpoint}?key=${encodeURIComponent(apiKey)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  });
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timer));
 
   if (!res.ok) {
     const text = await res.text();
@@ -178,6 +187,8 @@ async function generateOneViaOpenAI(item, apiKey) {
     size: normalizeOpenAiSize(item.size),
     quality: OPENAI_IMAGE_QUALITY,
   };
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), IMAGE_TIMEOUT_MS);
   const res = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers: {
@@ -185,7 +196,8 @@ async function generateOneViaOpenAI(item, apiKey) {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify(body),
-  });
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timer));
 
   if (!res.ok) {
     const text = await res.text();
