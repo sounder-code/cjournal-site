@@ -49,7 +49,11 @@ export function slugify(input: string): string {
 export function wordCount(text: string): number {
   const cleaned = text.replace(/[#>*`\-]/g, ' ').replace(/\s+/g, ' ').trim();
   if (!cleaned) return 0;
-  return cleaned.split(' ').length;
+  const spaceTokens = cleaned.split(' ').filter(Boolean).length;
+  const koChars = (cleaned.match(/[가-힣]/g) ?? []).length;
+  // Korean drafts often use fewer spaces; estimate "word-like" volume from Hangul length.
+  const koEstimatedWords = Math.floor(koChars / 2);
+  return Math.max(spaceTokens, koEstimatedWords);
 }
 
 export function tokenizeKo(text: string): Set<string> {

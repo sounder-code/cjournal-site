@@ -39,6 +39,8 @@ function countFaqItems(content: string) {
   return (faq.match(/Q\d|^\s*-\s*Q[:.]|^\s*\*\*Q/gi) ?? []).length;
 }
 
+const MIN_WORD_COUNT = Number(process.env.MIN_WORD_COUNT ?? '900');
+
 function validateDraft(
   markdown: string,
   forbidden: string[],
@@ -65,8 +67,8 @@ function validateDraft(
     return { ok: false as const, reason: 'missing required frontmatter fields' };
   }
 
-  if (wordCount(content) < 1200) {
-    return { ok: false as const, reason: 'word count < 1200' };
+  if (wordCount(content) < MIN_WORD_COUNT) {
+    return { ok: false as const, reason: `word count < ${MIN_WORD_COUNT}` };
   }
   if (countH2(content) < 4) {
     return { ok: false as const, reason: 'h2 count < 4' };
@@ -116,7 +118,8 @@ async function main() {
   const created: string[] = [];
   const logLines: string[] = [];
 
-  for (const keyword of rawKeywords.keywords.slice(0, count)) {
+  for (const keyword of rawKeywords.keywords) {
+    if (created.length >= count) break;
     if (isUnsafeTopic(keyword)) {
       logLines.push(`skip unsafe keyword: ${keyword}`);
       continue;

@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-02-24T05:29:21.173Z",
+  "generatedAt": "2026-03-01T08:17:22.867Z",
   "latest": [
     {
-      "slug": "시간-관리-기초",
+      "slug": "time-management-basics-ko",
       "title": "시간 관리 기초: 일상 루틴을 안정적으로 만드는 방법",
       "description": "시간 관리의 기본 원리와 실천 체크리스트를 정리한 입문 가이드입니다.",
       "tags": [
@@ -14,14 +14,34 @@
       "publishedAt": "Tue Feb 24 2026 09:00:00 GMT+0900 (Korean Standard Time)",
       "updatedAt": "Tue Feb 24 2026 09:00:00 GMT+0900 (Korean Standard Time)",
       "readingTimeMinutes": 8
+    },
+    {
+      "slug": "geugeos-i-algo-sipda-investigative-reporting",
+      "title": "그것이 알고 싶다: 탐사 보도의 역사와 영향",
+      "description": "한국의 대표적인 탐사 보도 프로그램 ‘그것이 알고 싶다’의 역사, 특징, 사회적 영향과 관련 이슈들을 살펴봅니다.",
+      "tags": [
+        "그것이 알고 싶다",
+        "탐사 보도",
+        "시사 프로그램",
+        "한국 방송"
+      ],
+      "category": "미디어와 사회",
+      "publishedAt": "2026-03-01",
+      "updatedAt": "2026-03-01",
+      "readingTimeMinutes": 15
     }
   ],
   "tagCounts": {
+    "그것이 알고 싶다": 1,
+    "탐사 보도": 1,
+    "시사 프로그램": 1,
+    "한국 방송": 1,
     "시간관리": 1,
     "루틴": 1,
     "생산성": 1
   },
   "related": {
-    "시간-관리-기초": []
+    "geugeos-i-algo-sipda-investigative-reporting": [],
+    "time-management-basics-ko": []
   }
 }

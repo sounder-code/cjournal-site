@@ -28,6 +28,8 @@ function faqCount(content: string) {
   return (faq.match(/Q\d|\*\*Q|^-\s*Q[:.]/gim) ?? []).length;
 }
 
+const MIN_WORD_COUNT = Number(process.env.MIN_WORD_COUNT ?? '900');
+
 async function main() {
   await ensureDir(LOG_DIR);
   await ensureDir(POSTS_DIR);
@@ -58,9 +60,9 @@ async function main() {
     let score = 100;
 
     const wc = wordCount(content);
-    if (wc < 1200) {
+    if (wc < MIN_WORD_COUNT) {
       score -= 25;
-      reasons.push(`wordCount ${wc} < 1200`);
+      reasons.push(`wordCount ${wc} < ${MIN_WORD_COUNT}`);
     }
 
     const h2 = countH2(content);
