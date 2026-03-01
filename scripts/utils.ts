@@ -5,6 +5,7 @@ import matter from 'gray-matter';
 export const ROOT = process.cwd();
 export const POSTS_DIR = path.join(ROOT, 'src/content/posts');
 export const LOG_DIR = path.join(ROOT, 'logs');
+export const RUN_GENERATED_POSTS_PATH = path.join(LOG_DIR, 'run-generated-posts.json');
 
 export async function ensureDir(dir: string) {
   await fs.mkdir(dir, { recursive: true });
@@ -33,6 +34,28 @@ export async function loadPostsFrontmatter() {
     rows.push({ file, data: parsed.data as Record<string, any>, content: parsed.content });
   }
   return rows;
+}
+
+export async function writeRunGeneratedPosts(files: string[]) {
+  await ensureDir(LOG_DIR);
+  await fs.writeFile(
+    RUN_GENERATED_POSTS_PATH,
+    JSON.stringify({ files, generatedAt: new Date().toISOString() }, null, 2),
+    'utf8'
+  );
+}
+
+export async function readRunGeneratedPosts(): Promise<string[]> {
+  try {
+    const raw = await fs.readFile(RUN_GENERATED_POSTS_PATH, 'utf8');
+    const parsed = JSON.parse(raw) as { files?: unknown };
+    if (!Array.isArray(parsed.files)) return [];
+    return parsed.files
+      .filter((v): v is string => typeof v === 'string' && v.length > 0)
+      .map((file) => path.resolve(ROOT, file));
+  } catch {
+    return [];
+  }
 }
 
 export function slugify(input: string): string {

@@ -10,6 +10,7 @@ import {
   jaccardSimilarity,
   loadPostsFrontmatter,
   slugify,
+  writeRunGeneratedPosts,
   wordCount
 } from './utils';
 
@@ -255,7 +256,12 @@ async function main() {
   const logPath = path.join(LOG_DIR, `generate-${Date.now()}.log`);
   logLines.unshift(`provider: ${provider}`);
   await fs.writeFile(logPath, logLines.join('\n'), 'utf8');
+  await writeRunGeneratedPosts(created);
   console.log(`created articles: ${created.length}`);
+
+  if (created.length === 0) {
+    throw new Error('No newly created articles in this run');
+  }
 }
 
 main().catch((error) => {
