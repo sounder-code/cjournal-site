@@ -18,11 +18,12 @@ interface Props {
 
 const { post } = Astro.props;
 const compact = Astro.props.compact ?? false;
-const thumb = `/assets/posts/${post.slug}.png`;
+const thumb = `/assets/posts/${post.slug}-1.png`;
+const thumbFallback = `/assets/posts/${post.slug}.png`;
 ---
 <article class={`article-card ${compact ? 'compact' : ''}`}>
   <a class="thumb" href={`/posts/${post.slug}/`}>
-    <img src={thumb} alt={`${post.data.title} 썸네일`} loading="lazy" />
+    <img src={thumb} alt={`${post.data.title} 썸네일`} loading="lazy" onerror={`this.onerror=null;this.src='${thumbFallback}'`} />
   </a>
   <div>
   <p class="category">{post.data.category ?? '종합'}</p>

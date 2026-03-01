@@ -15,6 +15,8 @@ const mixCenter = posts[11];
 const mixCenterHeadlines = posts.slice(12, 15);
 const mixRight = posts.slice(15, 20);
 const trendingTags = (await getTagCounts()).slice(0, 10);
+const thumbSrc = (slug: string) => `/assets/posts/${slug}-1.png`;
+const thumbFallback = (slug: string) => `/assets/posts/${slug}.png`;
 
 const byCategory = new Map<string, typeof posts>();
 for (const post of posts) {
@@ -52,7 +54,11 @@ const searchIndex = latestNews.map((post) => ({
         {leadPost && (
           <article class="lead-story">
             <a class="lead-image" href={`/posts/${leadPost.slug}/`}>
-              <img src={`/assets/posts/${leadPost.slug}.png`} alt={`${leadPost.data.title} 대표 이미지`} />
+              <img
+                src={thumbSrc(leadPost.slug)}
+                alt={`${leadPost.data.title} 대표 이미지`}
+                onerror={`this.onerror=null;this.src='${thumbFallback(leadPost.slug)}'`}
+              />
             </a>
             <p class="kicker">{leadPost.data.category}</p>
             <h1><a href={`/posts/${leadPost.slug}/`}>{leadPost.data.title}</a></h1>
@@ -93,7 +99,12 @@ const searchIndex = latestNews.map((post) => ({
           <article class={`rail-item ${idx === 0 ? 'with-thumb' : ''}`}>
             {idx === 0 && (
               <a class="rail-thumb" href={`/posts/${post.slug}/`}>
-                <img src={`/assets/posts/${post.slug}.png`} alt={`${post.data.title} 썸네일`} loading="lazy" />
+                <img
+                  src={thumbSrc(post.slug)}
+                  alt={`${post.data.title} 썸네일`}
+                  loading="lazy"
+                  onerror={`this.onerror=null;this.src='${thumbFallback(post.slug)}'`}
+                />
               </a>
             )}
             <h3><a href={`/posts/${post.slug}/`}>{post.data.title}</a></h3>
@@ -105,7 +116,12 @@ const searchIndex = latestNews.map((post) => ({
         {mixCenter && (
           <>
             <a class="focus-image" href={`/posts/${mixCenter.slug}/`}>
-              <img src={`/assets/posts/${mixCenter.slug}.png`} alt={`${mixCenter.data.title} 대표 이미지`} loading="lazy" />
+              <img
+                src={thumbSrc(mixCenter.slug)}
+                alt={`${mixCenter.data.title} 대표 이미지`}
+                loading="lazy"
+                onerror={`this.onerror=null;this.src='${thumbFallback(mixCenter.slug)}'`}
+              />
             </a>
             <h3><a href={`/posts/${mixCenter.slug}/`}>{mixCenter.data.title}</a></h3>
             <p>{mixCenter.data.description}</p>
@@ -123,7 +139,12 @@ const searchIndex = latestNews.map((post) => ({
           <article class={`rail-item ${idx === 0 ? 'with-thumb' : ''}`}>
             {idx === 0 && (
               <a class="rail-thumb" href={`/posts/${post.slug}/`}>
-                <img src={`/assets/posts/${post.slug}.png`} alt={`${post.data.title} 썸네일`} loading="lazy" />
+                <img
+                  src={thumbSrc(post.slug)}
+                  alt={`${post.data.title} 썸네일`}
+                  loading="lazy"
+                  onerror={`this.onerror=null;this.src='${thumbFallback(post.slug)}'`}
+                />
               </a>
             )}
             <h3><a href={`/posts/${post.slug}/`}>{post.data.title}</a></h3>
@@ -139,7 +160,12 @@ const searchIndex = latestNews.map((post) => ({
       {latestNews.map((post) => (
         <article class="latest-news-item search-card">
           <a class="latest-thumb" href={`/posts/${post.slug}/`}>
-            <img src={`/assets/posts/${post.slug}.png`} alt={`${post.data.title} 썸네일`} loading="lazy" />
+            <img
+              src={thumbSrc(post.slug)}
+              alt={`${post.data.title} 썸네일`}
+              loading="lazy"
+              onerror={`this.onerror=null;this.src='${thumbFallback(post.slug)}'`}
+            />
           </a>
           <div class="latest-copy">
             <h3><a href={`/posts/${post.slug}/`}>{post.data.title}</a></h3>

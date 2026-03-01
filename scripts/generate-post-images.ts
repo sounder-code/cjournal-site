@@ -30,12 +30,12 @@ function buildPrompt(title: string, description: string, index: number) {
         ? '중간 본문 설명에 어울리는 실무 장면'
         : '후반 요약/FAQ에 어울리는 정돈된 장면';
   return [
-    `한국어 정보 기사용 고품질 일러스트를 생성한다.`,
-    `주제: ${title}`,
-    `요약: ${description}`,
-    `장면: ${scene}`,
-    `스타일: 차분한 뉴스/매거진 톤, 사실적 구도, 텍스트/로고/워터마크 절대 금지, 배너/광고 문구 금지.`,
-    `인물 표정 과장 금지, 손/사물 비율 자연스럽게, 깔끔한 색감, 16:9 가로 이미지.`
+    `Create a realistic editorial image for a Korean news article.`,
+    `Concept: ${title}.`,
+    `Context: ${description}.`,
+    `Scene: ${scene}.`,
+    `STRICT NEGATIVE RULES: no text, no letters, no numbers, no symbols, no logo, no watermark, no caption, no UI mockup, no poster layout, no banner layout.`,
+    `Style: calm newsroom magazine tone, natural composition, clean colors, 16:9 landscape.`
   ].join('\n');
 }
 

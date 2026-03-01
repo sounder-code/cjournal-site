@@ -43,8 +43,16 @@ function countFaqItems(content: string) {
 const MIN_WORD_COUNT = Number(process.env.MIN_WORD_COUNT ?? '900');
 const ARTICLE_PARALLELISM = Math.max(1, Number(process.env.ARTICLE_PARALLELISM ?? '3'));
 const MAX_ATTEMPTS_PER_KEYWORD = Math.max(1, Number(process.env.ARTICLE_MAX_ATTEMPTS ?? '1'));
-const TITLE_SIMILARITY_THRESHOLD = Number(process.env.TITLE_SIMILARITY_THRESHOLD ?? '0.9');
+const TITLE_SIMILARITY_THRESHOLD = Number(process.env.TITLE_SIMILARITY_THRESHOLD ?? '0.7');
 const GEMINI_TIMEOUT_MS = Math.max(5000, Number(process.env.GEMINI_TIMEOUT_MS ?? '25000'));
+
+function topicStem(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/(뜻|방법|기준|비교|추천|주의사항|체크리스트|요약|실생활 영향|가이드|실무|전략|정리)\s*$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 type Provider = 'gemini' | 'openai';
 
@@ -235,6 +243,7 @@ async function main() {
   const logLines: string[] = [];
   const selectedTitles: string[] = [...existingTitles];
   const selectedSlugs = new Set(existingSlugs);
+  const selectedTopicStems = new Set(existingTitles.map((t) => topicStem(t)).filter(Boolean));
   const keywordQueue = [...rawKeywords.keywords];
 
   async function processKeyword(keyword: string) {
@@ -312,6 +321,11 @@ async function main() {
         logLines.push(`skip duplicate: ${candidate.keyword} (sim=${similarity.toFixed(2)})`);
         continue;
       }
+      const candidateStem = topicStem(candidate.keyword);
+      if (candidateStem && selectedTopicStems.has(candidateStem)) {
+        logLines.push(`skip same-topic: ${candidate.keyword} (stem=${candidateStem})`);
+        continue;
+      }
       candidate.parsed.data.slug = deriveUniqueSlug(candidate.slug, selectedSlugs);
 
       if (wordCount(candidate.parsed.content) < MIN_WORD_COUNT) {
@@ -339,6 +353,7 @@ async function main() {
       created.push(filePath);
       selectedTitles.push(candidate.title);
       selectedSlugs.add(finalSlug);
+      if (candidateStem) selectedTopicStems.add(candidateStem);
       logLines.push(`created: ${finalSlug}`);
     }
   }
