@@ -23,6 +23,7 @@ npm run build
 - 제휴 링크 설정 파일: `src/content/monetization/offers.ts`
 - `url` 값을 실제 제휴/파트너 링크로 교체하세요.
 - 클릭 이벤트는 GTM `affiliate_click` 이벤트로 전송됩니다.
+- 키워드 생성 시 상업의도 점수 임계값은 `MIN_COMMERCIAL_SCORE`로 조정할 수 있습니다(기본값: `2`).
 
 필수 GitHub Secrets:
 - `OPENAI_API_KEY`

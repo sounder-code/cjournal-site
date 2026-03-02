@@ -9,14 +9,14 @@ const outPath = path.join(process.cwd(), 'src/content/keywords/today.json');
 const rankCachePath = path.join(process.cwd(), 'logs/search-rank-cache.json');
 
 const templates = [
-  '{keyword} 뜻',
-  '{keyword} 방법',
-  '{keyword} 기준',
   '{keyword} 비교',
   '{keyword} 추천',
-  '{keyword} 주의사항',
-  '{keyword} 체크리스트',
-  '{keyword} 요약'
+  '{keyword} 가격',
+  '{keyword} 비용',
+  '{keyword} 요금',
+  '{keyword} 후기',
+  '{keyword} 할인',
+  '{keyword} 가입 방법'
 ];
 
 const PERSON_OR_EVENT_PATTERNS = [
@@ -59,6 +59,15 @@ const SITE_RELEVANCE_PATTERNS = [
   /교통|운전|전기차|기차|버스|지하철|항공|여행/i
 ];
 
+const COMMERCIAL_HIGH_PATTERNS = [
+  /가격|비용|요금|할인|쿠폰|구독|무료체험|프로모션|특가/i,
+  /추천|비교|순위|best|top|후기|리뷰|대안|대체/i,
+  /가입|신청|등록|설치|구매|결제/i
+];
+
+const COMMERCIAL_MEDIUM_PATTERNS = [/가이드|방법|체크리스트|앱|툴|서비스|자동화|설정|최적화/i];
+const LOW_INTENT_PATTERNS = [/뜻|요약|정리|뉴스|이슈|실시간|속보/i];
+
 const CATEGORY_CAPS: Record<string, number> = {
   생산성: 7,
   디지털: 7,
@@ -68,6 +77,8 @@ const CATEGORY_CAPS: Record<string, number> = {
   '사회/이슈': 2,
   기타: 0
 };
+
+const MIN_COMMERCIAL_SCORE = Number(process.env.MIN_COMMERCIAL_SCORE ?? '2');
 
 function topicStem(keyword: string) {
   return keyword
@@ -132,6 +143,21 @@ function isSafeForEvergreen(value: string) {
 function isRelevantToSite(value: string) {
   const base = topicStem(value) || value;
   return SITE_RELEVANCE_PATTERNS.some((pattern) => pattern.test(base));
+}
+
+function commercialIntentScore(value: string) {
+  const base = normalizeTopic(value);
+  let score = 0;
+  for (const pattern of COMMERCIAL_HIGH_PATTERNS) {
+    if (pattern.test(base)) score += 3;
+  }
+  for (const pattern of COMMERCIAL_MEDIUM_PATTERNS) {
+    if (pattern.test(base)) score += 1;
+  }
+  for (const pattern of LOW_INTENT_PATTERNS) {
+    if (pattern.test(base)) score -= 2;
+  }
+  return score;
 }
 
 async function fetchTextWithTimeout(url: string, timeoutMs: number): Promise<string> {
@@ -307,21 +333,27 @@ async function main() {
           (keyword) =>
             isRelevantToSite(keyword) && !isLowTrustKeyword(keyword) && !blacklist.has(keyword) && !isUnsafeTopic(keyword)
         );
+  const prioritizedBaseKeywords = [...finalBaseKeywords].sort(
+    (a, b) => commercialIntentScore(b) - commercialIntentScore(a)
+  );
 
   const usedKeywords = new Set<string>();
   const stemCount = new Map<string, number>();
   const categoryCount = new Map<string, number>();
   const selected: string[] = [];
+  const selectedCommercialScores: number[] = [];
   // When today's safe ranking pool is small, relax stem cap to avoid pipeline failure.
   const maxPerStem = finalRankKeywords.length < 6 ? 2 : 1;
   const limit = 30;
 
-  function tryAdd(keyword: string) {
+  function tryAdd(keyword: string, enforceCommercial = true) {
     const cleaned = keyword.trim();
     if (!cleaned) return false;
     if (blacklist.has(cleaned) || isUnsafeTopic(cleaned)) return false;
     if (isLowTrustKeyword(cleaned)) return false;
     if (!isRelevantToSite(cleaned)) return false;
+    const commercialScore = commercialIntentScore(cleaned);
+    if (enforceCommercial && commercialScore < MIN_COMMERCIAL_SCORE) return false;
 
     const stem = topicStem(cleaned);
     if (!stem) return false;
@@ -338,21 +370,37 @@ async function main() {
     stemCount.set(stem, stemHits + 1);
     categoryCount.set(category, current + 1);
     selected.push(cleaned);
+    selectedCommercialScores.push(commercialScore);
     return true;
   }
 
   // 1) 검색순위 원문 우선 반영
-  for (const rank of finalBaseKeywords) {
+  for (const rank of prioritizedBaseKeywords) {
     if (selected.length >= limit) break;
-    tryAdd(rank);
+    tryAdd(rank, true);
   }
 
   // 2) 검색순위 기반 확장 키워드 생성(라운드로빈으로 주제 편중 완화)
   for (const tpl of templates) {
     if (selected.length >= limit) break;
-    for (const rank of finalBaseKeywords) {
+    for (const rank of prioritizedBaseKeywords) {
       if (selected.length >= limit) break;
-      tryAdd(tpl.replace('{keyword}', rank).trim());
+      tryAdd(tpl.replace('{keyword}', rank).trim(), true);
+    }
+  }
+
+  // If high-intent pool is sparse, fill remainder with relaxed relevance-only candidates.
+  if (selected.length < Math.min(8, limit)) {
+    for (const rank of prioritizedBaseKeywords) {
+      if (selected.length >= limit) break;
+      tryAdd(rank, false);
+    }
+    for (const tpl of templates) {
+      if (selected.length >= limit) break;
+      for (const rank of prioritizedBaseKeywords) {
+        if (selected.length >= limit) break;
+        tryAdd(tpl.replace('{keyword}', rank).trim(), false);
+      }
     }
   }
 
@@ -377,6 +425,12 @@ async function main() {
         usingRelaxedKeywords: rankKeywords.length === 0,
         usingSeedFallback: finalRankKeywords.length < 5,
         tokenDerivedRankKeywordCount: tokenDerivedRankKeywords.length,
+        minCommercialScore: MIN_COMMERCIAL_SCORE,
+        averageCommercialScore:
+          selectedCommercialScores.length > 0
+            ? Number((selectedCommercialScores.reduce((sum, score) => sum + score, 0) / selectedCommercialScores.length).toFixed(2))
+            : 0,
+        highIntentSelectedCount: selectedCommercialScores.filter((score) => score >= MIN_COMMERCIAL_SCORE).length,
         count: selected.length,
         categories: Object.fromEntries(categoryCount.entries()),
         keywords: selected
@@ -386,7 +440,9 @@ async function main() {
     )
   );
 
-  console.log(`generated keywords: ${selected.length} (rank=${finalRankKeywords.length}, live=${liveRankKeywords.length}, cache=${cachedRankKeywords.length})`);
+  console.log(
+    `generated keywords: ${selected.length} (rank=${finalRankKeywords.length}, live=${liveRankKeywords.length}, cache=${cachedRankKeywords.length}, avgIntent=${selectedCommercialScores.length > 0 ? (selectedCommercialScores.reduce((sum, score) => sum + score, 0) / selectedCommercialScores.length).toFixed(2) : '0.00'})`
+  );
 }
 
 main().catch((error) => {

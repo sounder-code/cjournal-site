@@ -41,6 +41,8 @@ jobs:
 
       - name: Generate keywords
         if: steps.toggle.outputs.enabled == 'true'
+        env:
+          MIN_COMMERCIAL_SCORE: 2
         run: npm run gen:keywords
 
       - name: Generate articles
