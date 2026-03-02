@@ -48,18 +48,19 @@ jobs:
       - name: Generate articles
         if: steps.toggle.outputs.enabled == 'true'
         env:
-          ARTICLE_PROVIDER: gemini
+          ARTICLE_PROVIDER: auto
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: gemini-2.5-flash
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: gpt-4.1
           ARTICLE_COUNT: 10
-          ARTICLE_PARALLELISM: 3
-          ARTICLE_MAX_ATTEMPTS: 1
+          ARTICLE_PARALLELISM: 2
+          ARTICLE_MAX_ATTEMPTS: 2
+          RETRY_BACKOFF_MS: 1200
           TITLE_SIMILARITY_THRESHOLD: 0.7
           MIN_WORD_COUNT: 900
-          GEMINI_TIMEOUT_MS: 25000
-          OPENAI_TIMEOUT_MS: 25000
+          GEMINI_TIMEOUT_MS: 35000
+          OPENAI_TIMEOUT_MS: 35000
         run: npm run gen:articles
 
       - name: Quality gate

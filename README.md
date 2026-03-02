@@ -25,6 +25,12 @@ npm run build
 - 클릭 이벤트는 GTM `affiliate_click` 이벤트로 전송됩니다.
 - 키워드 생성 시 상업의도 점수 임계값은 `MIN_COMMERCIAL_SCORE`로 조정할 수 있습니다(기본값: `2`).
 
+## 생성 안정화 튜닝
+- 기사 생성은 `ARTICLE_PROVIDER=auto`일 때 Gemini 실패 시 OpenAI로 자동 failover합니다.
+- 재시도 횟수: `ARTICLE_MAX_ATTEMPTS` (기본값 `2`)
+- 재시도 대기: `RETRY_BACKOFF_MS` (기본값 `1200`)
+- 타임아웃: `GEMINI_TIMEOUT_MS`, `OPENAI_TIMEOUT_MS`
+
 필수 GitHub Secrets:
 - `OPENAI_API_KEY`
 - `GENERATION_ENABLED` (`true`/`false`)

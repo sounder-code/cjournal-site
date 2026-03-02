@@ -42,9 +42,11 @@ function countFaqItems(content: string) {
 
 const MIN_WORD_COUNT = Number(process.env.MIN_WORD_COUNT ?? '900');
 const ARTICLE_PARALLELISM = Math.max(1, Number(process.env.ARTICLE_PARALLELISM ?? '3'));
-const MAX_ATTEMPTS_PER_KEYWORD = Math.max(1, Number(process.env.ARTICLE_MAX_ATTEMPTS ?? '1'));
+const MAX_ATTEMPTS_PER_KEYWORD = Math.max(1, Number(process.env.ARTICLE_MAX_ATTEMPTS ?? '2'));
 const TITLE_SIMILARITY_THRESHOLD = Number(process.env.TITLE_SIMILARITY_THRESHOLD ?? '0.7');
 const GEMINI_TIMEOUT_MS = Math.max(5000, Number(process.env.GEMINI_TIMEOUT_MS ?? '25000'));
+const OPENAI_TIMEOUT_MS = Math.max(5000, Number(process.env.OPENAI_TIMEOUT_MS ?? '25000'));
+const RETRY_BACKOFF_MS = Math.max(0, Number(process.env.RETRY_BACKOFF_MS ?? '1200'));
 
 function topicStem(value: string) {
   return value
@@ -64,27 +66,45 @@ function isLikelyRealOpenAiKey(key: string | undefined) {
   return /^sk-[A-Za-z0-9_\-]{20,}$/.test(value);
 }
 
-function selectProvider(): Provider {
+function hasGeminiKey() {
+  return Boolean(process.env.GEMINI_API_KEY);
+}
+
+function hasOpenAiKey() {
+  return isLikelyRealOpenAiKey(process.env.OPENAI_API_KEY);
+}
+
+function selectProviderOrder(): Provider[] {
   const preferred = (process.env.ARTICLE_PROVIDER ?? 'auto').toLowerCase();
-  const hasGemini = Boolean(process.env.GEMINI_API_KEY);
-  const hasOpenAI = isLikelyRealOpenAiKey(process.env.OPENAI_API_KEY);
+  const hasGemini = hasGeminiKey();
+  const hasOpenAI = hasOpenAiKey();
 
-  if (preferred === 'gemini' && hasGemini) return 'gemini';
-  if (preferred === 'openai' && hasOpenAI) return 'openai';
+  if (preferred === 'gemini' && hasGemini) {
+    return hasOpenAI ? ['gemini', 'openai'] : ['gemini'];
+  }
+  if (preferred === 'openai' && hasOpenAI) {
+    return hasGemini ? ['openai', 'gemini'] : ['openai'];
+  }
 
-  // auto: prefer Gemini first for this project
-  if (hasGemini) return 'gemini';
-  if (hasOpenAI) return 'openai';
+  // auto: prefer Gemini first for this project.
+  if (hasGemini && hasOpenAI) return ['gemini', 'openai'];
+  if (hasGemini) return ['gemini'];
+  if (hasOpenAI) return ['openai'];
   throw new Error('Either GEMINI_API_KEY or OPENAI_API_KEY is required');
 }
 
-async function generateWithGemini(prompt: string) {
+async function sleep(ms: number) {
+  if (ms <= 0) return;
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function generateWithGemini(prompt: string, timeoutMs: number) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY is required');
   const model = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash';
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -106,6 +126,17 @@ async function generateWithGemini(prompt: string) {
   const text = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('').trim();
   if (!text) throw new Error('empty output');
   return text;
+}
+
+async function generateWithOpenAi(prompt: string, client: OpenAI) {
+  const response = await client.responses.create({
+    model: process.env.OPENAI_MODEL ?? 'gpt-4.1-mini',
+    temperature: 0.7,
+    input: prompt
+  });
+  const markdown = response.output_text?.trim() ?? '';
+  if (!markdown) throw new Error('empty output');
+  return markdown;
 }
 
 function extractTitleFromContent(content: string, fallback: string) {
@@ -241,14 +272,13 @@ async function main() {
   const existingTitles = existing.map((row) => String(row.data.title ?? ''));
   const existingSlugs = new Set(existing.map((row) => String(row.data.slug ?? '')));
 
-  const provider = selectProvider();
-  const openaiClient =
-    provider === 'openai'
-      ? new OpenAI({
-          apiKey: process.env.OPENAI_API_KEY,
-          timeout: Math.max(5000, Number(process.env.OPENAI_TIMEOUT_MS ?? '25000'))
-        })
-      : null;
+  const providerOrder = selectProviderOrder();
+  const openaiClient = hasOpenAiKey()
+    ? new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+        timeout: OPENAI_TIMEOUT_MS
+      })
+    : null;
   const created: string[] = [];
   const logLines: string[] = [];
   const selectedTitles: string[] = [...existingTitles];
@@ -286,36 +316,49 @@ async function main() {
     let lastReason = '';
     for (let attempt = 1; attempt <= MAX_ATTEMPTS_PER_KEYWORD; attempt += 1) {
       const prompt = attempt === 1 ? basePrompt : `${basePrompt}\n이전 결과 실패 이유: ${lastReason}\n실패 원인을 수정해 다시 작성하라.`;
-      let markdown = '';
-      try {
-        if (provider === 'gemini') {
-          markdown = await generateWithGemini(prompt);
-        } else {
-          const response = await openaiClient!.responses.create({
-            model: process.env.OPENAI_MODEL ?? 'gpt-4.1-mini',
-            temperature: 0.7,
-            input: prompt
-          });
-          markdown = response.output_text?.trim() ?? '';
+      for (const provider of providerOrder) {
+        let markdown = '';
+        try {
+          if (provider === 'gemini') {
+            const timeout = GEMINI_TIMEOUT_MS + (attempt - 1) * 10000;
+            markdown = await generateWithGemini(prompt, timeout);
+          } else {
+            if (!openaiClient) {
+              lastReason = 'openai client unavailable';
+              continue;
+            }
+            markdown = await generateWithOpenAi(prompt, openaiClient);
+          }
+        } catch (e) {
+          lastReason = `[${provider}] ${e instanceof Error ? e.message : 'provider call failed'}`;
+          continue;
         }
-      } catch (e) {
-        lastReason = e instanceof Error ? e.message : 'provider call failed';
-        continue;
+
+        if (!markdown) {
+          lastReason = `[${provider}] empty output`;
+          continue;
+        }
+
+        const normalized = normalizeDraft(markdown, keyword, baseSlug, todayKST());
+        const validation = validateNormalizedDraft(normalized.parsed.content, normalized.title, forbidden);
+        if (!validation.ok) {
+          lastReason = `[${provider}] ${validation.reason}`;
+          continue;
+        }
+
+        return {
+          keyword,
+          ok: true as const,
+          provider,
+          slug: normalized.slug,
+          title: normalized.title,
+          parsed: normalized.parsed
+        };
       }
 
-      if (!markdown) {
-        lastReason = 'empty output';
-        continue;
+      if (attempt < MAX_ATTEMPTS_PER_KEYWORD && RETRY_BACKOFF_MS > 0) {
+        await sleep(RETRY_BACKOFF_MS * attempt);
       }
-
-      const normalized = normalizeDraft(markdown, keyword, baseSlug, todayKST());
-      const validation = validateNormalizedDraft(normalized.parsed.content, normalized.title, forbidden);
-      if (!validation.ok) {
-        lastReason = validation.reason;
-        continue;
-      }
-
-      return { keyword, ok: true as const, slug: normalized.slug, title: normalized.title, parsed: normalized.parsed };
     }
 
     return { keyword, ok: false as const, reason: lastReason || 'unknown' };
@@ -377,12 +420,12 @@ async function main() {
       selectedSlugs.add(finalSlug);
       if (candidateKeywordStem) selectedTopicStems.add(candidateKeywordStem);
       if (candidateTitleStem) selectedTopicStems.add(candidateTitleStem);
-      logLines.push(`created: ${finalSlug}`);
+      logLines.push(`created: ${finalSlug} (provider=${candidate.provider})`);
     }
   }
 
   const logPath = path.join(LOG_DIR, `generate-${Date.now()}.log`);
-  logLines.unshift(`provider: ${provider}`);
+  logLines.unshift(`provider-order: ${providerOrder.join(' -> ')}`);
   await fs.writeFile(logPath, logLines.join('\n'), 'utf8');
   await writeRunGeneratedPosts(created);
   console.log(`created articles: ${created.length}`);
