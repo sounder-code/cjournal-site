@@ -60,8 +60,8 @@ const gtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-TXMPF75Z').trim();
           href: link.href
         };
 
-        const w = window as any;
-        (w.dataLayer = w.dataLayer || []).push(payload);
+        window['dataLayer'] = window['dataLayer'] || [];
+        window['dataLayer'].push(payload);
       });
     </script>
   </body>
