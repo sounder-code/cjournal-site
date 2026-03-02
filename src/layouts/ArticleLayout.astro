@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import AdSense from '@/components/AdSense.astro';
+import MonetizationBlock from '@/components/MonetizationBlock.astro';
 import { formatDate, toDate } from '@/lib/date';
 
 const { post } = Astro.props;
@@ -31,6 +32,7 @@ const articleJsonLd = {
       발행 {formatDate(post.data.publishedAt)} · 업데이트 {formatDate(post.data.updatedAt)} · {post.data.readingTimeMinutes}분
     </p>
     <AdSense slot="top" />
+    <MonetizationBlock post={post} />
     <slot />
     <AdSense slot="mid" />
     <section>

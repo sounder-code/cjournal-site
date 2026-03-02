@@ -10,8 +10,4 @@ const { slot } = Astro.props;
     {/* Insert AdSense script and ad unit here when ads are activated. */}
     {/* Keep this area minimal to preserve CLS and Core Web Vitals. */}
   </div>
-) : (
-  <div class="ad-slot ad-slot-disabled" data-slot={slot} aria-hidden="true">
-    {/* Ads disabled. Set PUBLIC_ADS_ENABLED=true to enable placements. */}
-  </div>
-)}
+) : null}

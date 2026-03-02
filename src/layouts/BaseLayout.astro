@@ -45,6 +45,25 @@ const gtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-TXMPF75Z').trim();
       <slot />
     </main>
     <Footer />
+    <script is:inline>
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const link = target.closest('[data-affiliate-link="true"]');
+        if (!(link instanceof HTMLAnchorElement)) return;
+
+        const payload = {
+          event: 'affiliate_click',
+          offer_id: link.dataset.offerId || '',
+          offer_title: link.dataset.offerTitle || '',
+          post_slug: link.dataset.postSlug || '',
+          href: link.href
+        };
+
+        const w = window as any;
+        (w.dataLayer = w.dataLayer || []).push(payload);
+      });
+    </script>
   </body>
 </html>
 

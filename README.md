@@ -18,6 +18,12 @@ npm run build
 - 실행: 매일 06:00 (Asia/Seoul), 수동 실행 지원
 - 동작: 키워드 생성 -> 기사 생성 -> 품질 검사 -> 인덱스 빌드 -> 커밋/푸시
 
+## 애드센스 없이 수익화(제휴 링크)
+- 기사 상세 페이지에 태그/카테고리 기반 추천 링크가 자동 노출됩니다.
+- 제휴 링크 설정 파일: `src/content/monetization/offers.ts`
+- `url` 값을 실제 제휴/파트너 링크로 교체하세요.
+- 클릭 이벤트는 GTM `affiliate_click` 이벤트로 전송됩니다.
+
 필수 GitHub Secrets:
 - `OPENAI_API_KEY`
 - `GENERATION_ENABLED` (`true`/`false`)
