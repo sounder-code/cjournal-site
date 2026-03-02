@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import matter from 'gray-matter';
 import OpenAI from 'openai';
-import { isUnsafeTopic, shouldAddDisclaimer } from './policy';
+import { isLowTrustKeyword, isUnsafeTopic, shouldAddDisclaimer } from './policy';
 import {
   LOG_DIR,
   POSTS_DIR,
@@ -263,6 +263,7 @@ async function main() {
 
   async function processKeyword(keyword: string) {
     if (isUnsafeTopic(keyword)) return { keyword, ok: false as const, reason: 'unsafe keyword' };
+    if (isLowTrustKeyword(keyword)) return { keyword, ok: false as const, reason: 'low-trust keyword' };
 
     const baseSlug = slugify(keyword);
     if (!baseSlug) return { keyword, ok: false as const, reason: 'invalid slug keyword' };
@@ -387,7 +388,8 @@ async function main() {
   console.log(`created articles: ${created.length}`);
 
   if (created.length === 0) {
-    const fallbackKeyword = rawKeywords.keywords.find((k) => !isUnsafeTopic(k)) ?? '오늘의 생활 정보';
+    const fallbackKeyword =
+      rawKeywords.keywords.find((k) => !isUnsafeTopic(k) && !isLowTrustKeyword(k)) ?? '오늘의 생활 정보';
     const fallbackSlug = deriveUniqueSlug(slugify(`${fallbackKeyword} 가이드`) || 'daily-guide', selectedSlugs);
     const fallbackTitle = `${fallbackKeyword} 실무 가이드`;
     const fallbackDoc = matter.stringify(buildLocalFallbackBody(fallbackKeyword, todayKST()), {

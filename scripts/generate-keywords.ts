@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { isUnsafeTopic } from './policy';
+import { isLowTrustKeyword, isUnsafeTopic } from './policy';
 import { readLines } from './utils';
 
 const blacklistPath = path.join(process.cwd(), 'src/content/keywords/blacklist.txt');
@@ -16,8 +16,7 @@ const templates = [
   '{keyword} 추천',
   '{keyword} 주의사항',
   '{keyword} 체크리스트',
-  '{keyword} 요약',
-  '{keyword} 실생활 영향'
+  '{keyword} 요약'
 ];
 
 const PERSON_OR_EVENT_PATTERNS = [
@@ -52,6 +51,14 @@ const CATEGORY_RULES: Array<{ category: string; patterns: RegExp[] }> = [
   { category: '사회/이슈', patterns: [/선거|정책|공천|사건|사고|법안|공공|행정|국회/i] }
 ];
 
+const SITE_RELEVANCE_PATTERNS = [
+  /시간|루틴|집중|메모|목표|일정|업무|메일|회의|생산성/i,
+  /디지털|보안|비밀번호|백업|스마트폰|브라우저|앱|계정|개인정보|와이파이|노트북/i,
+  /생활|장보기|가계부|예산|청소|정리|주방|냉장고|구독|소비/i,
+  /건강|수면|스트레스|운동|자세|눈 건강|목 건강/i,
+  /교통|운전|전기차|기차|버스|지하철|항공|여행/i
+];
+
 const CATEGORY_CAPS: Record<string, number> = {
   생산성: 7,
   디지털: 7,
@@ -59,7 +66,7 @@ const CATEGORY_CAPS: Record<string, number> = {
   건강생활: 5,
   '교통/이동': 4,
   '사회/이슈': 2,
-  기타: 30
+  기타: 0
 };
 
 function topicStem(keyword: string) {
@@ -71,8 +78,9 @@ function topicStem(keyword: string) {
 }
 
 function classifyCategory(keyword: string) {
+  const base = topicStem(keyword) || keyword;
   for (const rule of CATEGORY_RULES) {
-    if (rule.patterns.some((pattern) => pattern.test(keyword))) return rule.category;
+    if (rule.patterns.some((pattern) => pattern.test(base))) return rule.category;
   }
   return '기타';
 }
@@ -117,7 +125,13 @@ function isSafeForEvergreen(value: string) {
   if (LOW_VALUE_PATTERNS.some((pattern) => pattern.test(value))) return false;
   if (PERSON_OR_EVENT_PATTERNS.some((pattern) => pattern.test(value))) return false;
   if (isPersonNameLike(value)) return false;
+  if (isLowTrustKeyword(value)) return false;
   return true;
+}
+
+function isRelevantToSite(value: string) {
+  const base = topicStem(value) || value;
+  return SITE_RELEVANCE_PATTERNS.some((pattern) => pattern.test(base));
 }
 
 async function fetchTextWithTimeout(url: string, timeoutMs: number): Promise<string> {
@@ -251,14 +265,22 @@ async function main() {
   }
 
   const safeRankKeywords = uniqueKeepOrder(
-    rawRankKeywords.map(normalizeTopic).filter((keyword) => isSafeForEvergreen(keyword) && !blacklist.has(keyword) && !isUnsafeTopic(keyword))
+    rawRankKeywords
+      .map(normalizeTopic)
+      .filter(
+        (keyword) =>
+          isSafeForEvergreen(keyword) && isRelevantToSite(keyword) && !blacklist.has(keyword) && !isUnsafeTopic(keyword)
+      )
   );
 
   const tokenDerivedRankKeywords = uniqueKeepOrder(
     rawRankKeywords
       .flatMap((row) => extractMeaningfulTokensFromRank(normalizeTopic(row)))
       .map((token) => `${token} 가이드`)
-      .filter((keyword) => isSafeForEvergreen(keyword) && !blacklist.has(keyword) && !isUnsafeTopic(keyword))
+      .filter(
+        (keyword) =>
+          isSafeForEvergreen(keyword) && isRelevantToSite(keyword) && !blacklist.has(keyword) && !isUnsafeTopic(keyword)
+      )
   );
 
   const rankKeywords = uniqueKeepOrder([...safeRankKeywords, ...tokenDerivedRankKeywords]);
@@ -270,6 +292,8 @@ async function main() {
         (keyword) =>
           keyword.length > 1 &&
           !LOW_VALUE_PATTERNS.some((pattern) => pattern.test(keyword)) &&
+          isRelevantToSite(keyword) &&
+          !isLowTrustKeyword(keyword) &&
           !blacklist.has(keyword) &&
           !isUnsafeTopic(keyword)
       )
@@ -280,7 +304,8 @@ async function main() {
     finalRankKeywords.length >= 5
       ? finalRankKeywords
       : uniqueKeepOrder([...finalRankKeywords, ...seedKeywords.map(normalizeTopic)]).filter(
-          (keyword) => !blacklist.has(keyword) && !isUnsafeTopic(keyword)
+          (keyword) =>
+            isRelevantToSite(keyword) && !isLowTrustKeyword(keyword) && !blacklist.has(keyword) && !isUnsafeTopic(keyword)
         );
 
   const usedKeywords = new Set<string>();
@@ -295,6 +320,8 @@ async function main() {
     const cleaned = keyword.trim();
     if (!cleaned) return false;
     if (blacklist.has(cleaned) || isUnsafeTopic(cleaned)) return false;
+    if (isLowTrustKeyword(cleaned)) return false;
+    if (!isRelevantToSite(cleaned)) return false;
 
     const stem = topicStem(cleaned);
     if (!stem) return false;
