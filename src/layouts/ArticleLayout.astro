@@ -44,3 +44,34 @@ const articleJsonLd = {
   </article>
   <script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
 </BaseLayout>
+
+<style>
+  article {
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+
+  article img,
+  article picture,
+  article video,
+  article canvas,
+  article svg,
+  article iframe {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin-inline: auto;
+  }
+
+  article figure {
+    margin: 1.2rem 0;
+    max-width: 100%;
+  }
+
+  article table,
+  article pre {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+</style>
