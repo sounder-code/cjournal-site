@@ -7,10 +7,10 @@
   "cachedRankKeywordCount": 5,
   "previousOutputKeywordCount": 30,
   "seedKeywordCount": 50,
-  "safeRankKeywordCount": 0,
-  "relaxedRankKeywordCount": 0,
-  "usingRelaxedKeywords": true,
-  "usingSeedFallback": true,
+  "safeRankKeywordCount": 30,
+  "relaxedRankKeywordCount": 30,
+  "usingRelaxedKeywords": false,
+  "usingSeedFallback": false,
   "tokenDerivedRankKeywordCount": 0,
   "count": 30,
   "categories": {
@@ -49,7 +49,7 @@
     "여행 준비 체크리스트",
     "비 오는 날 운전 팁",
     "대중교통 예절",
-    "주방 위생 뜻",
-    "여행 준비 체크리스트 뜻"
+    "여행 준비 체크리스트 뜻",
+    "주방 위생 뜻 방법"
   ]
 }
