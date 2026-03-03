@@ -2,8 +2,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { loadPostsFrontmatter, readRunGeneratedPosts } from './utils';
 
-const MIN_IMAGES = Number(process.env.MIN_IMAGES_PER_POST ?? '3');
-const MAX_IMAGES = Number(process.env.MAX_IMAGES_PER_POST ?? '5');
+const MIN_IMAGES = Number(process.env.MIN_IMAGES_PER_POST ?? '2');
+const MAX_IMAGES = Number(process.env.MAX_IMAGES_PER_POST ?? '2');
 
 async function exists(filePath: string) {
   try {
