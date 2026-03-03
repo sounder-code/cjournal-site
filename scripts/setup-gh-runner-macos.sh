@@ -46,9 +46,16 @@ fi
   --unattended \
   --replace
 
-sudo ./svc.sh install
-sudo ./svc.sh start
-sudo ./svc.sh status || true
+OS_NAME="$(uname -s)"
+if [[ "$OS_NAME" == "Darwin" ]]; then
+  ./svc.sh install
+  ./svc.sh start
+  ./svc.sh status || true
+else
+  sudo ./svc.sh install
+  sudo ./svc.sh start
+  sudo ./svc.sh status || true
+fi
 
 echo "Runner installed and started."
 echo "Repo: https://github.com/$REPO"
