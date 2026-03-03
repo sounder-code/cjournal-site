@@ -6,7 +6,7 @@ import { LOG_DIR, POSTS_DIR, ensureDir, loadPostsFrontmatter, readRunGeneratedPo
 
 const OUT_DIR = path.join(process.cwd(), 'public/assets/posts');
 const PROMPT_PATH = path.join(LOG_DIR, 'post-image-prompts.json');
-const IMAGES_PER_POST = Number(process.env.IMAGES_PER_POST ?? '3');
+const IMAGES_PER_POST = Number(process.env.IMAGES_PER_POST ?? '2');
 
 type PromptItem = {
   id: string;
