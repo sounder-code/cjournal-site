@@ -31,6 +31,17 @@ npm run build
 - 재시도 대기: `RETRY_BACKOFF_MS` (기본값 `1200`)
 - 타임아웃: `GEMINI_TIMEOUT_MS`, `OPENAI_TIMEOUT_MS`
 
+## 로컬 FLUX 이미지 생성
+- 이미지 스크립트는 `IMAGE_PROVIDER=flux-local` 또는 `IMAGE_PROVIDER=auto`에서 로컬 FLUX API를 우선 시도합니다.
+- 필수 설정:
+  - `FLUX_LOCAL_API_URL`: 로컬 이미지 API 주소
+  - (선택) `FLUX_LOCAL_API_KEY`
+  - (선택) `FLUX_LOCAL_MODEL` (기본 `flux.2`)
+- 지원 형식:
+  - Stable Diffusion WebUI `.../sdapi/v1/txt2img`
+  - OpenAI 호환 이미지 생성 엔드포인트
+- 주의: GitHub Actions(호스티드 러너)는 사용자 PC의 로컬 FLUX에 접근할 수 없습니다. 자동 배치에서 FLUX를 쓰려면 self-hosted runner 또는 외부 공개 API가 필요합니다.
+
 필수 GitHub Secrets:
 - `OPENAI_API_KEY`
 - `GENERATION_ENABLED` (`true`/`false`)

@@ -9,6 +9,15 @@ const GEMINI_API_BASE = (process.env.GEMINI_API_BASE || "https://generativelangu
 const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || "").trim();
 const OPENAI_IMAGE_MODEL = (process.env.OPENAI_IMAGE_MODEL || "gpt-image-1").trim();
 const OPENAI_IMAGE_QUALITY = (process.env.OPENAI_IMAGE_QUALITY || "medium").trim();
+const FLUX_LOCAL_API_URL = (process.env.FLUX_LOCAL_API_URL || "").trim();
+const FLUX_LOCAL_API_KEY = (process.env.FLUX_LOCAL_API_KEY || "").trim();
+const FLUX_LOCAL_MODEL = (process.env.FLUX_LOCAL_MODEL || "flux.2").trim();
+const FLUX_LOCAL_NEGATIVE_PROMPT = (
+  process.env.FLUX_LOCAL_NEGATIVE_PROMPT ||
+  "text, letters, words, logo, watermark, caption, subtitle, infographic, banner, poster, ui, symbols, numbers"
+).trim();
+const FLUX_LOCAL_STEPS = Math.max(8, Number(process.env.FLUX_LOCAL_STEPS || "24"));
+const FLUX_LOCAL_CFG = Math.max(1, Number(process.env.FLUX_LOCAL_CFG || "4.0"));
 const IMAGE_PROVIDER = (process.env.IMAGE_PROVIDER || "auto").trim().toLowerCase();
 const IMAGE_PARALLELISM = Math.max(1, Number(process.env.IMAGE_PARALLELISM || "3"));
 const IMAGE_TIMEOUT_MS = Math.max(5000, Number(process.env.IMAGE_TIMEOUT_MS || "30000"));
@@ -24,6 +33,7 @@ function usage() {
   console.log("Mode A (custom endpoint): NANOBANANA_API_URL + NANOBANANA_API_KEY");
   console.log("Mode B (Gemini direct): GEMINI_API_KEY (+ optional NANO_BANANA_MODEL)");
   console.log("Mode C (OpenAI direct): OPENAI_API_KEY (+ optional OPENAI_IMAGE_MODEL, OPENAI_IMAGE_QUALITY)");
+  console.log("Mode D (FLUX local API): FLUX_LOCAL_API_URL (+ optional FLUX_LOCAL_API_KEY)");
 }
 
 async function readPromptFile(filePath) {
@@ -106,6 +116,12 @@ function normalizeOpenAiSize(inputSize) {
   return "1024x1024";
 }
 
+function parseSize(inputSize) {
+  const normalized = normalizeOpenAiSize(inputSize);
+  const [w, h] = normalized.split("x").map((v) => Number(v));
+  return { width: w || 1024, height: h || 1024 };
+}
+
 async function generateOneViaCustomApi(item) {
   const body = {
     prompt: normalizePrompt(item),
@@ -132,6 +148,76 @@ async function generateOneViaCustomApi(item) {
   const payload = await res.json();
   const imageRef = pickImageFromResponse(payload);
   if (!imageRef) throw new Error("No image field found in API response");
+  return fetchImageBuffer(imageRef);
+}
+
+async function generateOneViaFluxLocal(item) {
+  if (!FLUX_LOCAL_API_URL) {
+    throw new Error("FLUX_LOCAL_API_URL is required for flux-local provider");
+  }
+
+  const apiUrl = FLUX_LOCAL_API_URL.replace(/\/$/, "");
+  const { width, height } = parseSize(item.size);
+  const prompt = normalizePrompt(item);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), IMAGE_TIMEOUT_MS);
+
+  // Stable Diffusion WebUI compatible endpoint.
+  if (apiUrl.includes("/sdapi/v1/txt2img")) {
+    const body = {
+      prompt,
+      negative_prompt: FLUX_LOCAL_NEGATIVE_PROMPT,
+      steps: FLUX_LOCAL_STEPS,
+      cfg_scale: FLUX_LOCAL_CFG,
+      width,
+      height,
+      sampler_name: "Euler"
+    };
+
+    const headers = { "Content-Type": "application/json" };
+    if (FLUX_LOCAL_API_KEY) headers.Authorization = `Bearer ${FLUX_LOCAL_API_KEY}`;
+
+    const res = await fetch(apiUrl, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal
+    }).finally(() => clearTimeout(timer));
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`FLUX local (sdapi) failed (${res.status}): ${text.slice(0, 400)}`);
+    }
+
+    const payload = await res.json();
+    const b64 = Array.isArray(payload?.images) ? payload.images[0] : null;
+    if (!b64) throw new Error("FLUX local (sdapi) returned no image");
+    return toBufferFromBase64(b64);
+  }
+
+  // OpenAI-compatible local endpoint.
+  const headers = { "Content-Type": "application/json" };
+  if (FLUX_LOCAL_API_KEY) headers.Authorization = `Bearer ${FLUX_LOCAL_API_KEY}`;
+  const res = await fetch(apiUrl, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      model: FLUX_LOCAL_MODEL,
+      prompt,
+      size: `${width}x${height}`
+    }),
+    signal: controller.signal
+  }).finally(() => clearTimeout(timer));
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`FLUX local API failed (${res.status}): ${text.slice(0, 400)}`);
+  }
+
+  const payload = await res.json();
+  const imageRef = pickImageFromResponse(payload);
+  if (!imageRef) throw new Error("FLUX local API returned no image");
   return fetchImageBuffer(imageRef);
 }
 
@@ -226,12 +312,13 @@ async function main() {
   }
 
   const hasCustomMode = Boolean(CUSTOM_API_URL && CUSTOM_API_KEY);
+  const hasFluxLocalMode = Boolean(FLUX_LOCAL_API_URL);
   const effectiveGeminiKey = GEMINI_API_KEY || (CUSTOM_API_URL ? "" : CUSTOM_API_KEY);
   const hasGeminiMode = Boolean(effectiveGeminiKey);
   const hasOpenAiMode = isLikelyRealOpenAiKey(OPENAI_API_KEY);
-  if (!hasCustomMode && !hasGeminiMode && !hasOpenAiMode) {
+  if (!hasCustomMode && !hasGeminiMode && !hasOpenAiMode && !hasFluxLocalMode) {
     throw new Error(
-      "Missing credentials: set NANOBANANA_API_URL+NANOBANANA_API_KEY OR GEMINI_API_KEY OR OPENAI_API_KEY.",
+      "Missing credentials: set FLUX_LOCAL_API_URL OR NANOBANANA_API_URL+NANOBANANA_API_KEY OR GEMINI_API_KEY OR OPENAI_API_KEY.",
     );
   }
 
@@ -249,7 +336,9 @@ async function main() {
     const provider = IMAGE_PROVIDER;
     let providerOrder;
     if (provider === "auto") {
-      providerOrder = ["gemini", "openai", "custom"];
+      providerOrder = ["flux-local", "gemini", "openai", "custom"];
+    } else if (provider === "flux-local" || provider === "flux") {
+      providerOrder = ["flux-local"];
     } else if (provider === "gemini") {
       providerOrder = ["gemini"];
     } else if (provider === "openai") {
@@ -263,6 +352,14 @@ async function main() {
     let buffer = null;
     for (const current of providerOrder) {
       try {
+        if (current === "flux-local") {
+          if (!hasFluxLocalMode) {
+            errors.push("flux-local: missing FLUX_LOCAL_API_URL");
+            continue;
+          }
+          buffer = await generateOneViaFluxLocal({ id, prompt, size: item.size });
+          break;
+        }
         if (current === "gemini") {
           if (!hasGeminiMode) {
             errors.push("gemini: missing GEMINI_API_KEY");
