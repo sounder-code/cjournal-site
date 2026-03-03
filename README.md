@@ -17,6 +17,7 @@ npm run build
 - 파일: `.github/workflows/daily-generate.yml`
 - 실행: 매일 06:00 (Asia/Seoul), 수동 실행 지원
 - 동작: 키워드 생성 -> 기사 생성 -> 품질 검사 -> 인덱스 빌드 -> 커밋/푸시
+- 현재 워크플로우는 `self-hosted` 러너(`macOS/ARM64/cjournal` 라벨)에서 실행됩니다.
 
 ## 애드센스 없이 수익화(제휴 링크)
 - 기사 상세 페이지에 태그/카테고리 기반 추천 링크가 자동 노출됩니다.
@@ -41,6 +42,19 @@ npm run build
   - Stable Diffusion WebUI `.../sdapi/v1/txt2img`
   - OpenAI 호환 이미지 생성 엔드포인트
 - 주의: GitHub Actions(호스티드 러너)는 사용자 PC의 로컬 FLUX에 접근할 수 없습니다. 자동 배치에서 FLUX를 쓰려면 self-hosted runner 또는 외부 공개 API가 필요합니다.
+
+## Self-hosted Runner 설정(맥)
+1. GitHub 저장소 `Settings -> Actions -> Runners -> New self-hosted runner`에서 등록 토큰을 발급합니다.
+2. 아래 스크립트를 실행합니다.
+```bash
+bash scripts/setup-gh-runner-macos.sh sounder-code/cjournal-site <RUNNER_TOKEN>
+```
+3. 저장소 `Settings -> Secrets and variables -> Actions`에서 아래 값을 설정합니다.
+- `Variables`
+  - `FLUX_LOCAL_API_URL` (예: `http://127.0.0.1:7860/sdapi/v1/txt2img`)
+  - `FLUX_LOCAL_MODEL` (예: `flux.2`)
+- `Secrets` (선택)
+  - `FLUX_LOCAL_API_KEY`
 
 필수 GitHub Secrets:
 - `OPENAI_API_KEY`
