@@ -90,7 +90,8 @@ function selectProviderOrder(): Provider[] {
   if (hasGemini && hasOpenAI) return ['gemini', 'openai'];
   if (hasGemini) return ['gemini'];
   if (hasOpenAI) return ['openai'];
-  throw new Error('Either GEMINI_API_KEY or OPENAI_API_KEY is required');
+  // Allow local fallback article creation when no model API key is configured.
+  return [];
 }
 
 async function sleep(ms: number) {

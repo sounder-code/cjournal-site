@@ -25,18 +25,20 @@ function hasPostImage(content: string, slug: string, index: number) {
 function buildPrompt(title: string, description: string, index: number) {
   const scene =
     index === 1
-      ? '기사 리드 문단에 어울리는 핵심 장면'
+      ? 'clean indoor air scene with sunlight, plant leaves, and soft airflow feeling'
       : index === 2
-        ? '중간 본문 설명에 어울리는 실무 장면'
-        : '후반 요약/FAQ에 어울리는 정돈된 장면';
+        ? 'open window with sheer curtains, indoor plants, and clear morning light in a minimal room'
+        : 'minimal calm interior with curtains and natural light, no objects with writing';
   return [
-    `Create a realistic editorial image for a Korean news article.`,
+    `Create a realistic photo.`,
     `Concept: ${title}.`,
     `Context: ${description}.`,
     `Scene: ${scene}.`,
+    `STRICT CONTENT RULES: choose objects that naturally have no writing.`,
+    `Do not include screens, posters, signs, books, newspapers, packages, keyboard, remote controls, dashboards, appliances, devices, or any product labels.`,
     `STRICT NEGATIVE RULES: no text, no letters, no numbers, no symbols, no logo, no watermark, no caption, no title card, no subtitle, no UI mockup, no poster layout, no banner layout, no infographic, no signage, no labels.`,
     `Korean/English text must not appear anywhere in the image.`,
-    `Style: calm newsroom magazine tone, natural composition, clean colors, 16:9 landscape, photojournalistic scene only.`
+    `Style: natural daylight photography, clean composition, muted colors, 16:9 landscape.`
   ].join('\n');
 }
 

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-03",
+  "generatedAt": "2026-03-04",
   "source": "search-rank-only",
   "sourceProvider": "nate-live-issue-keyword",
   "rankKeywordCount": 35,
@@ -8,7 +8,7 @@
   "previousOutputKeywordCount": 30,
   "seedKeywordCount": 50,
   "safeRankKeywordCount": 30,
-  "relaxedRankKeywordCount": 30,
+  "relaxedRankKeywordCount": 31,
   "usingRelaxedKeywords": false,
   "usingSeedFallback": false,
   "tokenDerivedRankKeywordCount": 0,
@@ -17,14 +17,13 @@
   "highIntentSelectedCount": 30,
   "count": 30,
   "categories": {
-    "생활관리": 7,
     "생산성": 7,
     "교통/이동": 4,
     "건강생활": 5,
-    "디지털": 7
+    "디지털": 7,
+    "생활관리": 7
   },
   "keywords": [
-    "구독 서비스 정리",
     "구독 서비스 정리 비교",
     "메모 방법 비교",
     "목표 설정 비교",
@@ -51,8 +50,9 @@
     "눈 건강 습관 비교",
     "비 오는 날 운전 팁 비교",
     "대중교통 예절 비교",
+    "주방 위생 가격",
+    "구독 서비스 정리",
     "여행 준비 체크리스트 뜻 비교",
-    "주방 위생 뜻 방법 비교",
-    "주방 위생 가격"
+    "주방 위생 뜻 방법 비교"
   ]
 }

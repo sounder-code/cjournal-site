@@ -1,5 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
+import { spawn } from "node:child_process";
 
 const CUSTOM_API_URL = (process.env.NANOBANANA_API_URL || "").trim();
 const CUSTOM_API_KEY = (process.env.NANOBANANA_API_KEY || "").trim();
@@ -14,11 +16,13 @@ const FLUX_LOCAL_API_KEY = (process.env.FLUX_LOCAL_API_KEY || "").trim();
 const FLUX_LOCAL_MODEL = (process.env.FLUX_LOCAL_MODEL || "flux.2").trim();
 const FLUX_LOCAL_NEGATIVE_PROMPT = (
   process.env.FLUX_LOCAL_NEGATIVE_PROMPT ||
-  "text, letters, words, logo, watermark, caption, subtitle, infographic, banner, poster, ui, symbols, numbers"
+  "text, letters, words, logo, watermark, caption, subtitle, infographic, banner, poster, ui, symbols, numbers, typography, label, signage, title, headline, callout, chart, diagram, monitor, tv screen, smartphone screen, laptop screen, billboard, road sign, storefront sign, package label, jersey number, keyboard legends, document, newspaper, magazine"
 ).trim();
 const FLUX_LOCAL_STEPS = Math.max(8, Number(process.env.FLUX_LOCAL_STEPS || "24"));
-const FLUX_LOCAL_CFG = Math.max(1, Number(process.env.FLUX_LOCAL_CFG || "4.0"));
-const IMAGE_PROVIDER = (process.env.IMAGE_PROVIDER || "auto").trim().toLowerCase();
+const FLUX_LOCAL_CFG = Math.max(1, Number(process.env.FLUX_LOCAL_CFG || "2.2"));
+const FLUX_LOCAL_TEXT_FREE_RETRIES = Math.max(1, Number(process.env.FLUX_LOCAL_TEXT_FREE_RETRIES || "8"));
+const TEXT_DETECT_ENABLED = String(process.env.TEXT_DETECT_ENABLED || "true").trim().toLowerCase() !== "false";
+const IMAGE_PROVIDER = (process.env.IMAGE_PROVIDER || "flux-local").trim().toLowerCase();
 const IMAGE_PARALLELISM = Math.max(1, Number(process.env.IMAGE_PARALLELISM || "3"));
 const IMAGE_TIMEOUT_MS = Math.max(5000, Number(process.env.IMAGE_TIMEOUT_MS || "30000"));
 
@@ -96,10 +100,70 @@ function pickGeminiInlineImage(payload) {
 function normalizePrompt(item) {
   const prompt = String(item.prompt || "").trim();
   const size = String(item.size || "").trim();
+  const textSafeComposition =
+    "Text-safe composition: avoid monitors/phones/TV/laptops, posters, signage, books/newspapers/documents, packaging, jerseys with numbers, storefronts, dashboards, and any object likely to contain writing. Prefer nature, food, product close-up, or plain interior surfaces without printed marks.";
   const hardRule =
-    "Hard output constraints: image only; absolutely no visible text/letters/numbers/symbols in any language; no logos; no watermarks; no captions; no poster/title-card/banner/infographic layout.";
-  if (!size) return `${prompt}\n\n${hardRule}`;
-  return `${prompt}\n\nTarget image size: ${size}.\n${hardRule}`;
+    "Hard output constraints: image only; absolutely no visible text/letters/numbers/symbols in any language; no logos; no watermarks; no captions; no poster/title-card/banner/infographic layout; no signage; no labels; no UI screens; no document/paper text.";
+  if (!size) return `${prompt}\n\n${textSafeComposition}\n${hardRule}`;
+  return `${prompt}\n\nTarget image size: ${size}.\n${textSafeComposition}\n${hardRule}`;
+}
+
+function runProcess(cmd, args, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, { stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      reject(new Error(`process timeout: ${cmd}`));
+    }, timeoutMs);
+
+    child.stdout.on("data", (chunk) => {
+      stdout += String(chunk);
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += String(chunk);
+    });
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      if (code === 0) resolve({ stdout, stderr });
+      else reject(new Error(`${cmd} exited with code ${code}: ${stderr.slice(0, 200)}`));
+    });
+  });
+}
+
+async function hasLikelyVisibleText(buffer) {
+  if (!TEXT_DETECT_ENABLED) return false;
+  const tempBase = path.join(os.tmpdir(), `flux-text-check-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const inputPath = `${tempBase}.png`;
+  const outputBase = `${tempBase}-ocr`;
+  try {
+    await fs.writeFile(inputPath, buffer);
+    // OCR the whole image. Keep it short to avoid slowing generation too much.
+    const { stdout = "" } = await runProcess(
+      "tesseract",
+      [inputPath, outputBase, "--psm", "6", "-l", "eng", "quiet"],
+      12000,
+    ).catch(() => ({ stdout: "" }));
+
+    let text = stdout;
+    try {
+      text += await fs.readFile(`${outputBase}.txt`, "utf8");
+    } catch {
+      // ignore
+    }
+
+    // Accept tiny OCR noise, reject meaningful alnum sequences.
+    const normalized = text.replace(/[^a-zA-Z0-9가-힣]/g, "");
+    return normalized.length >= 3;
+  } finally {
+    await fs.rm(inputPath, { force: true }).catch(() => {});
+    await fs.rm(`${outputBase}.txt`, { force: true }).catch(() => {});
+  }
 }
 
 function normalizeOpenAiSize(inputSize) {
@@ -158,47 +222,137 @@ async function generateOneViaFluxLocal(item) {
 
   const apiUrl = FLUX_LOCAL_API_URL.replace(/\/$/, "");
   const { width, height } = parseSize(item.size);
-  const prompt = normalizePrompt(item);
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), IMAGE_TIMEOUT_MS);
+  const promptBase = normalizePrompt(item);
 
   // Stable Diffusion WebUI compatible endpoint.
   if (apiUrl.includes("/sdapi/v1/txt2img")) {
-    const body = {
-      prompt,
-      negative_prompt: FLUX_LOCAL_NEGATIVE_PROMPT,
-      steps: FLUX_LOCAL_STEPS,
-      cfg_scale: FLUX_LOCAL_CFG,
-      width,
-      height,
-      sampler_name: "Euler"
-    };
+    for (let attempt = 1; attempt <= FLUX_LOCAL_TEXT_FREE_RETRIES; attempt += 1) {
+      const prompt = `${promptBase}\n\nABSOLUTE RULE: Produce a clean photo scene with zero typography.`;
+      const body = {
+        prompt,
+        negative_prompt: FLUX_LOCAL_NEGATIVE_PROMPT,
+        steps: FLUX_LOCAL_STEPS,
+        cfg_scale: FLUX_LOCAL_CFG,
+        width,
+        height,
+        sampler_name: "Euler"
+      };
 
-    const headers = { "Content-Type": "application/json" };
-    if (FLUX_LOCAL_API_KEY) headers.Authorization = `Bearer ${FLUX_LOCAL_API_KEY}`;
+      const headers = { "Content-Type": "application/json" };
+      if (FLUX_LOCAL_API_KEY) headers.Authorization = `Bearer ${FLUX_LOCAL_API_KEY}`;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), IMAGE_TIMEOUT_MS);
 
-    const res = await fetch(apiUrl, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-      signal: controller.signal
-    }).finally(() => clearTimeout(timer));
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal
+      }).finally(() => clearTimeout(timer));
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`FLUX local (sdapi) failed (${res.status}): ${text.slice(0, 400)}`);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`FLUX local (sdapi) failed (${res.status}): ${text.slice(0, 400)}`);
+      }
+
+      const payload = await res.json();
+      const b64 = Array.isArray(payload?.images) ? payload.images[0] : null;
+      if (!b64) throw new Error("FLUX local (sdapi) returned no image");
+      const buffer = toBufferFromBase64(b64);
+
+      if (!(await hasLikelyVisibleText(buffer))) return buffer;
+      console.warn(`retry text-free image: ${item.id} (attempt ${attempt}/${FLUX_LOCAL_TEXT_FREE_RETRIES})`);
     }
+    throw new Error(`FLUX local (sdapi) OCR text detected after ${FLUX_LOCAL_TEXT_FREE_RETRIES} attempts`);
+  }
 
-    const payload = await res.json();
-    const b64 = Array.isArray(payload?.images) ? payload.images[0] : null;
-    if (!b64) throw new Error("FLUX local (sdapi) returned no image");
-    return toBufferFromBase64(b64);
+  // Gradio queue endpoint from local flux_ui.py
+  if (apiUrl.includes("/gradio_api/call/generate")) {
+    for (let attempt = 1; attempt <= FLUX_LOCAL_TEXT_FREE_RETRIES; attempt += 1) {
+      const headers = { "Content-Type": "application/json" };
+      if (FLUX_LOCAL_API_KEY) headers.Authorization = `Bearer ${FLUX_LOCAL_API_KEY}`;
+
+      // flux_ui.py gradio sliders currently allow max 1024 for each side.
+      const gWidth = Math.min(width, 1024);
+      const gHeight = Math.min(height, 1024);
+      const seed = Math.floor(Math.random() * 1_000_000_000);
+      const prompt = `${promptBase}\n\nABSOLUTE RULE: produce a realistic photo only, with zero text/letters/numbers anywhere.`;
+      const body = {
+        data: [
+          prompt,
+          FLUX_LOCAL_NEGATIVE_PROMPT,
+          FLUX_LOCAL_STEPS,
+          FLUX_LOCAL_CFG,
+          seed,
+          gWidth,
+          gHeight,
+        ],
+      };
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), IMAGE_TIMEOUT_MS);
+      const startRes = await fetch(apiUrl, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timer));
+
+      if (!startRes.ok) {
+        const text = await startRes.text();
+        throw new Error(`FLUX local (gradio) start failed (${startRes.status}): ${text.slice(0, 400)}`);
+      }
+
+      const startPayload = await startRes.json();
+      const eventId = String(startPayload?.event_id || "").trim();
+      if (!eventId) throw new Error("FLUX local (gradio) returned no event_id");
+
+      const eventUrl = `${apiUrl}/${eventId}`;
+      const eventController = new AbortController();
+      const eventTimer = setTimeout(() => eventController.abort(), Math.max(IMAGE_TIMEOUT_MS, 120000));
+      const eventRes = await fetch(eventUrl, {
+        method: "GET",
+        headers,
+        signal: eventController.signal,
+      }).finally(() => clearTimeout(eventTimer));
+
+      if (!eventRes.ok) {
+        const text = await eventRes.text();
+        throw new Error(`FLUX local (gradio) event failed (${eventRes.status}): ${text.slice(0, 400)}`);
+      }
+
+      const stream = await eventRes.text();
+      const lines = stream.split(/\r?\n/).filter((line) => line.startsWith("data:"));
+      for (let i = lines.length - 1; i >= 0; i -= 1) {
+        const raw = lines[i].slice(5).trim();
+        if (!raw || raw === "null") continue;
+        try {
+          const parsed = JSON.parse(raw);
+          const arr = Array.isArray(parsed) ? parsed : [parsed];
+          for (const entry of arr) {
+            if (entry && typeof entry === "object" && typeof entry.path === "string") {
+              const filePath = entry.path;
+              const buf = await fs.readFile(filePath);
+              if (!(await hasLikelyVisibleText(buf))) return buf;
+              console.warn(`retry text-free image: ${item.id} (attempt ${attempt}/${FLUX_LOCAL_TEXT_FREE_RETRIES})`);
+              i = -1; // break outer loop and retry
+              break;
+            }
+          }
+        } catch {
+          // Ignore malformed chunks and continue scanning.
+        }
+      }
+    }
+    throw new Error(`FLUX local (gradio) OCR text detected or no image after ${FLUX_LOCAL_TEXT_FREE_RETRIES} attempts`);
   }
 
   // OpenAI-compatible local endpoint.
+  const prompt = `${promptBase}\n\nABSOLUTE RULE: Produce a clean photo scene with zero typography.`;
   const headers = { "Content-Type": "application/json" };
   if (FLUX_LOCAL_API_KEY) headers.Authorization = `Bearer ${FLUX_LOCAL_API_KEY}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), IMAGE_TIMEOUT_MS);
   const res = await fetch(apiUrl, {
     method: "POST",
     headers,
@@ -328,7 +482,7 @@ async function main() {
 
   await fs.mkdir(outputDir, { recursive: true });
 
-  async function runOne(item) {
+async function runOne(item) {
     const id = String(item.id || "").trim();
     const prompt = String(item.prompt || "").trim();
     if (!id || !prompt) throw new Error("Each prompt item needs id and prompt");
@@ -358,6 +512,9 @@ async function main() {
             continue;
           }
           buffer = await generateOneViaFluxLocal({ id, prompt, size: item.size });
+          if (await hasLikelyVisibleText(buffer)) {
+            throw new Error("OCR detected visible text");
+          }
           break;
         }
         if (current === "gemini") {
@@ -366,6 +523,9 @@ async function main() {
             continue;
           }
           buffer = await generateOneViaGeminiWithRetry({ id, prompt, size: item.size }, effectiveGeminiKey);
+          if (await hasLikelyVisibleText(buffer)) {
+            throw new Error("OCR detected visible text");
+          }
           break;
         }
         if (current === "openai") {
@@ -374,6 +534,9 @@ async function main() {
             continue;
           }
           buffer = await generateOneViaOpenAI({ id, prompt, size: item.size }, OPENAI_API_KEY);
+          if (await hasLikelyVisibleText(buffer)) {
+            throw new Error("OCR detected visible text");
+          }
           break;
         }
         if (current === "custom") {
@@ -382,6 +545,9 @@ async function main() {
             continue;
           }
           buffer = await generateOneViaCustomApi({ id, prompt, size: item.size });
+          if (await hasLikelyVisibleText(buffer)) {
+            throw new Error("OCR detected visible text");
+          }
           break;
         }
       } catch (error) {

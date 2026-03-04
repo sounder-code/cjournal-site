@@ -73,7 +73,7 @@ jobs:
       - name: Generate post images
         if: steps.toggle.outputs.enabled == 'true'
         env:
-          IMAGE_PROVIDER: auto
+          IMAGE_PROVIDER: flux-local
           FLUX_LOCAL_API_URL: ${{ vars.FLUX_LOCAL_API_URL }}
           FLUX_LOCAL_API_KEY: ${{ secrets.FLUX_LOCAL_API_KEY }}
           FLUX_LOCAL_MODEL: ${{ vars.FLUX_LOCAL_MODEL }}
