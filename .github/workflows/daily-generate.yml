@@ -1,6 +1,11 @@
 name: Daily Content Generate
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/daily-generate.yml"
   schedule:
     - cron: "0 21 * * *" # 06:00 Asia/Seoul
     - cron: "0 3 * * *"  # 12:00 Asia/Seoul
