@@ -7,6 +7,10 @@ import { LOG_DIR, POSTS_DIR, ensureDir, loadPostsFrontmatter, readRunGeneratedPo
 const OUT_DIR = path.join(process.cwd(), 'public/assets/posts');
 const PROMPT_PATH = path.join(LOG_DIR, 'post-image-prompts.json');
 const IMAGES_PER_POST = Number(process.env.IMAGES_PER_POST ?? '2');
+const GEMINI_API_KEY = String(process.env.GEMINI_API_KEY ?? '').trim();
+const GEMINI_API_BASE = String(process.env.GEMINI_API_BASE ?? 'https://generativelanguage.googleapis.com/v1beta').trim();
+const GEMINI_TEXT_MODEL = String(process.env.GEMINI_TEXT_MODEL ?? process.env.GEMINI_MODEL ?? 'gemini-2.5-flash').trim();
+const GEMINI_TIMEOUT_MS = Math.max(5000, Number(process.env.GEMINI_TIMEOUT_MS ?? '25000'));
 
 type PromptItem = {
   id: string;
@@ -22,17 +26,63 @@ function hasPostImage(content: string, slug: string, index: number) {
   return content.includes(`/assets/posts/${slug}-${index}.png`);
 }
 
+type TopicKind = 'productivity' | 'home' | 'travel' | 'health' | 'finance' | 'generic';
+
+function detectTopic(title: string, description: string): TopicKind {
+  const text = `${title} ${description}`.toLowerCase();
+  if (/(메모|기록|목표|계획|집중|시간\s*관리|업무|회의|루틴|생산성)/.test(text)) return 'productivity';
+  if (/(실내|환기|청소|수납|집|가정|주방|생활)/.test(text)) return 'home';
+  if (/(여행|공항|숙소|짐|체크리스트)/.test(text)) return 'travel';
+  if (/(수면|건강|운동|식단|위생)/.test(text)) return 'health';
+  if (/(예산|가계부|비용|절약|구독|지출|가격|요금)/.test(text)) return 'finance';
+  return 'generic';
+}
+
+function pickScene(topic: TopicKind, index: number) {
+  const scenesByTopic: Record<TopicKind, string[]> = {
+    productivity: [
+      'hands arranging blank index cards on a clean desk, natural daylight, no writing visible',
+      'blank notebook and pen on a wooden desk with a simple cup, tidy workspace, no visible text',
+      'minimal workspace with closed laptop, notebook closed, soft side light, no labels or screens'
+    ],
+    home: [
+      'open window with sheer curtains and indoor plants, bright natural light, calm interior',
+      'neat living room corner with folded fabrics and simple storage boxes without labels',
+      'kitchen counter with plain containers and clean sink area, no packaging or text'
+    ],
+    travel: [
+      'packed suitcase with plain clothing and travel pouches without logos, clean hotel room light',
+      'flat lay of travel essentials in plain cases and bottles with no labels',
+      'airport-style waiting area scene focused on luggage silhouette and window light, no signs visible'
+    ],
+    health: [
+      'cozy bedroom with neatly arranged bedding and soft morning light, no printed materials',
+      'yoga mat and water glass in a minimal room, no brand marks or labels',
+      'clean bathroom shelf with plain towels and unlabeled containers'
+    ],
+    finance: [
+      'person organizing plain envelopes and blank paper cards on a desk, no writing visible',
+      'simple home desk scene with calculator turned away and blank notebook closed',
+      'minimal planning setup with plain folders and divider trays, no text or numbers visible'
+    ],
+    generic: [
+      'minimal interior with natural light and clean composition, no objects with writing',
+      'plain tabletop still life with ceramic cup and fruit bowl, no labels or packaging',
+      'calm room corner with chair, curtain, and shadow pattern, no screens or signs'
+    ]
+  };
+  const scenes = scenesByTopic[topic];
+  return scenes[(Math.max(1, index) - 1) % scenes.length];
+}
+
 function buildPrompt(title: string, description: string, index: number) {
-  const scene =
-    index === 1
-      ? 'clean indoor air scene with sunlight, plant leaves, and soft airflow feeling'
-      : index === 2
-        ? 'open window with sheer curtains, indoor plants, and clear morning light in a minimal room'
-        : 'minimal calm interior with curtains and natural light, no objects with writing';
+  const topic = detectTopic(title, description);
+  const scene = pickScene(topic, index);
   return [
     `Create a realistic photo.`,
     `Concept: ${title}.`,
     `Context: ${description}.`,
+    `Topic style: ${topic}.`,
     `Scene: ${scene}.`,
     `STRICT CONTENT RULES: choose objects that naturally have no writing.`,
     `Do not include screens, posters, signs, books, newspapers, packages, keyboard, remote controls, dashboards, appliances, devices, or any product labels.`,
@@ -40,6 +90,61 @@ function buildPrompt(title: string, description: string, index: number) {
     `Korean/English text must not appear anywhere in the image.`,
     `Style: natural daylight photography, clean composition, muted colors, 16:9 landscape.`
   ].join('\n');
+}
+
+function extractGeminiText(json: any): string {
+  const candidates = Array.isArray(json?.candidates) ? json.candidates : [];
+  for (const c of candidates) {
+    const parts = Array.isArray(c?.content?.parts) ? c.content.parts : [];
+    const text = parts.map((p: any) => String(p?.text ?? '')).join('').trim();
+    if (text) return text;
+  }
+  return '';
+}
+
+async function buildPromptViaGemini(title: string, description: string, index: number) {
+  const topic = detectTopic(title, description);
+  const scene = pickScene(topic, index);
+  const fallbackPrompt = buildPrompt(title, description, index);
+  if (!GEMINI_API_KEY) return fallbackPrompt;
+
+  const instruction = [
+    'Write one high-quality image generation prompt in English for a photorealistic editorial image.',
+    `Article title: ${title}`,
+    `Article summary: ${description}`,
+    `Topic kind: ${topic}`,
+    `Preferred scene direction: ${scene}`,
+    'Hard constraints:',
+    '- Keep strong relevance to the article topic and practical context.',
+    '- No text, letters, numbers, logos, watermarks, labels, signs, UI, screens, documents, packaging.',
+    '- Avoid objects likely to include writing.',
+    '- Natural composition and realistic lighting.',
+    'Output only the prompt text with no markdown, no explanations.',
+  ].join('\n');
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+  try {
+    const url = `${GEMINI_API_BASE}/models/${encodeURIComponent(GEMINI_TEXT_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: instruction }] }],
+        generationConfig: { temperature: 0.4 }
+      }),
+      signal: controller.signal
+    });
+    if (!res.ok) return fallbackPrompt;
+    const json = await res.json();
+    const prompt = extractGeminiText(json);
+    if (!prompt) return fallbackPrompt;
+    return prompt;
+  } catch {
+    return fallbackPrompt;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function insertImages(content: string, slug: string, title: string) {
@@ -146,9 +251,10 @@ async function main() {
     const description = String(row.data.description ?? '').trim();
     if (!slug || !title) continue;
     for (let i = 1; i <= IMAGES_PER_POST; i += 1) {
+      const prompt = await buildPromptViaGemini(title, description, i);
       prompts.push({
         id: `${slug}-${i}`,
-        prompt: buildPrompt(title, description, i),
+        prompt,
         size: '1536x1024'
       });
     }
