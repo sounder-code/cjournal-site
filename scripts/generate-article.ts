@@ -101,10 +101,12 @@ function selectProviderOrder(): Provider[] {
   const hasGemini = hasGeminiKey();
   const hasOpenAI = hasOpenAiKey();
 
-  if (preferred === 'gemini' && hasGemini) {
+  if (preferred === 'gemini') {
+    if (!hasGemini) throw new Error('ARTICLE_PROVIDER=gemini but GEMINI_API_KEY is missing');
     return hasOpenAI ? ['gemini', 'openai'] : ['gemini'];
   }
-  if (preferred === 'openai' && hasOpenAI) {
+  if (preferred === 'openai') {
+    if (!hasOpenAI) throw new Error('ARTICLE_PROVIDER=openai but OPENAI_API_KEY is missing');
     return hasGemini ? ['openai', 'gemini'] : ['openai'];
   }
 
@@ -259,25 +261,44 @@ function deriveUniqueSlug(baseSlug: string, usedSlugs: Set<string>) {
 
 function buildLocalFallbackBody(keyword: string, today: string) {
   const sections = [
-    '핵심 개념 정리',
-    '적용 전 체크리스트',
-    '실행 단계',
-    '점검과 개선',
-    '자주 발생하는 실수'
+    {
+      title: '핵심 개념 정리',
+      body: `${keyword}는 준비-실행-점검의 반복 구조로 접근할 때 안정적으로 개선됩니다. 먼저 현재 상태를 기록하고, 목표를 한 줄로 정의한 뒤, 실행 범위를 작게 시작하면 실패 비용을 줄일 수 있습니다.`
+    },
+    {
+      title: '적용 전 체크리스트',
+      body: `시작 전에는 현재 문제, 목표 시점, 사용할 시간, 실패 기준을 먼저 정리해야 합니다. 특히 우선순위를 1~2개로 제한하면 실행력이 올라가고, 중간에 방향이 흔들릴 가능성이 줄어듭니다.`
+    },
+    {
+      title: '실행 단계',
+      body: `실행 단계는 \"작게 시작-짧게 측정-빠르게 수정\"으로 운영하는 것이 좋습니다. 첫 주에는 완성보다 기록을 우선하고, 둘째 주부터 기준을 조정해야 실제 사용성에 맞는 루틴으로 수렴합니다.`
+    },
+    {
+      title: '점검과 개선',
+      body: `점검은 감각이 아니라 로그 기준으로 해야 합니다. 어떤 조건에서 성과가 나왔는지, 어떤 변수에서 실패했는지를 분리해 기록하면 다음 사이클에서 재현 가능한 개선이 가능합니다.`
+    },
+    {
+      title: '자주 발생하는 실수',
+      body: `한 번에 너무 많은 항목을 바꾸거나, 결과 확인 없이 도구만 교체하는 패턴이 가장 흔한 실수입니다. 변경은 1회 1변수 원칙으로 제한하고, 최소 7일 단위 비교 후 다음 결정을 내리는 것이 안전합니다.`
+    },
+    {
+      title: '실전 운영 예시',
+      body: `실무에서는 월요일에 계획, 수요일에 중간 점검, 금요일에 회고를 고정하면 운영 품질이 올라갑니다. 개인/팀 모두 동일한 템플릿을 사용하면 협업 시 해석 차이도 줄일 수 있습니다.`
+    }
   ];
 
-  let content = `${keyword}를 빠르게 이해하고 실무에 적용할 수 있도록 핵심 포인트를 정리합니다. 단정이 어려운 정보는 확실하지 않음으로 구분해 판단하는 방식이 안정적입니다.`;
-
+  let content = `${keyword}를 빠르게 이해하고 실무에 적용할 수 있도록 운영 기준과 점검 포인트를 중심으로 정리합니다. 불확실한 요소는 단정하지 않고 별도 검증 항목으로 분리하는 방식이 품질 관리에 유리합니다.`;
   for (const section of sections) {
-    content += `\n\n## ${section}\n${keyword}를 다룰 때는 준비-실행-점검 흐름으로 접근하는 것이 좋습니다. 먼저 현재 상태를 기록하고 우선순위를 명확히 한 뒤, 작은 단위로 실행하고 결과를 비교해야 시행착오를 줄일 수 있습니다. 이 과정에서 즉시 판단이 어려운 요소는 확실하지 않음으로 표시하고 추후 확인하는 절차를 둬야 품질이 유지됩니다. 또한 동일한 방식만 반복하지 말고 상황에 맞게 도구, 시간, 범위를 조정해야 합니다.`
-      + ` 실무에서는 기록이 매우 중요합니다. 시작 시점과 종료 시점, 변경한 항목, 관찰된 결과를 함께 남기면 다음 사이클의 의사결정 속도가 빨라집니다.`;
+    content += `\n\n## ${section.title}\n${section.body}`;
   }
 
-  content += `\n\n## FAQ\nQ1. ${keyword}를 처음 시작할 때 가장 중요한 기준은 무엇인가요?\nA1. 목표와 제약을 동시에 정리하고, 실행 범위를 작게 시작하는 기준이 가장 중요합니다.\n\nQ2. 빠르게 성과를 확인하려면 어떻게 해야 하나요?\nA2. 단일 지표를 정해 짧은 주기로 비교하면 변화 여부를 명확히 파악할 수 있습니다.\n\nQ3. 정보가 서로 다를 때는 어떻게 판단하나요?\nA3. 출처와 시점을 먼저 확인하고, 확실하지 않음인 정보는 단정하지 않는 방식이 안전합니다.`;
+  content += `\n\n## FAQ\nQ1. ${keyword}를 시작할 때 무엇부터 정해야 하나요?\nA1. 목표, 제약, 점검 주기 세 가지를 먼저 고정해야 실행 과정에서 흔들리지 않습니다.\n\nQ2. 성과가 안 보이면 바로 방식부터 바꿔야 하나요?\nA2. 바로 변경하지 말고 최소 1주 로그를 확보한 뒤 원인을 분리해 수정하는 편이 정확합니다.\n\nQ3. 정보가 충돌할 때는 어떻게 판단하나요?\nA3. 출처 시점과 적용 조건을 비교하고, 확실하지 않음인 항목은 보수적으로 적용해야 합니다.`;
   content += `\n\n업데이트: ${today}\n\n<!-- RELATED_POSTS -->`;
 
+  let extraIdx = 1;
   while (wordCount(content) < MIN_WORD_COUNT) {
-    content += `\n\n## 실행 사례 확장\n${keyword} 관련 실행 사례를 정리할 때는 배경, 행동, 결과, 개선점 순서로 기록하는 것이 좋습니다. 특히 같은 조건에서 반복했을 때 재현 가능한지 확인해야 신뢰도가 올라갑니다.`;
+    content += `\n\n추가 점검 메모 ${extraIdx}. ${keyword} 운영 시 변경 이력, 실행 시간, 결과 체감을 같은 형식으로 남기면 주간 비교 품질이 크게 좋아집니다. 지표는 많이 두기보다 핵심 1~2개만 유지하는 방식이 실전에서 더 유효합니다.`;
+    extraIdx += 1;
   }
 
   return content.trim();
