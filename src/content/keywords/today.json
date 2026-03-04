@@ -8,7 +8,7 @@
   "previousOutputKeywordCount": 30,
   "seedKeywordCount": 50,
   "safeRankKeywordCount": 30,
-  "relaxedRankKeywordCount": 31,
+  "relaxedRankKeywordCount": 30,
   "usingRelaxedKeywords": false,
   "usingSeedFallback": false,
   "tokenDerivedRankKeywordCount": 0,

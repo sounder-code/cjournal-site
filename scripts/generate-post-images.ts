@@ -51,24 +51,34 @@ function insertImages(content: string, slug: string, title: string) {
   }
   if (!missing.length) return updated;
 
-  const firstH2 = updated.search(/^##\s+/m);
-  if (firstH2 > 0) {
-    const lead = imageLine(slug, missing[0], title);
-    updated = `${updated.slice(0, firstH2).trimEnd()}\n\n${lead}\n\n${updated.slice(firstH2)}`;
-    missing.shift();
-  }
-
-  for (const idx of missing) {
-    const h2Match = updated.match(/^##\s+.+$/gm);
-    if (h2Match && h2Match.length > 0) {
-      const anchor = h2Match[Math.min(idx - 1, h2Match.length - 1)];
-      const pos = updated.indexOf(anchor);
-      if (pos >= 0) {
-        updated = `${updated.slice(0, pos)}${imageLine(slug, idx, title)}\n\n${updated.slice(pos)}`;
-        continue;
+  const headingMatches = [...updated.matchAll(/^##\s+.+$/gm)];
+  if (headingMatches.length > 0) {
+    const selectedHeadingIdx: number[] = [];
+    for (let i = 0; i < missing.length; i += 1) {
+      const ratio = (i + 1) / (missing.length + 1);
+      let idx = Math.min(headingMatches.length - 1, Math.max(0, Math.floor(ratio * headingMatches.length)));
+      if (selectedHeadingIdx.length > 0) {
+        idx = Math.max(idx, selectedHeadingIdx[selectedHeadingIdx.length - 1] + 1);
       }
+      idx = Math.min(idx, headingMatches.length - 1);
+      selectedHeadingIdx.push(idx);
     }
-    updated = `${updated.trimEnd()}\n\n${imageLine(slug, idx, title)}\n`;
+
+    const insertions = missing
+      .map((imageIdx, i) => ({
+        imageIdx,
+        pos: headingMatches[selectedHeadingIdx[i]]?.index ?? -1
+      }))
+      .filter((row) => row.pos >= 0)
+      .sort((a, b) => b.pos - a.pos);
+
+    for (const row of insertions) {
+      updated = `${updated.slice(0, row.pos).trimEnd()}\n\n${imageLine(slug, row.imageIdx, title)}\n\n${updated.slice(row.pos)}`;
+    }
+  } else {
+    for (const imageIdx of missing) {
+      updated = `${updated.trimEnd()}\n\n${imageLine(slug, imageIdx, title)}\n`;
+    }
   }
 
   return updated;
