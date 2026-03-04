@@ -77,6 +77,7 @@ jobs:
           FLUX_LOCAL_API_URL: ${{ vars.FLUX_LOCAL_API_URL }}
           FLUX_LOCAL_API_KEY: ${{ secrets.FLUX_LOCAL_API_KEY }}
           FLUX_LOCAL_MODEL: ${{ vars.FLUX_LOCAL_MODEL }}
+          FLUX_LOCAL_STEPS: 8
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           NANO_BANANA_MODEL: gemini-2.5-flash-image

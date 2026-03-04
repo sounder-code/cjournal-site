@@ -18,7 +18,7 @@ const FLUX_LOCAL_NEGATIVE_PROMPT = (
   process.env.FLUX_LOCAL_NEGATIVE_PROMPT ||
   "text, letters, words, logo, watermark, caption, subtitle, infographic, banner, poster, ui, symbols, numbers, typography, label, signage, title, headline, callout, chart, diagram, monitor, tv screen, smartphone screen, laptop screen, billboard, road sign, storefront sign, package label, jersey number, keyboard legends, document, newspaper, magazine"
 ).trim();
-const FLUX_LOCAL_STEPS = Math.max(8, Number(process.env.FLUX_LOCAL_STEPS || "24"));
+const FLUX_LOCAL_STEPS = Math.max(8, Number(process.env.FLUX_LOCAL_STEPS || "8"));
 const FLUX_LOCAL_CFG = Math.max(1, Number(process.env.FLUX_LOCAL_CFG || "2.2"));
 const FLUX_LOCAL_TEXT_FREE_RETRIES = Math.max(1, Number(process.env.FLUX_LOCAL_TEXT_FREE_RETRIES || "8"));
 const TEXT_DETECT_ENABLED = String(process.env.TEXT_DETECT_ENABLED || "true").trim().toLowerCase() !== "false";
