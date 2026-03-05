@@ -23,6 +23,18 @@ function todayKST() {
   return `${kst.getUTCFullYear()}-${String(kst.getUTCMonth() + 1).padStart(2, '0')}-${String(kst.getUTCDate()).padStart(2, '0')}`;
 }
 
+function nowKSTIso() {
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const y = kst.getUTCFullYear();
+  const m = String(kst.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(kst.getUTCDate()).padStart(2, '0');
+  const hh = String(kst.getUTCHours()).padStart(2, '0');
+  const mm = String(kst.getUTCMinutes()).padStart(2, '0');
+  const ss = String(kst.getUTCSeconds()).padStart(2, '0');
+  return `${y}-${m}-${d}T${hh}:${mm}:${ss}+09:00`;
+}
+
 async function readForbidden() {
   const raw = await fs.readFile(forbiddenPath, 'utf8');
   return raw
@@ -31,8 +43,8 @@ async function readForbidden() {
     .filter(Boolean);
 }
 
-function countH2(content: string) {
-  return (content.match(/^##\s+/gm) ?? []).length;
+function countSections(content: string) {
+  return (content.match(/^#{2,3}\s+/gm) ?? []).length;
 }
 
 function countFaqItems(content: string) {
@@ -47,9 +59,11 @@ const TITLE_SIMILARITY_THRESHOLD = Number(process.env.TITLE_SIMILARITY_THRESHOLD
 const GEMINI_TIMEOUT_MS = Math.max(5000, Number(process.env.GEMINI_TIMEOUT_MS ?? '15000'));
 const OPENAI_TIMEOUT_MS = Math.max(5000, Number(process.env.OPENAI_TIMEOUT_MS ?? '25000'));
 const RETRY_BACKOFF_MS = Math.max(0, Number(process.env.RETRY_BACKOFF_MS ?? '1200'));
-const RECENT_DUP_DAYS = Math.max(1, Number(process.env.RECENT_DUP_DAYS ?? '3'));
+const RECENT_DUP_DAYS = Math.max(1, Number(process.env.RECENT_DUP_DAYS ?? '7'));
 const KEYWORD_POOL_MULTIPLIER = Math.max(2, Number(process.env.KEYWORD_POOL_MULTIPLIER ?? '4'));
 const ALLOW_FALLBACK = String(process.env.ALLOW_FALLBACK ?? 'false').trim().toLowerCase() === 'true';
+const GEMINI_TOPIC_VARIATION = String(process.env.GEMINI_TOPIC_VARIATION ?? 'true').trim().toLowerCase() === 'true';
+const GEMINI_TOPIC_VARIATION_TIMEOUT_MS = Math.max(5000, Number(process.env.GEMINI_TOPIC_VARIATION_TIMEOUT_MS ?? '10000'));
 
 function topicStem(value: string) {
   return value
@@ -154,6 +168,51 @@ async function generateWithGemini(prompt: string, timeoutMs: number) {
   return text;
 }
 
+function parseJsonObject(text: string): Record<string, unknown> | null {
+  const direct = text.trim();
+  const candidates = [
+    direct,
+    direct.replace(/^```json\s*/i, '').replace(/```$/i, '').trim(),
+    direct.match(/\{[\s\S]*\}/)?.[0] ?? ''
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as Record<string, unknown>;
+    } catch {
+      // ignore parse errors and continue
+    }
+  }
+  return null;
+}
+
+async function proposeGeminiTopicVariant(keyword: string, recentTitles: string[]) {
+  if (!GEMINI_TOPIC_VARIATION || !hasGeminiKey()) return null;
+  const prompt = [
+    '다음 키워드로 한국어 정보성 기사의 차별화된 제목/각도를 1개 제안하라.',
+    `키워드: ${keyword}`,
+    `최근 제목(중복 회피 참고): ${recentTitles.slice(0, 30).join(' | ') || '없음'}`,
+    '출력은 반드시 JSON 객체 1개만:',
+    '{"title":"", "angle":"", "audience":"", "must_include":["", ""]}',
+    '규칙: 과장/선정 금지, 뉴스속보체 금지, 제목 길이 18~38자, 같은 어미 반복 금지.'
+  ].join('\n');
+
+  try {
+    const raw = await generateWithGemini(prompt, GEMINI_TOPIC_VARIATION_TIMEOUT_MS);
+    const parsed = parseJsonObject(raw);
+    if (!parsed) return null;
+    const title = String(parsed.title ?? '').trim();
+    const angle = String(parsed.angle ?? '').trim();
+    const audience = String(parsed.audience ?? '').trim();
+    const mustInclude = Array.isArray(parsed.must_include) ? parsed.must_include.map((v) => String(v).trim()).filter(Boolean) : [];
+    if (!title || !angle) return null;
+    return { title, angle, audience, mustInclude };
+  } catch {
+    return null;
+  }
+}
+
 async function generateWithOpenAi(prompt: string, client: OpenAI) {
   const response = await client.responses.create({
     model: process.env.OPENAI_MODEL ?? 'gpt-4.1-mini',
@@ -168,7 +227,12 @@ async function generateWithOpenAi(prompt: string, client: OpenAI) {
 function extractTitleFromContent(content: string, fallback: string) {
   const h1 = content.match(/^#\s+(.+)$/m)?.[1]?.trim();
   if (h1) return h1;
-  const h2 = content.match(/^##\s+(.+)$/m)?.[1]?.trim();
+  const h2 = content
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => /^#{2,3}\s+/.test(line) && !/^#{2,3}\s*핵심 포인트\s*\d+/i.test(line))
+    ?.replace(/^#{2,3}\s+/, '')
+    .trim();
   if (h2) return h2;
   return fallback;
 }
@@ -181,8 +245,8 @@ function normalizeContent(content: string, keyword: string, today: string) {
 
   if (!next) next = `${keyword}에 대한 기본 정보를 정리합니다.`;
 
-  while (countH2(next) < 4) {
-    const index = countH2(next) + 1;
+  while (countSections(next) < 4) {
+    const index = countSections(next) + 1;
     next += `\n\n## 핵심 포인트 ${index}\n${keyword}와 관련된 핵심 개념을 일상/업무 관점에서 정리합니다. 선택 기준, 준비 단계, 실행 순서, 점검 포인트를 차례대로 확인하면 시행착오를 줄일 수 있습니다. 확실하지 않음이 포함된 정보는 단정하지 않고 조건을 분리해 이해하는 것이 중요합니다.`;
   }
 
@@ -206,7 +270,7 @@ function normalizeContent(content: string, keyword: string, today: string) {
   return next.trim();
 }
 
-function normalizeDraft(markdown: string, keyword: string, baseSlug: string, today: string) {
+function normalizeDraft(markdown: string, keyword: string, baseSlug: string, today: string, nowIso: string) {
   let parsed: matter.GrayMatterFile<string> | null = null;
   try {
     parsed = matter(markdown);
@@ -233,8 +297,8 @@ function normalizeDraft(markdown: string, keyword: string, baseSlug: string, tod
     title,
     description,
     slug,
-    publishedAt: today,
-    updatedAt: today,
+    publishedAt: nowIso,
+    updatedAt: nowIso,
     tags,
     category,
     readingTimeMinutes,
@@ -251,6 +315,34 @@ function validateNormalizedDraft(markdown: string, title: string, forbidden: str
   const hitForbidden = forbidden.find((word) => `${title}\n${markdown}`.includes(word));
   if (hitForbidden) return { ok: false as const, reason: `forbidden word: ${hitForbidden}` };
   return { ok: true as const };
+}
+
+function sanitizeForbiddenText(input: string, forbidden: string[]) {
+  const replacements: Record<string, string> = {
+    무조건: '일반적으로',
+    '100%': '대부분',
+    '완벽 보장': '상대적으로 안정적',
+    충격: '주목',
+    역대급: '높은 수준',
+    '반드시 돈 버는': '수익 가능성을 검토하는',
+    '평생 무료': '장기 무료 정책',
+    기적: '유의미한 개선',
+    '절대 손해 없음': '손실 가능성을 낮추는',
+    '단기간 확정': '단기 확인 가능성',
+    '의사가 숨긴': '널리 알려지지 않은',
+    '정부가 숨긴': '공개 정보에서 놓치기 쉬운',
+    '몰랐다면 손해': '알아두면 도움이 되는'
+  };
+
+  const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  let out = input;
+  for (const token of forbidden) {
+    if (!token) continue;
+    const replacement = replacements[token] ?? '주의 표현';
+    const pattern = new RegExp(`(^|[^\\p{L}\\p{N}])(${escapeRegExp(token)})(?=[^\\p{L}\\p{N}]|$)`, 'gu');
+    out = out.replace(pattern, (_, prefix) => `${prefix}${replacement}`);
+  }
+  return out;
 }
 
 function deriveUniqueSlug(baseSlug: string, usedSlugs: Set<string>) {
@@ -347,15 +439,27 @@ async function main() {
     .slice(0, Math.max(count * KEYWORD_POOL_MULTIPLIER, count));
 
   async function processKeyword(keyword: string) {
+    console.log(`[article] start keyword: ${keyword}`);
     if (isUnsafeTopic(keyword)) return { keyword, ok: false as const, reason: 'unsafe keyword' };
     if (isLowTrustKeyword(keyword)) return { keyword, ok: false as const, reason: 'low-trust keyword' };
 
-    const baseSlug = slugify(keyword);
+    const topicVariant = await proposeGeminiTopicVariant(keyword, selectedTitles);
+    if (topicVariant?.title) {
+      console.log(`[article] topic-variant: ${keyword} -> ${topicVariant.title}`);
+    } else {
+      console.log(`[article] topic-variant-skip: ${keyword}`);
+    }
+    const seedTitle = topicVariant?.title?.trim() || keyword;
+    const baseSlug = slugify(seedTitle);
     if (!baseSlug) return { keyword, ok: false as const, reason: 'invalid slug keyword' };
 
     const basePrompt = [
       '한국어 정보형 기사 본문만 Markdown으로 작성하라. frontmatter는 쓰지 마라.',
       `키워드: ${keyword}`,
+      topicVariant?.title ? `권장 제목(H1으로 사용): ${topicVariant.title}` : '',
+      topicVariant?.angle ? `기사 각도(중복 회피): ${topicVariant.angle}` : '',
+      topicVariant?.audience ? `대상 독자: ${topicVariant.audience}` : '',
+      topicVariant?.mustInclude?.length ? `반드시 포함할 핵심 포인트: ${topicVariant.mustInclude.join(', ')}` : '',
       '본문 규칙: 도입 1개, H2 4~6개(필수), H3 선택, FAQ 섹션에서 Q&A 3개 포함.',
       '본문 길이: 700~1000단어 권장.',
       '문체: 중립적, 과장 금지, 확실하지 않은 사실은 "확실하지 않음"이라고 명시.',
@@ -394,8 +498,11 @@ async function main() {
           continue;
         }
 
-        const normalized = normalizeDraft(markdown, keyword, baseSlug, today);
-        const validation = validateNormalizedDraft(normalized.parsed.content, normalized.title, forbidden);
+        const normalized = normalizeDraft(markdown, keyword, baseSlug, today, nowKSTIso());
+        normalized.parsed.content = sanitizeForbiddenText(normalized.parsed.content, forbidden);
+        const sanitizedTitle = sanitizeForbiddenText(String(normalized.parsed.data.title ?? normalized.title ?? ''), forbidden);
+        normalized.parsed.data.title = sanitizedTitle;
+        const validation = validateNormalizedDraft(normalized.parsed.content, sanitizedTitle, forbidden);
         if (!validation.ok) {
           lastReason = `[${provider}] ${validation.reason}`;
           continue;
@@ -426,6 +533,7 @@ async function main() {
     for (const candidate of candidates) {
       if (created.length >= count) break;
       if (!candidate.ok) {
+        console.log(`[article] skip keyword: ${candidate.keyword} (${candidate.reason})`);
         logLines.push(`skip: ${candidate.keyword} (${candidate.reason})`);
         continue;
       }
@@ -469,6 +577,7 @@ async function main() {
       const finalDoc = matter.stringify(candidate.parsed.content, candidate.parsed.data);
       const filePath = path.join(POSTS_DIR, `${finalSlug}.md`);
       await fs.writeFile(filePath, finalDoc, 'utf8');
+      console.log(`[article] created: ${finalSlug} (provider=${candidate.provider})`);
 
       created.push(filePath);
       selectedTitles.push(candidate.title);
@@ -510,8 +619,8 @@ async function main() {
         title: fallbackTitle,
         description: `${fallbackKeyword} 핵심 내용을 빠르게 확인할 수 있는 요약 가이드입니다.`,
         slug: fallbackSlug,
-        publishedAt: todayKST(),
-        updatedAt: todayKST(),
+        publishedAt: nowKSTIso(),
+        updatedAt: nowKSTIso(),
         tags: [fallbackKeyword, '가이드', '실무'],
         category: '종합',
         readingTimeMinutes: Math.max(8, Math.ceil(MIN_WORD_COUNT / 130)),
