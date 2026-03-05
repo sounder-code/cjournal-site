@@ -81,11 +81,8 @@ echo "[4/4] per-article publish (images -> validate -> index -> commit/push)"
 git config user.name "content-bot"
 git config user.email "content-bot@users.noreply.github.com"
 
-PUBLISH_SLUGS=()
-while IFS= read -r __slug; do
-  [[ -n "${__slug}" ]] || continue
-  PUBLISH_SLUGS+=("${__slug}")
-done < <(node - <<'NODE'
+SLUG_FILE="/tmp/cjournal_publish_slugs_runtime.txt"
+node - <<'NODE' > "${SLUG_FILE}"
 const fs = require('fs');
 const path = require('path');
 const runPath = path.join(process.cwd(), 'logs/run-generated-posts.json');
@@ -93,7 +90,6 @@ if (!fs.existsSync(runPath)) process.exit(0);
 const parsed = JSON.parse(fs.readFileSync(runPath, 'utf8'));
 const files = Array.isArray(parsed.files) ? parsed.files : [];
 const seen = new Set();
-
 for (const file of files) {
   const full = path.isAbsolute(file) ? file : path.resolve(process.cwd(), file);
   if (!fs.existsSync(full)) continue;
@@ -106,7 +102,12 @@ for (const file of files) {
   process.stdout.write(`${slug}\n`);
 }
 NODE
-)
+
+PUBLISH_SLUGS=()
+while IFS= read -r __slug; do
+  [[ -n "${__slug}" ]] || continue
+  PUBLISH_SLUGS+=("${__slug}")
+done < "${SLUG_FILE}"
 
 if [[ "${#PUBLISH_SLUGS[@]}" -eq 0 ]]; then
   echo "No publish targets after quality gate"
@@ -131,8 +132,8 @@ for SLUG in "${PUBLISH_SLUGS[@]}"; do
     continue
   fi
 
-  # Ensure "last published post appears latest" by stamping a precise KST update timestamp.
-  NOW_KST_ISO="$(node -e 'const d=new Date(Date.now()+9*60*60*1000); const y=d.getUTCFullYear(); const m=String(d.getUTCMonth()+1).padStart(2,\"0\"); const day=String(d.getUTCDate()).padStart(2,\"0\"); const hh=String(d.getUTCHours()).padStart(2,\"0\"); const mm=String(d.getUTCMinutes()).padStart(2,\"0\"); const ss=String(d.getUTCSeconds()).padStart(2,\"0\"); process.stdout.write(`${y}-${m}-${day}T${hh}:${mm}:${ss}+09:00`);')"
+  # Ensure last published post is ordered first on homepage.
+  NOW_KST_ISO="$(TZ=Asia/Seoul date '+%Y-%m-%dT%H:%M:%S%z' | sed 's/\(..\)$/:\1/')"
   perl -i -pe "s/^updatedAt:\\s*.*\$/updatedAt: '${NOW_KST_ISO}'/" "src/content/posts/${SLUG}.md"
   perl -i -pe "s/^publishedAt:\\s*'\\d{4}-\\d{2}-\\d{2}'\$/publishedAt: '${NOW_KST_ISO}'/" "src/content/posts/${SLUG}.md"
 
