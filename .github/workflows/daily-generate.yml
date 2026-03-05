@@ -61,11 +61,11 @@ jobs:
           OPENAI_MODEL: gpt-4.1
           ARTICLE_COUNT: 1
           ARTICLE_PARALLELISM: 2
-          ARTICLE_MAX_ATTEMPTS: 1
+          ARTICLE_MAX_ATTEMPTS: 2
           RETRY_BACKOFF_MS: 1200
           TITLE_SIMILARITY_THRESHOLD: 0.7
           MIN_WORD_COUNT: 900
-          GEMINI_TIMEOUT_MS: 15000
+          GEMINI_TIMEOUT_MS: 60000
           OPENAI_TIMEOUT_MS: 35000
           KEYWORD_POOL_MULTIPLIER: 4
         run: npm run gen:articles
