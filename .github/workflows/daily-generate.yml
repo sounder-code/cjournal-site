@@ -63,7 +63,7 @@ jobs:
           GEMINI_MODEL: gemini-2.5-flash
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: gpt-4.1
-          ARTICLE_COUNT: 12
+          ARTICLE_COUNT: 10
           ARTICLE_PARALLELISM: 2
           ARTICLE_MAX_ATTEMPTS: 2
           RETRY_BACKOFF_MS: 1200
