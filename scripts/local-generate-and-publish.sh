@@ -3,8 +3,34 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Ensure common CLI paths are available under launchd.
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH:-}"
+
+SECRETS_FILE="${SECRETS_FILE:-.env.local}"
+if [[ -f "${SECRETS_FILE}" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "${SECRETS_FILE}"
+  set +a
+fi
+
+LOCK_DIR="/tmp/cjournal-local-generate.lock"
+if ! mkdir "${LOCK_DIR}" 2>/dev/null; then
+  echo "Another local generation run is already in progress. skip."
+  exit 0
+fi
+trap 'rmdir "${LOCK_DIR}" 2>/dev/null || true' EXIT
+
+KEYCHAIN_SERVICE="${KEYCHAIN_SERVICE:-cjournal.gemini.api}"
+KEYCHAIN_ACCOUNT="${KEYCHAIN_ACCOUNT:-default}"
+
 if [[ -z "${GEMINI_API_KEY:-}" ]]; then
-  echo "GEMINI_API_KEY is required"
+  GEMINI_API_KEY="$(security find-generic-password -a "${KEYCHAIN_ACCOUNT}" -s "${KEYCHAIN_SERVICE}" -w 2>/dev/null || true)"
+  export GEMINI_API_KEY
+fi
+
+if [[ -z "${GEMINI_API_KEY:-}" ]]; then
+  echo "GEMINI_API_KEY is required (env or macOS Keychain: service=${KEYCHAIN_SERVICE}, account=${KEYCHAIN_ACCOUNT})"
   exit 1
 fi
 
@@ -32,6 +58,9 @@ export FLUX_LOCAL_NEGATIVE_PROMPT="${FLUX_LOCAL_NEGATIVE_PROMPT:-low quality, bl
 export IMAGES_PER_POST="${IMAGES_PER_POST:-2}"
 export IMAGE_PARALLELISM="${IMAGE_PARALLELISM:-2}"
 export IMAGE_TIMEOUT_MS="${IMAGE_TIMEOUT_MS:-30000}"
+
+RUN_TS="$(date '+%Y-%m-%d %H:%M:%S')"
+echo "[$RUN_TS] local pipeline start"
 
 echo "[1/7] generate keywords"
 npm run gen:keywords
