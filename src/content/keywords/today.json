@@ -2,8 +2,8 @@
   "generatedAt": "2026-03-05",
   "source": "search-rank-live-only",
   "sourceProvider": "google",
-  "rankKeywordCount": 46,
-  "liveRankKeywordCount": 47,
+  "rankKeywordCount": 53,
+  "liveRankKeywordCount": 54,
   "cachedRankKeywordCount": 0,
   "previousOutputKeywordCount": 0,
   "seedKeywordCount": 0,
@@ -17,10 +17,10 @@
   "tokenDerivedRankKeywordCount": 0,
   "fallbackBaseKeywordCount": 142,
   "recentDupDays": 7,
-  "recentTopicStemCount": 14,
+  "recentTopicStemCount": 20,
   "minCommercialScore": 2,
-  "averageCommercialScore": 4.27,
-  "highIntentSelectedCount": 15,
+  "averageCommercialScore": 5.5,
+  "highIntentSelectedCount": 12,
   "intentSuffixCap": 3,
   "priceLikeSuffixCap": 1,
   "intentSuffixDistribution": {
@@ -29,31 +29,26 @@
     "비교": 3,
     "추천": 3,
     "비용": 1,
-    "요금": 1,
-    "후기": 2,
-    "할인": 1
+    "요금": 1
   },
-  "count": 15,
+  "count": 12,
   "categories": {
-    "코인/투자기초": 7,
-    "디지털": 6,
+    "코인/투자기초": 8,
+    "디지털": 2,
     "생활관리": 2
   },
   "keywords": [
     "가상자산 수수료 비교 가입 방법",
     "가상자산 수수료 비교 가격",
-    "생산성 앱 비교",
-    "생산성 앱 추천",
     "비밀번호 관리 가입 방법",
-    "클라우드 백업 가입 방법",
     "가계부 자동화 비교",
     "가계부 자동화 추천",
-    "스테이킹 방법 비교",
-    "스테이킹 방법 추천",
-    "비밀번호 관리 비용",
-    "클라우드 백업 요금",
-    "이더리움 가스비 후기",
-    "이더리움 가스비 할인",
-    "가상자산 수수료 비교 가입 방법 후기"
+    "이더리움 가스비 가입 방법",
+    "비밀번호 관리 비교",
+    "이더리움 가스비 비교",
+    "가상자산 수수료 비교 가입 방법 추천",
+    "스테이킹 방법 가입 방법 추천",
+    "가상자산 수수료 비교 가입 방법 비용",
+    "스테이킹 방법 가입 방법 요금"
   ]
 }
