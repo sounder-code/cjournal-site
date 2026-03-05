@@ -131,6 +131,11 @@ for SLUG in "${PUBLISH_SLUGS[@]}"; do
     continue
   fi
 
+  # Ensure "last published post appears latest" by stamping a precise KST update timestamp.
+  NOW_KST_ISO="$(node -e 'const d=new Date(Date.now()+9*60*60*1000); const y=d.getUTCFullYear(); const m=String(d.getUTCMonth()+1).padStart(2,\"0\"); const day=String(d.getUTCDate()).padStart(2,\"0\"); const hh=String(d.getUTCHours()).padStart(2,\"0\"); const mm=String(d.getUTCMinutes()).padStart(2,\"0\"); const ss=String(d.getUTCSeconds()).padStart(2,\"0\"); process.stdout.write(`${y}-${m}-${day}T${hh}:${mm}:${ss}+09:00`);')"
+  perl -i -pe "s/^updatedAt:\\s*.*\$/updatedAt: '${NOW_KST_ISO}'/" "src/content/posts/${SLUG}.md"
+  perl -i -pe "s/^publishedAt:\\s*'\\d{4}-\\d{2}-\\d{2}'\$/publishedAt: '${NOW_KST_ISO}'/" "src/content/posts/${SLUG}.md"
+
   echo "[publish] ${SLUG}: build index"
   npm run build:index
 
