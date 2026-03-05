@@ -7,8 +7,7 @@ on:
     paths:
       - ".github/workflows/daily-generate.yml"
   schedule:
-    - cron: "0 21 * * *" # 06:00 Asia/Seoul
-    - cron: "0 3 * * *"  # 12:00 Asia/Seoul
+    - cron: "0 20 * * *" # 05:00 Asia/Seoul
   workflow_dispatch:
 
 concurrency:
@@ -48,6 +47,11 @@ jobs:
         if: steps.toggle.outputs.enabled == 'true'
         env:
           MIN_COMMERCIAL_SCORE: 2
+          FALLBACK_MIN_KEYWORDS: 12
+          MAX_SELECTED_KEYWORDS: 16
+          DOMAIN_TOPIC_MODE: on
+          TREND_TOPIC_MODE: on
+          RECENT_DUP_DAYS: 7
         run: npm run gen:keywords
 
       - name: Generate articles
@@ -59,7 +63,7 @@ jobs:
           GEMINI_MODEL: gemini-2.5-flash
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: gpt-4.1
-          ARTICLE_COUNT: 1
+          ARTICLE_COUNT: 12
           ARTICLE_PARALLELISM: 2
           ARTICLE_MAX_ATTEMPTS: 2
           RETRY_BACKOFF_MS: 1200
@@ -67,19 +71,22 @@ jobs:
           MIN_WORD_COUNT: 900
           GEMINI_TIMEOUT_MS: 60000
           OPENAI_TIMEOUT_MS: 35000
-          KEYWORD_POOL_MULTIPLIER: 4
+          KEYWORD_POOL_MULTIPLIER: 6
+          RECENT_DUP_DAYS: 7
         run: npm run gen:articles
 
       - name: Quality gate
         if: steps.toggle.outputs.enabled == 'true'
         env:
           MIN_WORD_COUNT: 900
-          MIN_KEPT_COUNT: 1
+          MIN_KEPT_COUNT: 10
         run: npm run quality
 
       - name: Generate post images
         if: steps.toggle.outputs.enabled == 'true'
         env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_PROMPT_MODEL: gemini-2.5-flash
           IMAGE_PROVIDER: flux-local
           FLUX_LOCAL_API_URL: ${{ vars.FLUX_LOCAL_API_URL }}
           FLUX_LOCAL_API_KEY: ${{ secrets.FLUX_LOCAL_API_KEY }}

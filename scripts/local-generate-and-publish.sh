@@ -40,13 +40,18 @@ fi
 
 export ARTICLE_PROVIDER="${ARTICLE_PROVIDER:-gemini}"
 export ALLOW_FALLBACK="false"
-export ARTICLE_COUNT="${ARTICLE_COUNT:-1}"
+export ARTICLE_COUNT="${ARTICLE_COUNT:-12}"
 export ARTICLE_PARALLELISM="${ARTICLE_PARALLELISM:-2}"
 export ARTICLE_MAX_ATTEMPTS="${ARTICLE_MAX_ATTEMPTS:-2}"
 export GEMINI_TIMEOUT_MS="${GEMINI_TIMEOUT_MS:-60000}"
 export TITLE_SIMILARITY_THRESHOLD="${TITLE_SIMILARITY_THRESHOLD:-0.7}"
 export MIN_WORD_COUNT="${MIN_WORD_COUNT:-900}"
-export KEYWORD_POOL_MULTIPLIER="${KEYWORD_POOL_MULTIPLIER:-4}"
+export KEYWORD_POOL_MULTIPLIER="${KEYWORD_POOL_MULTIPLIER:-6}"
+export FALLBACK_MIN_KEYWORDS="${FALLBACK_MIN_KEYWORDS:-12}"
+export MAX_SELECTED_KEYWORDS="${MAX_SELECTED_KEYWORDS:-16}"
+export DOMAIN_TOPIC_MODE="${DOMAIN_TOPIC_MODE:-on}"
+export TREND_TOPIC_MODE="${TREND_TOPIC_MODE:-on}"
+export RECENT_DUP_DAYS="${RECENT_DUP_DAYS:-7}"
 
 export IMAGE_PROVIDER="flux-local"
 export RAW_PROMPT_ONLY="true"
@@ -62,34 +67,86 @@ export IMAGE_TIMEOUT_MS="${IMAGE_TIMEOUT_MS:-30000}"
 RUN_TS="$(date '+%Y-%m-%d %H:%M:%S')"
 echo "[$RUN_TS] local pipeline start"
 
-echo "[1/7] generate keywords"
+echo "[1/4] generate keywords"
 npm run gen:keywords
 
-echo "[2/7] generate articles"
+echo "[2/4] generate articles"
 npm run gen:articles
 
-echo "[3/7] quality gate"
-MIN_KEPT_COUNT="${MIN_KEPT_COUNT:-1}" npm run quality
+echo "[3/4] quality gate"
+MIN_KEPT_COUNT="${MIN_KEPT_COUNT:-10}" npm run quality
 
-echo "[4/7] generate post images (1024x768)"
-npm run gen:post-images
-
-echo "[5/7] validate images"
-MIN_IMAGES_PER_POST="${IMAGES_PER_POST}" MAX_IMAGES_PER_POST="${IMAGES_PER_POST}" npm run check:images
-
-echo "[6/7] build index"
-npm run build:index
-
-echo "[7/7] commit and push"
-if [[ -z "$(git status --porcelain src/content/posts src/content/keywords/today.json src/content/posts-index.json public/assets/posts logs)" ]]; then
-  echo "No content changes to commit"
-  exit 0
-fi
+echo "[4/4] per-article publish (images -> validate -> index -> commit/push)"
 
 git config user.name "content-bot"
 git config user.email "content-bot@users.noreply.github.com"
-git add src/content/posts src/content/keywords/today.json src/content/posts-index.json public/assets/posts logs
-git commit -m "chore(content): local generate and publish $(date '+%Y-%m-%d %H:%M')"
-git push origin main
 
-echo "Done"
+PUBLISH_SLUGS=()
+while IFS= read -r __slug; do
+  [[ -n "${__slug}" ]] || continue
+  PUBLISH_SLUGS+=("${__slug}")
+done < <(node - <<'NODE'
+const fs = require('fs');
+const path = require('path');
+const runPath = path.join(process.cwd(), 'logs/run-generated-posts.json');
+if (!fs.existsSync(runPath)) process.exit(0);
+const parsed = JSON.parse(fs.readFileSync(runPath, 'utf8'));
+const files = Array.isArray(parsed.files) ? parsed.files : [];
+const seen = new Set();
+
+for (const file of files) {
+  const full = path.isAbsolute(file) ? file : path.resolve(process.cwd(), file);
+  if (!fs.existsSync(full)) continue;
+  const raw = fs.readFileSync(full, 'utf8');
+  const m = raw.match(/^slug:\s*(.+)$/m);
+  if (!m) continue;
+  const slug = String(m[1]).trim().replace(/^['"]+|['"]+$/g, '');
+  if (!slug || seen.has(slug)) continue;
+  seen.add(slug);
+  process.stdout.write(`${slug}\n`);
+}
+NODE
+)
+
+if [[ "${#PUBLISH_SLUGS[@]}" -eq 0 ]]; then
+  echo "No publish targets after quality gate"
+  exit 1
+fi
+
+SUCCESS=0
+FAIL=0
+
+for SLUG in "${PUBLISH_SLUGS[@]}"; do
+  echo "[publish] ${SLUG}: generate images"
+  if ! TARGET_POST_SLUGS="${SLUG}" npm run gen:post-images; then
+    echo "[publish] ${SLUG}: image generation failed, skip"
+    FAIL=$((FAIL + 1))
+    continue
+  fi
+
+  echo "[publish] ${SLUG}: validate images"
+  if ! TARGET_POST_SLUGS="${SLUG}" MIN_IMAGES_PER_POST="${IMAGES_PER_POST}" MAX_IMAGES_PER_POST="${IMAGES_PER_POST}" npm run check:images; then
+    echo "[publish] ${SLUG}: image validation failed, skip"
+    FAIL=$((FAIL + 1))
+    continue
+  fi
+
+  echo "[publish] ${SLUG}: build index"
+  npm run build:index
+
+  git add "src/content/posts/${SLUG}.md" "public/assets/posts/${SLUG}-1.png" "public/assets/posts/${SLUG}-2.png" src/content/posts-index.json src/content/keywords/today.json
+  if git diff --cached --quiet; then
+    echo "[publish] ${SLUG}: no changes to commit"
+    continue
+  fi
+
+  git commit -m "chore(content): publish ${SLUG} $(date '+%Y-%m-%d %H:%M')"
+  git push origin main
+  SUCCESS=$((SUCCESS + 1))
+  echo "[publish] ${SLUG}: done"
+done
+
+echo "Done (published=${SUCCESS}, failed=${FAIL}, total=${#PUBLISH_SLUGS[@]})"
+if [[ "${FAIL}" -gt 0 ]]; then
+  exit 1
+fi
