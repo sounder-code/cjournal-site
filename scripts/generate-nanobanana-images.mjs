@@ -182,10 +182,16 @@ function normalizeOpenAiSize(inputSize) {
   return "1024x1024";
 }
 
-function parseSize(inputSize) {
-  const normalized = normalizeOpenAiSize(inputSize);
-  const [w, h] = normalized.split("x").map((v) => Number(v));
-  return { width: w || 1024, height: h || 1024 };
+function parseRawSize(inputSize) {
+  const value = String(inputSize || "").trim();
+  const match = value.match(/^(\d+)\s*x\s*(\d+)$/i);
+  if (!match) return { width: 1024, height: 768 };
+  const width = Number(match[1]);
+  const height = Number(match[2]);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return { width: 1024, height: 768 };
+  }
+  return { width, height };
 }
 
 async function generateOneViaCustomApi(item) {
@@ -223,7 +229,7 @@ async function generateOneViaFluxLocal(item) {
   }
 
   const apiUrl = FLUX_LOCAL_API_URL.replace(/\/$/, "");
-  const { width, height } = parseSize(item.size);
+  const { width, height } = parseRawSize(item.size);
   const promptBase = normalizePrompt(item);
 
   // Stable Diffusion WebUI compatible endpoint.

@@ -158,7 +158,7 @@ async function main() {
       prompts.push({
         id: `${slug}-${i}`,
         prompt,
-        size: '1536x1024'
+        size: '1024x768'
       });
     }
   }

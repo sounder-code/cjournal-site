@@ -38,7 +38,7 @@ jobs:
         env:
           GENERATION_ENABLED: ${{ secrets.GENERATION_ENABLED }}
         run: |
-          if [ "${GENERATION_ENABLED:-true}" != "true" ]; then
+          if [ "${GENERATION_ENABLED:-false}" != "true" ]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
           else
             echo "enabled=true" >> "$GITHUB_OUTPUT"
