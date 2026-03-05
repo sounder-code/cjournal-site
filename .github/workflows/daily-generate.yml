@@ -54,11 +54,12 @@ jobs:
         if: steps.toggle.outputs.enabled == 'true'
         env:
           ARTICLE_PROVIDER: gemini
+          ALLOW_FALLBACK: false
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: gemini-2.5-flash
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: gpt-4.1
-          ARTICLE_COUNT: 10
+          ARTICLE_COUNT: 1
           ARTICLE_PARALLELISM: 2
           ARTICLE_MAX_ATTEMPTS: 1
           RETRY_BACKOFF_MS: 1200
@@ -73,7 +74,7 @@ jobs:
         if: steps.toggle.outputs.enabled == 'true'
         env:
           MIN_WORD_COUNT: 900
-          MIN_KEPT_COUNT: 5
+          MIN_KEPT_COUNT: 1
         run: npm run quality
 
       - name: Generate post images

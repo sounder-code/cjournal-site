@@ -42,12 +42,14 @@ function countFaqItems(content: string) {
 
 const MIN_WORD_COUNT = Number(process.env.MIN_WORD_COUNT ?? '900');
 const ARTICLE_PARALLELISM = Math.max(1, Number(process.env.ARTICLE_PARALLELISM ?? '3'));
-const MAX_ATTEMPTS_PER_KEYWORD = Math.max(1, Number(process.env.ARTICLE_MAX_ATTEMPTS ?? '2'));
+const MAX_ATTEMPTS_PER_KEYWORD = Math.max(1, Number(process.env.ARTICLE_MAX_ATTEMPTS ?? '1'));
 const TITLE_SIMILARITY_THRESHOLD = Number(process.env.TITLE_SIMILARITY_THRESHOLD ?? '0.7');
-const GEMINI_TIMEOUT_MS = Math.max(5000, Number(process.env.GEMINI_TIMEOUT_MS ?? '25000'));
+const GEMINI_TIMEOUT_MS = Math.max(5000, Number(process.env.GEMINI_TIMEOUT_MS ?? '15000'));
 const OPENAI_TIMEOUT_MS = Math.max(5000, Number(process.env.OPENAI_TIMEOUT_MS ?? '25000'));
 const RETRY_BACKOFF_MS = Math.max(0, Number(process.env.RETRY_BACKOFF_MS ?? '1200'));
 const RECENT_DUP_DAYS = Math.max(1, Number(process.env.RECENT_DUP_DAYS ?? '3'));
+const KEYWORD_POOL_MULTIPLIER = Math.max(2, Number(process.env.KEYWORD_POOL_MULTIPLIER ?? '4'));
+const ALLOW_FALLBACK = String(process.env.ALLOW_FALLBACK ?? 'false').trim().toLowerCase() === 'true';
 
 function topicStem(value: string) {
   return value
@@ -114,8 +116,7 @@ function selectProviderOrder(): Provider[] {
   if (hasGemini && hasOpenAI) return ['gemini', 'openai'];
   if (hasGemini) return ['gemini'];
   if (hasOpenAI) return ['openai'];
-  // Allow local fallback article creation when no model API key is configured.
-  return [];
+  throw new Error('No article model API key configured');
 }
 
 async function sleep(ms: number) {
@@ -337,7 +338,13 @@ async function main() {
       ...recentExisting.map((row) => topicStem(String(row.data.slug ?? '').replace(/-/g, ' ')))
     ].filter(Boolean)
   );
-  const keywordQueue = [...rawKeywords.keywords];
+  const keywordQueue = rawKeywords.keywords
+    .filter((keyword) => {
+      const stem = topicStem(keyword);
+      if (!stem) return true;
+      return !selectedTopicStems.has(stem);
+    })
+    .slice(0, Math.max(count * KEYWORD_POOL_MULTIPLIER, count));
 
   async function processKeyword(keyword: string) {
     if (isUnsafeTopic(keyword)) return { keyword, ok: false as const, reason: 'unsafe keyword' };
@@ -477,6 +484,10 @@ async function main() {
   await fs.writeFile(logPath, logLines.join('\n'), 'utf8');
   await writeRunGeneratedPosts(created);
   console.log(`created articles: ${created.length}`);
+
+  if (created.length === 0 && !ALLOW_FALLBACK) {
+    throw new Error('No verified model-generated articles were created; fallback publishing is disabled');
+  }
 
   if (created.length === 0) {
     const fallbackKeywords = rawKeywords.keywords
