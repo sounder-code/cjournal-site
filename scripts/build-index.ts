@@ -11,8 +11,18 @@ type PostItem = {
   category: string;
   publishedAt: string;
   updatedAt: string;
+  mtimeMs: number;
   readingTimeMinutes: number;
 };
+
+function score(item: PostItem) {
+  const updated = Date.parse(item.updatedAt ?? '');
+  const published = Date.parse(item.publishedAt ?? '');
+  const u = Number.isNaN(updated) ? 0 : updated;
+  const p = Number.isNaN(published) ? 0 : published;
+  const m = Number.isFinite(item.mtimeMs) ? item.mtimeMs : 0;
+  return Math.max(u, p, m);
+}
 
 function related(current: PostItem, all: PostItem[]) {
   return all
@@ -22,7 +32,7 @@ function related(current: PostItem, all: PostItem[]) {
       overlap: item.tags.filter((tag) => current.tags.includes(tag)).length
     }))
     .filter((row) => row.overlap > 0)
-    .sort((a, b) => b.overlap - a.overlap || b.item.publishedAt.localeCompare(a.item.publishedAt))
+    .sort((a, b) => b.overlap - a.overlap || score(b.item) - score(a.item))
     .slice(0, 3)
     .map((row) => row.item);
 }
@@ -32,20 +42,26 @@ async function main() {
   await ensureDir(POSTS_DIR);
 
   const rows = await loadPostsFrontmatter();
-  const posts: PostItem[] = rows
-    .map(({ data }) => ({
-      slug: String(data.slug ?? ''),
-      title: String(data.title ?? ''),
-      description: String(data.description ?? ''),
-      tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
-      category: String(data.category ?? ''),
-      publishedAt: String(data.publishedAt ?? ''),
-      updatedAt: String(data.updatedAt ?? ''),
-      readingTimeMinutes: Number(data.readingTimeMinutes ?? 1)
-    }))
-    .filter((post) => post.slug && post.title);
+  const posts: PostItem[] = (
+    await Promise.all(
+      rows.map(async ({ file, data }) => {
+        const stat = await fs.stat(file);
+        return {
+          slug: String(data.slug ?? ''),
+          title: String(data.title ?? ''),
+          description: String(data.description ?? ''),
+          tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
+          category: String(data.category ?? ''),
+          publishedAt: String(data.publishedAt ?? ''),
+          updatedAt: String(data.updatedAt ?? ''),
+          mtimeMs: stat.mtimeMs,
+          readingTimeMinutes: Number(data.readingTimeMinutes ?? 1)
+        };
+      })
+    )
+  ).filter((post) => post.slug && post.title);
 
-  const latest = [...posts].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)).slice(0, 50);
+  const latest = [...posts].sort((a, b) => score(b) - score(a)).slice(0, 50);
   const tagCounts: Record<string, number> = {};
   for (const post of posts) {
     for (const tag of post.tags) {

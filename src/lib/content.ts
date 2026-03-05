@@ -3,9 +3,14 @@ import { toDate } from './date';
 
 export async function getAllPosts() {
   const posts = await getCollection('posts');
-  return posts.sort((a, b) =>
-    toDate(b.data.publishedAt).getTime() - toDate(a.data.publishedAt).getTime()
-  );
+  return posts.sort((a, b) => {
+    const aRecent = Math.max(toDate(a.data.updatedAt).getTime(), toDate(a.data.publishedAt).getTime());
+    const bRecent = Math.max(toDate(b.data.updatedAt).getTime(), toDate(b.data.publishedAt).getTime());
+    if (bRecent !== aRecent) return bRecent - aRecent;
+    const byPublished = toDate(b.data.publishedAt).getTime() - toDate(a.data.publishedAt).getTime();
+    if (byPublished !== 0) return byPublished;
+    return b.slug.localeCompare(a.slug);
+  });
 }
 
 export async function getLatestPosts(limit = 12) {

@@ -3,7 +3,16 @@ export type PostIndexItem = {
   title: string;
   tags: string[];
   publishedAt: string;
+  updatedAt?: string;
 };
+
+function score(item: PostIndexItem) {
+  const updated = Date.parse(item.updatedAt ?? '');
+  const published = Date.parse(item.publishedAt ?? '');
+  const u = Number.isNaN(updated) ? 0 : updated;
+  const p = Number.isNaN(published) ? 0 : published;
+  return Math.max(u, p);
+}
 
 export function suggestRelatedPosts(current: PostIndexItem, pool: PostIndexItem[], limit = 3) {
   return pool
@@ -13,7 +22,7 @@ export function suggestRelatedPosts(current: PostIndexItem, pool: PostIndexItem[
       return { item, overlap };
     })
     .filter((row) => row.overlap > 0)
-    .sort((a, b) => b.overlap - a.overlap || b.item.publishedAt.localeCompare(a.item.publishedAt))
+    .sort((a, b) => b.overlap - a.overlap || score(b.item) - score(a.item))
     .slice(0, limit)
     .map((row) => row.item);
 }
