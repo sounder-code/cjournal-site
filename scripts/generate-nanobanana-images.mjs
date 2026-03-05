@@ -16,12 +16,13 @@ const FLUX_LOCAL_API_KEY = (process.env.FLUX_LOCAL_API_KEY || "").trim();
 const FLUX_LOCAL_MODEL = (process.env.FLUX_LOCAL_MODEL || "flux.2").trim();
 const FLUX_LOCAL_NEGATIVE_PROMPT = (
   process.env.FLUX_LOCAL_NEGATIVE_PROMPT ||
-  "text, letters, words, logo, watermark, caption, subtitle, infographic, banner, poster, ui, symbols, numbers, typography, label, signage, title, headline, callout, chart, diagram, monitor, tv screen, smartphone screen, laptop screen, billboard, road sign, storefront sign, package label, jersey number, keyboard legends, document, newspaper, magazine"
+  "garbled text, distorted letters, unreadable typography, broken characters, malformed words, artifact text, glitch text, corrupted watermark"
 ).trim();
 const FLUX_LOCAL_STEPS = Math.max(8, Number(process.env.FLUX_LOCAL_STEPS || "8"));
 const FLUX_LOCAL_CFG = Math.max(1, Number(process.env.FLUX_LOCAL_CFG || "2.2"));
-const FLUX_LOCAL_TEXT_FREE_RETRIES = Math.max(1, Number(process.env.FLUX_LOCAL_TEXT_FREE_RETRIES || "8"));
-const TEXT_DETECT_ENABLED = String(process.env.TEXT_DETECT_ENABLED || "true").trim().toLowerCase() !== "false";
+const FLUX_LOCAL_TEXT_FREE_RETRIES = Math.max(1, Number(process.env.FLUX_LOCAL_TEXT_FREE_RETRIES || "1"));
+const TEXT_DETECT_ENABLED = String(process.env.TEXT_DETECT_ENABLED || "false").trim().toLowerCase() !== "false";
+const RAW_PROMPT_ONLY = String(process.env.RAW_PROMPT_ONLY || "false").trim().toLowerCase() === "true";
 const IMAGE_PROVIDER = (process.env.IMAGE_PROVIDER || "flux-local").trim().toLowerCase();
 const IMAGE_PARALLELISM = Math.max(1, Number(process.env.IMAGE_PARALLELISM || "3"));
 const IMAGE_TIMEOUT_MS = Math.max(5000, Number(process.env.IMAGE_TIMEOUT_MS || "30000"));
@@ -99,13 +100,14 @@ function pickGeminiInlineImage(payload) {
 
 function normalizePrompt(item) {
   const prompt = String(item.prompt || "").trim();
+  if (RAW_PROMPT_ONLY) return prompt;
   const size = String(item.size || "").trim();
-  const textSafeComposition =
-    "Text-safe composition: avoid monitors/phones/TV/laptops, posters, signage, books/newspapers/documents, packaging, jerseys with numbers, storefronts, dashboards, and any object likely to contain writing. Prefer nature, food, product close-up, or plain interior surfaces without printed marks.";
+  const textQualityRule =
+    "Text quality rule: if any text appears in the scene, it must be short, clean, and legible English text only (no gibberish, no malformed characters).";
   const hardRule =
-    "Hard output constraints: image only; absolutely no visible text/letters/numbers/symbols in any language; no logos; no watermarks; no captions; no poster/title-card/banner/infographic layout; no signage; no labels; no UI screens; no document/paper text.";
-  if (!size) return `${prompt}\n\n${textSafeComposition}\n${hardRule}`;
-  return `${prompt}\n\nTarget image size: ${size}.\n${textSafeComposition}\n${hardRule}`;
+    "Hard output constraints: image only; realistic composition; no corrupted typography, no broken characters, no artifact overlays, no malformed logos/watermarks.";
+  if (!size) return `${prompt}\n\n${textQualityRule}\n${hardRule}`;
+  return `${prompt}\n\nTarget image size: ${size}.\n${textQualityRule}\n${hardRule}`;
 }
 
 function runProcess(cmd, args, timeoutMs) {
@@ -227,7 +229,9 @@ async function generateOneViaFluxLocal(item) {
   // Stable Diffusion WebUI compatible endpoint.
   if (apiUrl.includes("/sdapi/v1/txt2img")) {
     for (let attempt = 1; attempt <= FLUX_LOCAL_TEXT_FREE_RETRIES; attempt += 1) {
-      const prompt = `${promptBase}\n\nABSOLUTE RULE: Produce a clean photo scene with zero typography.`;
+      const prompt = RAW_PROMPT_ONLY
+        ? promptBase
+        : `${promptBase}\n\nABSOLUTE RULE: if text appears, it must be clean and readable; no broken/garbled characters.`;
       const body = {
         prompt,
         negative_prompt: FLUX_LOCAL_NEGATIVE_PROMPT,
@@ -261,9 +265,9 @@ async function generateOneViaFluxLocal(item) {
       const buffer = toBufferFromBase64(b64);
 
       if (!(await hasLikelyVisibleText(buffer))) return buffer;
-      console.warn(`retry text-free image: ${item.id} (attempt ${attempt}/${FLUX_LOCAL_TEXT_FREE_RETRIES})`);
+      console.warn(`retry image due to text OCR policy: ${item.id} (attempt ${attempt}/${FLUX_LOCAL_TEXT_FREE_RETRIES})`);
     }
-    throw new Error(`FLUX local (sdapi) OCR text detected after ${FLUX_LOCAL_TEXT_FREE_RETRIES} attempts`);
+    throw new Error(`FLUX local (sdapi) OCR policy failed after ${FLUX_LOCAL_TEXT_FREE_RETRIES} attempts`);
   }
 
   // Gradio queue endpoint from local flux_ui.py
@@ -276,7 +280,9 @@ async function generateOneViaFluxLocal(item) {
       const gWidth = Math.min(width, 1024);
       const gHeight = Math.min(height, 1024);
       const seed = Math.floor(Math.random() * 1_000_000_000);
-      const prompt = `${promptBase}\n\nABSOLUTE RULE: produce a realistic photo only, with zero text/letters/numbers anywhere.`;
+      const prompt = RAW_PROMPT_ONLY
+        ? promptBase
+        : `${promptBase}\n\nABSOLUTE RULE: produce a realistic photo; any visible text must be clear and readable (not garbled).`;
       const body = {
         data: [
           prompt,
@@ -334,7 +340,7 @@ async function generateOneViaFluxLocal(item) {
               const filePath = entry.path;
               const buf = await fs.readFile(filePath);
               if (!(await hasLikelyVisibleText(buf))) return buf;
-              console.warn(`retry text-free image: ${item.id} (attempt ${attempt}/${FLUX_LOCAL_TEXT_FREE_RETRIES})`);
+              console.warn(`retry image due to text OCR policy: ${item.id} (attempt ${attempt}/${FLUX_LOCAL_TEXT_FREE_RETRIES})`);
               i = -1; // break outer loop and retry
               break;
             }
@@ -344,11 +350,13 @@ async function generateOneViaFluxLocal(item) {
         }
       }
     }
-    throw new Error(`FLUX local (gradio) OCR text detected or no image after ${FLUX_LOCAL_TEXT_FREE_RETRIES} attempts`);
+    throw new Error(`FLUX local (gradio) OCR policy failed or no image after ${FLUX_LOCAL_TEXT_FREE_RETRIES} attempts`);
   }
 
   // OpenAI-compatible local endpoint.
-  const prompt = `${promptBase}\n\nABSOLUTE RULE: Produce a clean photo scene with zero typography.`;
+  const prompt = RAW_PROMPT_ONLY
+    ? promptBase
+    : `${promptBase}\n\nABSOLUTE RULE: Produce a clean photo scene; if text appears, keep it readable and artifact-free.`;
   const headers = { "Content-Type": "application/json" };
   if (FLUX_LOCAL_API_KEY) headers.Authorization = `Bearer ${FLUX_LOCAL_API_KEY}`;
   const controller = new AbortController();
