@@ -14,6 +14,7 @@
     "gen:keywords": "tsx scripts/generate-keywords.ts",
     "gen:articles": "tsx scripts/generate-article.ts",
     "gen:post-images": "tsx scripts/generate-post-images.ts",
+    "wash:posts": "tsx scripts/wash-posts.ts",
     "check:images": "tsx scripts/check-post-images.ts",
     "quality": "tsx scripts/quality-gate.ts",
     "build:index": "tsx scripts/build-index.ts"
