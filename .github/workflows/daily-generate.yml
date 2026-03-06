@@ -82,6 +82,44 @@ jobs:
           MIN_KEPT_COUNT: 10
         run: npm run quality
 
+      - name: Collect generated slugs
+        if: steps.toggle.outputs.enabled == 'true'
+        id: slugs
+        run: |
+          VALUE="$(node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const runPath = path.join(process.cwd(), 'logs/run-generated-posts.json');
+          if (!fs.existsSync(runPath)) {
+            process.stdout.write('');
+            process.exit(0);
+          }
+          const parsed = JSON.parse(fs.readFileSync(runPath, 'utf8'));
+          const files = Array.isArray(parsed.files) ? parsed.files : [];
+          const slugs = [];
+          const seen = new Set();
+          for (const file of files) {
+            const full = path.isAbsolute(file) ? file : path.resolve(process.cwd(), file);
+            if (!fs.existsSync(full)) continue;
+            const raw = fs.readFileSync(full, 'utf8');
+            const m = raw.match(/^slug:\s*(.+)$/m);
+            if (!m) continue;
+            const slug = String(m[1]).trim().replace(/^['"]+|['"]+$/g, '');
+            if (!slug || seen.has(slug)) continue;
+            seen.add(slug);
+            slugs.push(slug);
+          }
+          process.stdout.write(slugs.join(','));
+          NODE
+          )"
+          echo "value=${VALUE}" >> "$GITHUB_OUTPUT"
+
+      - name: Wash generated posts
+        if: steps.toggle.outputs.enabled == 'true'
+        env:
+          TARGET_POST_SLUGS: ${{ steps.slugs.outputs.value }}
+        run: npm run wash:posts
+
       - name: Generate post images
         if: steps.toggle.outputs.enabled == 'true'
         env:

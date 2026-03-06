@@ -3,6 +3,12 @@ import path from 'node:path';
 import matter from 'gray-matter';
 
 const POSTS_DIR = path.join(process.cwd(), 'src/content/posts');
+const TARGET_POST_SLUGS = new Set(
+  String(process.env.TARGET_POST_SLUGS ?? '')
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean)
+);
 
 const BROKEN_REPLACEMENTS: Array<[RegExp, string]> = [
   [/[정주장단]유의미한 개선인/g, '정기적인'],
@@ -76,6 +82,11 @@ function main() {
   const files = fs
     .readdirSync(POSTS_DIR)
     .filter((name) => name.endsWith('.md') && name !== '.gitkeep')
+    .filter((name) => {
+      if (TARGET_POST_SLUGS.size === 0) return true;
+      const slug = name.replace(/\.md$/, '');
+      return TARGET_POST_SLUGS.has(slug);
+    })
     .sort((a, b) => a.localeCompare(b, 'ko'));
 
   let changed = 0;

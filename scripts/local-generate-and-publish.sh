@@ -137,6 +137,9 @@ for SLUG in "${PUBLISH_SLUGS[@]}"; do
   perl -i -pe "s/^updatedAt:\\s*.*\$/updatedAt: '${NOW_KST_ISO}'/" "src/content/posts/${SLUG}.md"
   perl -i -pe "s/^publishedAt:\\s*'\\d{4}-\\d{2}-\\d{2}'\$/publishedAt: '${NOW_KST_ISO}'/" "src/content/posts/${SLUG}.md"
 
+  echo "[publish] ${SLUG}: wash content"
+  TARGET_POST_SLUGS="${SLUG}" npm run wash:posts
+
   echo "[publish] ${SLUG}: build index"
   npm run build:index
 
