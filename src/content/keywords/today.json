@@ -1,39 +1,40 @@
 {
-  "generatedAt": "2026-03-06",
+  "generatedAt": "2026-03-09",
   "source": "search-rank-live-only",
   "sourceProvider": "google",
-  "rankKeywordCount": 65,
-  "liveRankKeywordCount": 65,
+  "rankKeywordCount": 59,
+  "liveRankKeywordCount": 59,
   "cachedRankKeywordCount": 0,
   "previousOutputKeywordCount": 0,
   "seedKeywordCount": 0,
-  "safeRankKeywordCount": 0,
-  "relaxedRankKeywordCount": 0,
+  "safeRankKeywordCount": 1,
+  "relaxedRankKeywordCount": 1,
   "domainKeywordCount": 142,
-  "trendKeywordCount": 0,
-  "mergedBaseKeywordCount": 142,
-  "usingRelaxedKeywords": true,
+  "trendKeywordCount": 1,
+  "mergedBaseKeywordCount": 143,
+  "usingRelaxedKeywords": false,
   "usingSeedFallback": false,
   "tokenDerivedRankKeywordCount": 0,
-  "fallbackBaseKeywordCount": 142,
+  "fallbackBaseKeywordCount": 143,
   "recentDupDays": 7,
-  "recentTopicStemCount": 30,
+  "recentTopicStemCount": 31,
   "minCommercialScore": 2,
-  "averageCommercialScore": 5,
-  "highIntentSelectedCount": 7,
+  "averageCommercialScore": 4.56,
+  "highIntentSelectedCount": 9,
   "intentSuffixCap": 3,
   "priceLikeSuffixCap": 1,
   "intentSuffixDistribution": {
     "가입 방법": 3,
     "가격": 1,
-    "비교": 2,
-    "추천": 1
+    "비교": 3,
+    "추천": 2
   },
-  "count": 7,
+  "count": 9,
   "categories": {
     "코인/투자기초": 2,
     "디지털": 2,
-    "생활관리": 3
+    "생활관리": 3,
+    "생산성": 2
   },
   "keywords": [
     "가상자산 수수료 비교 가입 방법",
@@ -42,6 +43,8 @@
     "가계부 자동화 비교",
     "가계부 자동화 추천",
     "비밀번호 관리 비교",
+    "목표가 700 비교",
+    "목표가 700 추천",
     "구독비 절감 가입 방법 가입 방법"
   ]
 }
