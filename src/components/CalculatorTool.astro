@@ -22,17 +22,25 @@ const { calculator, compact = false } = Astro.props;
         <label>
           <span>{input.label}</span>
           <div class="input-wrap">
-            <input
-              data-calc-input
-              data-default={input.value}
-              name={input.key}
-              type="number"
-              value={input.value}
-              min={input.min}
-              max={input.max}
-              step={input.step ?? 1}
-            />
-            <em>{input.suffix}</em>
+            {input.type === 'select' ? (
+              <select data-calc-input data-default={input.value} name={input.key}>
+                {(input.options ?? []).map((option) => (
+                  <option value={option.value} selected={option.value === input.value}>{option.label}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                data-calc-input
+                data-default={input.value}
+                name={input.key}
+                type="number"
+                value={input.value}
+                min={input.min}
+                max={input.max}
+                step={input.step ?? 1}
+              />
+            )}
+            {input.suffix && <em>{input.suffix}</em>}
           </div>
         </label>
       ))}
@@ -119,7 +127,8 @@ const { calculator, compact = false } = Astro.props;
     background: #fbfdfc;
     overflow: hidden;
   }
-  input {
+  input,
+  select {
     width: 100%;
     min-width: 0;
     border: 0;
@@ -128,6 +137,10 @@ const { calculator, compact = false } = Astro.props;
     font: 800 1rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     padding: 13px 12px;
     outline: none;
+  }
+  select {
+    appearance: none;
+    cursor: pointer;
   }
   .input-wrap:focus-within {
     border-color: #1e7a55;

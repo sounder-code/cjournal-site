@@ -14,6 +14,24 @@ const { calculator } = Astro.props;
 const related = calculators
   .filter((item) => item.slug !== calculator.slug && item.group === calculator.group)
   .slice(0, 5);
+const guideByGroup = {
+  seller: [
+    ['1. 비용을 빠짐없이 입력', '판매가만 보지 말고 수수료, 결제비, 배송비, 광고비, 반품 손실까지 함께 넣으세요.'],
+    ['2. 주문 1건과 월 기준을 분리', '주문당 이익이 남아도 월 고정비와 광고비가 커지면 전체 손익은 달라질 수 있습니다.'],
+    ['3. 플랫폼 기준 확인', '카테고리별 수수료, 정산 방식, 배송 정책은 플랫폼마다 다르므로 최종 판매 전 공식 기준을 확인하세요.']
+  ],
+  living: [
+    ['1. 월요금보다 총액 확인', '렌탈료나 통신비는 월 납입액보다 약정 기간 전체 비용으로 비교해야 조건이 보입니다.'],
+    ['2. 할인과 위약금을 같이 계산', '사은품, 설치비, 위약금, 기존 할인 해지 여부를 함께 넣어야 실제 이득을 볼 수 있습니다.'],
+    ['3. 계약 조건 확인', '프로모션과 약정 조건은 바뀔 수 있으니 신청 전 사업자 안내를 다시 확인하세요.']
+  ],
+  utility: [
+    ['1. 월 현금흐름 확인', '대출이나 사업 손익은 총액뿐 아니라 매월 빠져나가는 금액을 먼저 확인해야 합니다.'],
+    ['2. 기간을 길게 볼수록 총비용 확인', '월 납입액이 작아도 기간이 길면 총이자나 기회비용이 크게 늘어날 수 있습니다.'],
+    ['3. 실제 조건으로 재계산', '금리, 상환방식, 세금, 보험료 같은 조건이 달라지면 결과도 달라집니다.']
+  ]
+};
+const guideItems = guideByGroup[calculator.group];
 ---
 <BaseLayout
   title={`${calculator.title} | 마진계산소`}
@@ -39,18 +57,12 @@ const related = calculators
   <section class="guide">
     <h2>이 계산기를 쓰는 기준</h2>
     <div class="guide-grid">
-      <article>
-        <h3>1. 보수적으로 입력</h3>
-        <p>비용은 낮게 보지 말고, 광고비·반품률·수수료처럼 빠지기 쉬운 항목을 넉넉하게 넣으세요.</p>
-      </article>
-      <article>
-        <h3>2. 월 단위로 환산</h3>
-        <p>주문 1건 결과가 괜찮아도 월 주문 수, 고정비, 약정 기간을 합치면 판단이 달라질 수 있습니다.</p>
-      </article>
-      <article>
-        <h3>3. 공식 기준 확인</h3>
-        <p>플랫폼 수수료, 세금, 전기요금, 렌탈 조건은 수시로 바뀔 수 있어 최종 계약 전 공식 기준을 확인해야 합니다.</p>
-      </article>
+      {guideItems.map(([title, body]) => (
+        <article>
+          <h3>{title}</h3>
+          <p>{body}</p>
+        </article>
+      ))}
     </div>
   </section>
 

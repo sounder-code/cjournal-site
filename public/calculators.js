@@ -11,9 +11,15 @@ const clampRate = (value) => Math.max(0, Math.min(95, value));
 function readInputs(root) {
   const values = {};
   root.querySelectorAll('[data-calc-input]').forEach((input) => {
-    values[input.name] = Number(input.value || 0);
+    values[input.name] = input.tagName === 'SELECT' ? input.value : Number(input.value || 0);
   });
   return values;
+}
+
+function repaymentTypeLabel(value) {
+  if (value === 'equal-principal') return '원금균등';
+  if (value === 'bullet') return '만기일시';
+  return '원리금균등';
 }
 
 function sellerMargin(v) {
@@ -212,18 +218,60 @@ function movingCost(v) {
 }
 
 function loanInterest(v) {
-  const monthlyInterest = v.principal * (v.annualRate / 100 / 12);
+  const principal = Math.max(0, v.principal);
+  const months = Math.max(1, Math.round(v.years * 12));
+  const monthlyRate = Math.max(0, v.annualRate) / 100 / 12;
+  let firstPayment = 0;
+  let lastPayment = 0;
+  let totalPayment = 0;
+  let totalInterest = 0;
+
+  if (v.repaymentType === 'bullet') {
+    const monthlyInterest = principal * monthlyRate;
+    firstPayment = monthlyInterest;
+    lastPayment = principal + monthlyInterest;
+    totalInterest = monthlyInterest * months;
+    totalPayment = principal + totalInterest;
+  } else if (v.repaymentType === 'equal-principal') {
+    const monthlyPrincipal = principal / months;
+    firstPayment = monthlyPrincipal + principal * monthlyRate;
+    lastPayment = monthlyPrincipal + monthlyPrincipal * monthlyRate;
+    totalInterest = 0;
+    for (let i = 0; i < months; i += 1) {
+      const remaining = principal - monthlyPrincipal * i;
+      totalInterest += remaining * monthlyRate;
+    }
+    totalPayment = principal + totalInterest;
+  } else {
+    if (monthlyRate === 0) {
+      firstPayment = principal / months;
+    } else {
+      const factor = (monthlyRate * (1 + monthlyRate) ** months) / ((1 + monthlyRate) ** months - 1);
+      firstPayment = principal * factor;
+    }
+    lastPayment = firstPayment;
+    totalPayment = firstPayment * months;
+    totalInterest = totalPayment - principal;
+  }
+
   return {
-    primary: monthlyInterest,
-    primaryLabel: '월 이자 부담',
+    primary: firstPayment,
+    primaryLabel: v.repaymentType === 'bullet' ? '월 이자 납입액' : '예상 월 납입액',
     metrics: [
-      ['연 이자', formatWon(monthlyInterest * 12)],
-      ['기간 총이자', formatWon(monthlyInterest * v.months)],
-      ['월 이율', formatPercent(v.annualRate / 12)],
-      ['원금', formatWon(v.principal)]
+      ['총 이자', formatWon(totalInterest)],
+      ['총 상환액', formatWon(totalPayment)],
+      ['상환 기간', `${months.toLocaleString('ko-KR')}개월`],
+      ['상환 방식', repaymentTypeLabel(v.repaymentType)],
+      ...(v.repaymentType === 'equal-principal' ? [['마지막 월 납입액', formatWon(lastPayment)]] : []),
+      ...(v.repaymentType === 'bullet' ? [['만기월 납입액', formatWon(lastPayment)]] : [])
     ],
-    status: monthlyInterest > 100000 ? '부담 큼' : '확인',
-    note: '원리금균등 상환액이 아니라 단순 월 이자 부담을 빠르게 보는 계산입니다.'
+    status: totalInterest > principal * 0.5 ? '이자 부담 큼' : '계산 완료',
+    note:
+      v.repaymentType === 'equal-payment'
+        ? '원리금균등은 매월 같은 금액을 내는 방식이라 현금흐름을 예측하기 쉽습니다.'
+        : v.repaymentType === 'equal-principal'
+          ? '원금균등은 초반 납입액이 크지만 시간이 갈수록 월 납입액이 줄어듭니다.'
+          : '만기일시는 기간 중 이자만 내고 만기월에 원금을 함께 갚는 방식입니다.'
   };
 }
 

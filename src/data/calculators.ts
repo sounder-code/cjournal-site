@@ -10,8 +10,10 @@ export type Calculator = {
   inputs: Array<{
     key: string;
     label: string;
-    suffix: string;
-    value: number;
+    suffix?: string;
+    value: number | string;
+    type?: 'number' | 'select';
+    options?: Array<{ label: string; value: string }>;
     min?: number;
     max?: number;
     step?: number;
@@ -21,7 +23,7 @@ export type Calculator = {
 export const groupLabels: Record<CalculatorGroup, string> = {
   seller: '판매자 계산기',
   living: '생활비 계산기',
-  utility: '운영 유틸리티'
+  utility: '금융·운영 계산기'
 };
 
 export const calculators: Calculator[] = [
@@ -188,14 +190,25 @@ export const calculators: Calculator[] = [
   {
     slug: 'loan-interest',
     group: 'utility',
-    title: '월 이자 부담 계산기',
-    shortTitle: '월 이자',
-    description: '원금과 연이율로 월 이자와 연간 이자 부담을 빠르게 확인합니다.',
-    intent: '대출/할부 비용 감 잡기',
+    title: '대출 이자 계산기',
+    shortTitle: '대출 이자',
+    description: '대출금액, 기간, 금리, 상환방식으로 월 납입액과 총이자를 계산합니다.',
+    intent: '월 납입액과 총이자 확인',
     inputs: [
-      { key: 'principal', label: '원금', suffix: '원', value: 10000000, min: 0, step: 100000 },
-      { key: 'annualRate', label: '연이율', suffix: '%', value: 5.5, min: 0, max: 30, step: 0.1 },
-      { key: 'months', label: '기간', suffix: '개월', value: 12, min: 1, step: 1 }
+      { key: 'principal', label: '대출금액', suffix: '원', value: 100000000, min: 0, step: 1000000 },
+      { key: 'annualRate', label: '연이자율', suffix: '%', value: 4.5, min: 0, max: 30, step: 0.1 },
+      { key: 'years', label: '대출기간', suffix: '년', value: 30, min: 1, max: 50, step: 1 },
+      {
+        key: 'repaymentType',
+        label: '상환방식',
+        type: 'select',
+        value: 'equal-payment',
+        options: [
+          { label: '원리금균등', value: 'equal-payment' },
+          { label: '원금균등', value: 'equal-principal' },
+          { label: '만기일시', value: 'bullet' }
+        ]
+      }
     ]
   },
   {
