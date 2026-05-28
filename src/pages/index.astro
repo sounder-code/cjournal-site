@@ -25,22 +25,27 @@ const quickLinks = [
 >
   <section class="hero-tool">
     <div class="hero-copy">
-      <h1>팔수록 손해 보는 가격인지 먼저 계산하세요.</h1>
-      <p>
-        판매자 마진, 손익분기 판매가, 광고비 한도, 렌탈 총비용, 인터넷 갈아타기 손익까지
-        숫자만 넣고 바로 확인합니다.
-      </p>
-      <div class="quick-row" aria-label="빠른 계산기 링크">
-        {quickLinks.map(([label, href]) => (
-          <a href={href}>{label}</a>
-        ))}
+      <div>
+        <h1>마진, 이자, 생활비를 바로 계산하세요.</h1>
+        <p>
+          판매자 비용과 월 고정비, 대출 이자처럼 놓치기 쉬운 숫자를 한 화면에서 확인합니다.
+          기본값을 바꿔 실제 조건에 맞게 다시 계산해보세요.
+        </p>
+      </div>
+      <div class="quick-box">
+        <strong>자주 쓰는 계산기</strong>
+        <div class="quick-row" aria-label="빠른 계산기 링크">
+          {quickLinks.map(([label, href]) => (
+            <a href={href}>{label}</a>
+          ))}
+        </div>
       </div>
     </div>
     <CalculatorTool calculator={primary} />
   </section>
 
   <section class="revenue-note">
-    <h2>계산 전에 놓치기 쉬운 비용</h2>
+    <h2>계산 전 체크</h2>
     <p>
       판매가만 보면 남는 것 같아도 수수료, 결제비, 배송비, 광고비, 반품 손실을 넣으면
       실제 마진이 크게 달라집니다. 기본값을 바꿔 내 상품 기준으로 다시 계산해보세요.
@@ -80,59 +85,74 @@ const quickLinks = [
 <style>
   .hero-tool {
     display: grid;
-    gap: 22px;
+    gap: 18px;
   }
   .hero-copy {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(320px, 0.55fr);
-    gap: 24px;
-    align-items: end;
-    padding: 20px 0 4px;
+    gap: 22px;
+    align-items: stretch;
+    padding: 12px 0 2px;
   }
   h1 {
     margin: 0;
-    max-width: 760px;
-    color: #10221c;
-    font: 950 clamp(2.1rem, 5vw, 4.7rem)/1.02 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    max-width: 720px;
+    color: #1c2a23;
+    font: 950 clamp(2rem, 4.2vw, 3.9rem)/1.08 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     letter-spacing: 0;
   }
   .hero-copy p {
     margin: 14px 0 0;
-    max-width: 720px;
-    color: #52645b;
-    font: 700 1.05rem/1.65 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    max-width: 680px;
+    color: #596760;
+    font: 700 1rem/1.7 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .quick-box {
+    border: 1px solid #d8dfdb;
+    border-radius: 8px;
+    background: #fff;
+    padding: 16px;
+    align-self: end;
+    box-shadow: 0 1px 2px rgba(28, 42, 35, 0.04);
+  }
+  .quick-box strong {
+    display: block;
+    margin-bottom: 12px;
+    color: #1c2a23;
+    font: 900 0.95rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .quick-row {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
-    margin-top: 18px;
   }
   .quick-row a {
     display: inline-flex;
     align-items: center;
-    min-height: 40px;
-    border: 1px solid #d9e4df;
+    justify-content: center;
+    min-height: 38px;
+    border: 1px solid #d8dfdb;
     border-radius: 8px;
-    background: #fff;
-    color: #10221c;
+    background: #f8faf9;
+    color: #1c2a23;
     text-decoration: none;
-    font: 900 0.9rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-    padding: 0 12px;
+    font: 900 0.86rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    padding: 0 10px;
+    text-align: center;
   }
   .quick-row a:hover {
-    border-color: #8ab9a2;
-    background: #eef7f2;
+    border-color: #91b8a4;
+    background: #edf8f2;
   }
   .revenue-note,
   .ops-strip {
-    margin-top: 30px;
-    border: 1px solid #d9e4df;
+    margin-top: 28px;
+    border: 1px solid #d8dfdb;
     border-radius: 8px;
-    background: #eef7f2;
-    padding: 18px;
+    background: #fff;
+    padding: 18px 20px;
     display: grid;
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: 180px minmax(0, 1fr);
     gap: 18px;
     align-items: start;
   }
@@ -140,21 +160,21 @@ const quickLinks = [
   .ops-strip h2,
   .tool-section h2 {
     margin: 0;
-    color: #10221c;
-    font: 950 1.35rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    color: #1c2a23;
+    font: 950 1.25rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .revenue-note p,
   .ops-strip p {
     margin: 0;
-    color: #405149;
-    font: 700 0.98rem/1.65 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    color: #4e5d55;
+    font: 700 0.95rem/1.65 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .ops-strip div {
     display: grid;
     gap: 6px;
   }
   .tool-section {
-    margin-top: 44px;
+    margin-top: 40px;
   }
   .section-title {
     display: flex;
@@ -165,44 +185,43 @@ const quickLinks = [
   }
   .section-title p {
     margin: 0;
-    color: #69766f;
+    color: #74817b;
     font: 800 0.88rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .tool-list {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
+    gap: 10px;
   }
   .tool-card {
-    min-height: 170px;
+    min-height: 148px;
     display: flex;
     flex-direction: column;
-    border: 1px solid #d9e4df;
+    border: 1px solid #d8dfdb;
     border-radius: 8px;
     background: #fff;
-    padding: 16px;
+    padding: 15px;
     text-decoration: none;
     color: inherit;
-    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
   }
   .tool-card:hover {
-    transform: translateY(-2px);
-    border-color: #8ab9a2;
-    box-shadow: 0 12px 28px rgba(16, 34, 28, 0.08);
+    border-color: #91b8a4;
+    box-shadow: 0 8px 22px rgba(28, 42, 35, 0.07);
   }
   .tool-card span {
-    color: #1e7a55;
+    color: #16824f;
     font: 900 0.78rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .tool-card h3 {
-    margin: 18px 0 8px;
-    color: #10221c;
-    font: 950 1.2rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    margin: 14px 0 7px;
+    color: #1c2a23;
+    font: 950 1.08rem/1.3 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .tool-card p {
     margin: 0;
-    color: #52645b;
-    font: 700 0.92rem/1.55 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    color: #596760;
+    font: 700 0.9rem/1.55 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   @media (max-width: 920px) {
     .hero-copy,
@@ -215,6 +234,9 @@ const quickLinks = [
     }
   }
   @media (max-width: 620px) {
+    .quick-row {
+      grid-template-columns: 1fr;
+    }
     .tool-list {
       grid-template-columns: 1fr;
     }
