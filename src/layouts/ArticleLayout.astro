@@ -44,7 +44,7 @@ const articleJsonLd = {
     </section>
     <AdSense slot="bottom" />
   </article>
-  <script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
 </BaseLayout>
 
 <style>

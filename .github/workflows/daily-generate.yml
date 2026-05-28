@@ -1,4 +1,4 @@
-name: Daily Content Generate
+name: Legacy Content Generate
 
 on:
   push:
@@ -6,8 +6,6 @@ on:
       - main
     paths:
       - ".github/workflows/daily-generate.yml"
-  schedule:
-    - cron: "0 20 * * *" # 05:00 Asia/Seoul
   workflow_dispatch:
 
 concurrency:

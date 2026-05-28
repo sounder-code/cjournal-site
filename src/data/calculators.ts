@@ -1,0 +1,219 @@
+export type CalculatorGroup = 'seller' | 'living' | 'utility';
+
+export type Calculator = {
+  slug: string;
+  group: CalculatorGroup;
+  title: string;
+  shortTitle: string;
+  description: string;
+  intent: string;
+  inputs: Array<{
+    key: string;
+    label: string;
+    suffix: string;
+    value: number;
+    min?: number;
+    max?: number;
+    step?: number;
+  }>;
+};
+
+export const groupLabels: Record<CalculatorGroup, string> = {
+  seller: '판매자 계산기',
+  living: '생활비 계산기',
+  utility: '운영 유틸리티'
+};
+
+export const calculators: Calculator[] = [
+  {
+    slug: 'seller-margin',
+    group: 'seller',
+    title: '판매자 순이익 마진 계산기',
+    shortTitle: '마진 계산기',
+    description: '판매가, 원가, 수수료, 배송비, 광고비, 반품률을 반영해 실제 남는 돈을 계산합니다.',
+    intent: '팔수록 손해인지 먼저 확인',
+    inputs: [
+      { key: 'price', label: '판매가', suffix: '원', value: 29900, min: 0, step: 100 },
+      { key: 'cost', label: '매입/제조 원가', suffix: '원', value: 12000, min: 0, step: 100 },
+      { key: 'platformFee', label: '플랫폼 수수료', suffix: '%', value: 10.8, min: 0, max: 40, step: 0.1 },
+      { key: 'paymentFee', label: '결제 수수료', suffix: '%', value: 3.3, min: 0, max: 15, step: 0.1 },
+      { key: 'shipping', label: '판매자 부담 배송비', suffix: '원', value: 3000, min: 0, step: 100 },
+      { key: 'adCost', label: '주문당 광고비', suffix: '원', value: 1800, min: 0, step: 100 },
+      { key: 'returnRate', label: '반품/불량률', suffix: '%', value: 3, min: 0, max: 60, step: 0.1 }
+    ]
+  },
+  {
+    slug: 'break-even-price',
+    group: 'seller',
+    title: '손익분기 판매가 계산기',
+    shortTitle: '손익분기 판매가',
+    description: '원가와 비용을 넣으면 최소 판매가와 목표 마진 판매가를 역산합니다.',
+    intent: '최소 얼마에 팔아야 하는지 확인',
+    inputs: [
+      { key: 'cost', label: '원가', suffix: '원', value: 14000, min: 0, step: 100 },
+      { key: 'fixedCost', label: '주문당 고정비', suffix: '원', value: 4200, min: 0, step: 100 },
+      { key: 'feeRate', label: '총 수수료율', suffix: '%', value: 14, min: 0, max: 50, step: 0.1 },
+      { key: 'targetMargin', label: '목표 마진율', suffix: '%', value: 25, min: 0, max: 80, step: 0.1 }
+    ]
+  },
+  {
+    slug: 'ad-roas-limit',
+    group: 'seller',
+    title: '광고비 허용 한도 계산기',
+    shortTitle: '광고비 한도',
+    description: '목표 이익을 지키면서 주문 1건에 얼마까지 광고비를 쓸 수 있는지 계산합니다.',
+    intent: '광고 켜기 전 손실 방지',
+    inputs: [
+      { key: 'price', label: '판매가', suffix: '원', value: 34900, min: 0, step: 100 },
+      { key: 'cost', label: '원가', suffix: '원', value: 16000, min: 0, step: 100 },
+      { key: 'feeRate', label: '수수료율', suffix: '%', value: 13.5, min: 0, max: 50, step: 0.1 },
+      { key: 'shipping', label: '배송/포장비', suffix: '원', value: 3500, min: 0, step: 100 },
+      { key: 'targetProfit', label: '목표 순이익', suffix: '원', value: 5000, min: 0, step: 100 }
+    ]
+  },
+  {
+    slug: 'return-loss',
+    group: 'seller',
+    title: '반품률 반영 순이익 계산기',
+    shortTitle: '반품 손실',
+    description: '반품률과 반품 1건 손실액을 반영해 월 순이익이 얼마나 깎이는지 봅니다.',
+    intent: '반품 많은 상품의 숨은 비용 확인',
+    inputs: [
+      { key: 'orders', label: '월 주문 수', suffix: '건', value: 120, min: 0, step: 1 },
+      { key: 'profitPerOrder', label: '주문당 기본 이익', suffix: '원', value: 7200, min: 0, step: 100 },
+      { key: 'returnRate', label: '반품률', suffix: '%', value: 6, min: 0, max: 80, step: 0.1 },
+      { key: 'lossPerReturn', label: '반품 1건 손실', suffix: '원', value: 9000, min: 0, step: 100 }
+    ]
+  },
+  {
+    slug: 'platform-fee-compare',
+    group: 'seller',
+    title: '플랫폼 수수료 비교 계산기',
+    shortTitle: '수수료 비교',
+    description: '두 판매 채널의 수수료와 고정비를 비교해 더 유리한 채널을 계산합니다.',
+    intent: '쿠팡/스마트스토어/자사몰 비교',
+    inputs: [
+      { key: 'price', label: '판매가', suffix: '원', value: 39900, min: 0, step: 100 },
+      { key: 'orders', label: '월 주문 수', suffix: '건', value: 200, min: 0, step: 1 },
+      { key: 'feeA', label: '채널 A 수수료', suffix: '%', value: 13, min: 0, max: 50, step: 0.1 },
+      { key: 'feeB', label: '채널 B 수수료', suffix: '%', value: 6, min: 0, max: 50, step: 0.1 },
+      { key: 'fixedB', label: '채널 B 월 고정비', suffix: '원', value: 55000, min: 0, step: 1000 }
+    ]
+  },
+  {
+    slug: 'vat-profit',
+    group: 'seller',
+    title: '부가세 제외 실이익 계산기',
+    shortTitle: '부가세 실이익',
+    description: '부가세 포함 판매가에서 공급가와 실제 이익을 분리해 계산합니다.',
+    intent: '입금액과 실제 이익 혼동 방지',
+    inputs: [
+      { key: 'grossPrice', label: '부가세 포함 판매가', suffix: '원', value: 55000, min: 0, step: 100 },
+      { key: 'cost', label: '부가세 제외 원가', suffix: '원', value: 26000, min: 0, step: 100 },
+      { key: 'expense', label: '기타 비용', suffix: '원', value: 8000, min: 0, step: 100 },
+      { key: 'vatRate', label: '부가세율', suffix: '%', value: 10, min: 0, max: 20, step: 0.1 }
+    ]
+  },
+  {
+    slug: 'subscription-cut',
+    group: 'living',
+    title: '월 구독비 절감 계산기',
+    shortTitle: '구독비 절감',
+    description: '쓰지 않는 구독을 줄였을 때 월/연 절감액과 3년 누적액을 계산합니다.',
+    intent: '작은 고정비를 연 단위로 보기',
+    inputs: [
+      { key: 'monthlyTotal', label: '현재 월 구독비', suffix: '원', value: 89000, min: 0, step: 1000 },
+      { key: 'cutRate', label: '줄일 비율', suffix: '%', value: 35, min: 0, max: 100, step: 1 },
+      { key: 'newService', label: '새로 남길 필수 구독', suffix: '원', value: 12000, min: 0, step: 1000 }
+    ]
+  },
+  {
+    slug: 'internet-switch',
+    group: 'living',
+    title: '인터넷 갈아타기 손익 계산기',
+    shortTitle: '인터넷 갈아타기',
+    description: '위약금, 사은품, 월요금 차이를 합쳐 갈아타기가 이득인지 계산합니다.',
+    intent: '상담 전에 손익 먼저 확인',
+    inputs: [
+      { key: 'penalty', label: '예상 위약금', suffix: '원', value: 180000, min: 0, step: 1000 },
+      { key: 'reward', label: '사은품/지원금', suffix: '원', value: 420000, min: 0, step: 1000 },
+      { key: 'oldMonthly', label: '기존 월요금', suffix: '원', value: 42000, min: 0, step: 1000 },
+      { key: 'newMonthly', label: '새 월요금', suffix: '원', value: 36000, min: 0, step: 1000 },
+      { key: 'months', label: '비교 기간', suffix: '개월', value: 36, min: 1, step: 1 }
+    ]
+  },
+  {
+    slug: 'rental-total-cost',
+    group: 'living',
+    title: '렌탈 총비용 계산기',
+    shortTitle: '렌탈 총비용',
+    description: '정수기, 비데, 공기청정기 렌탈의 약정 총액과 사은품 반영 실부담을 계산합니다.',
+    intent: '월요금 말고 총액으로 비교',
+    inputs: [
+      { key: 'monthly', label: '월 렌탈료', suffix: '원', value: 29900, min: 0, step: 1000 },
+      { key: 'months', label: '약정 기간', suffix: '개월', value: 36, min: 1, step: 1 },
+      { key: 'install', label: '설치/등록비', suffix: '원', value: 0, min: 0, step: 1000 },
+      { key: 'reward', label: '사은품/할인', suffix: '원', value: 150000, min: 0, step: 1000 }
+    ]
+  },
+  {
+    slug: 'electricity-cost',
+    group: 'living',
+    title: '전기요금 예상 계산기',
+    shortTitle: '전기요금',
+    description: '소비전력과 사용시간으로 월 전력 사용량과 예상 비용을 계산합니다.',
+    intent: '계절가전 켜기 전 비용 감 잡기',
+    inputs: [
+      { key: 'watt', label: '소비전력', suffix: 'W', value: 900, min: 0, step: 10 },
+      { key: 'hours', label: '하루 사용 시간', suffix: '시간', value: 6, min: 0, max: 24, step: 0.5 },
+      { key: 'days', label: '월 사용일', suffix: '일', value: 30, min: 0, max: 31, step: 1 },
+      { key: 'rate', label: 'kWh당 단가', suffix: '원', value: 180, min: 0, step: 1 }
+    ]
+  },
+  {
+    slug: 'moving-cost',
+    group: 'living',
+    title: '이사비용 예산 계산기',
+    shortTitle: '이사 예산',
+    description: '기본 견적, 옵션, 청소, 중개비, 예비비를 합쳐 이사 총예산을 계산합니다.',
+    intent: '견적 외 비용 누락 방지',
+    inputs: [
+      { key: 'base', label: '이사 기본 견적', suffix: '원', value: 750000, min: 0, step: 10000 },
+      { key: 'options', label: '사다리차/에어컨 등 옵션', suffix: '원', value: 180000, min: 0, step: 10000 },
+      { key: 'cleaning', label: '청소/폐기 비용', suffix: '원', value: 250000, min: 0, step: 10000 },
+      { key: 'brokerage', label: '중개/계약 비용', suffix: '원', value: 400000, min: 0, step: 10000 },
+      { key: 'bufferRate', label: '예비비', suffix: '%', value: 10, min: 0, max: 50, step: 1 }
+    ]
+  },
+  {
+    slug: 'loan-interest',
+    group: 'utility',
+    title: '월 이자 부담 계산기',
+    shortTitle: '월 이자',
+    description: '원금과 연이율로 월 이자와 연간 이자 부담을 빠르게 확인합니다.',
+    intent: '대출/할부 비용 감 잡기',
+    inputs: [
+      { key: 'principal', label: '원금', suffix: '원', value: 10000000, min: 0, step: 100000 },
+      { key: 'annualRate', label: '연이율', suffix: '%', value: 5.5, min: 0, max: 30, step: 0.1 },
+      { key: 'months', label: '기간', suffix: '개월', value: 12, min: 1, step: 1 }
+    ]
+  },
+  {
+    slug: 'hourly-rate',
+    group: 'utility',
+    title: '시간당 실제 수익 계산기',
+    shortTitle: '시간당 수익',
+    description: '월 매출, 비용, 투입 시간을 넣어 내 일이 시간당 얼마를 남기는지 계산합니다.',
+    intent: '바쁜데 돈이 안 남는지 확인',
+    inputs: [
+      { key: 'revenue', label: '월 매출', suffix: '원', value: 3000000, min: 0, step: 10000 },
+      { key: 'expense', label: '월 비용', suffix: '원', value: 1200000, min: 0, step: 10000 },
+      { key: 'hours', label: '월 투입 시간', suffix: '시간', value: 120, min: 1, step: 1 },
+      { key: 'taxRate', label: '세금/보험 여유율', suffix: '%', value: 10, min: 0, max: 60, step: 1 }
+    ]
+  }
+];
+
+export function getCalculator(slug: string) {
+  return calculators.find((calculator) => calculator.slug === slug);
+}

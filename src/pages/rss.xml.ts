@@ -1,21 +1,16 @@
 import rss from '@astrojs/rss';
-import { getCollection } from 'astro:content';
-import { toDate } from '@/lib/date';
+import { calculators, groupLabels } from '@/data/calculators';
 
 export async function GET(context: { site: URL }) {
-  const posts = await getCollection('posts');
-
   return rss({
-    title: '콘텐츠 허브 RSS',
-    description: '최신 정보형 아티클 피드',
+    title: '마진계산소 계산기 피드',
+    description: '판매자 마진, 생활비, 운영 비용 계산기 업데이트',
     site: context.site,
-    items: posts
-      .sort((a, b) => toDate(b.data.publishedAt).getTime() - toDate(a.data.publishedAt).getTime())
-      .map((post) => ({
-        title: post.data.title,
-        description: post.data.description,
-        pubDate: toDate(post.data.publishedAt),
-        link: `/posts/${post.slug}/`
-      }))
+    items: calculators.map((calculator) => ({
+      title: calculator.title,
+      description: `${groupLabels[calculator.group]} · ${calculator.description}`,
+      pubDate: new Date('2026-05-28T00:00:00+09:00'),
+      link: `/calculators/${calculator.slug}/`
+    }))
   });
 }

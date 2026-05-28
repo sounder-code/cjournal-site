@@ -120,7 +120,8 @@ function main() {
     const contentChanged = nextContent !== parsed.content;
     if (!contentChanged && !dataChanged) continue;
 
-    const nextRaw = matter.stringify(nextContent, nextData, { lineWidth: 0 });
+    const stringifyOptions = { lineWidth: 0 } as Parameters<typeof matter.stringify>[2];
+    const nextRaw = matter.stringify(nextContent, nextData, stringifyOptions);
     fs.writeFileSync(fullPath, nextRaw, 'utf8');
     changed += 1;
     console.log(`washed: ${file}`);

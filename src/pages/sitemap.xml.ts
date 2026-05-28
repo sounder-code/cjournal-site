@@ -1,16 +1,15 @@
 import type { APIRoute } from 'astro';
-import { getCollection } from 'astro:content';
+import { calculators } from '@/data/calculators';
 
 export const GET: APIRoute = async ({ site }) => {
   const base = site?.toString().replace(/\/$/, '') ?? '';
-  const posts = await getCollection('posts');
 
   const urls = [
     '/',
     '/about',
     '/privacy',
     '/terms',
-    ...posts.map((post) => `/posts/${post.slug}/`)
+    ...calculators.map((calculator) => `/calculators/${calculator.slug}/`)
   ];
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls

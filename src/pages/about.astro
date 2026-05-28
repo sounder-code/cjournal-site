@@ -1,7 +1,67 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
-<BaseLayout title="소개" description="콘텐츠 허브 소개" canonical="/about">
-  <h1>소개</h1>
-  <p>본 사이트는 정적 페이지 기반으로 운영되며, 정보형 아티클을 주기적으로 발행합니다.</p>
+<BaseLayout title="마진계산소 소개" description="판매자와 생활비 의사결정을 돕는 정적 계산기 허브" canonical="/about">
+  <section class="about-page">
+    <h1>마진계산소는 계산기가 본체인 사이트입니다.</h1>
+    <p>
+      AI 답변 생성이나 대행 견적 대신, 사용자가 숫자를 넣고 바로 판단할 수 있는 계산기를 쌓습니다.
+      서버와 모델 호출 없이 브라우저에서 계산해 운영비를 낮추는 것이 기본 방향입니다.
+    </p>
+    <div>
+      <article>
+        <h2>판매자</h2>
+        <p>마진, 광고비, 반품률, 수수료처럼 팔기 전에 반드시 봐야 하는 비용을 계산합니다.</p>
+      </article>
+      <article>
+        <h2>생활비</h2>
+        <p>렌탈, 인터넷, 전기요금, 이사비처럼 계약 전 총액을 봐야 하는 항목을 계산합니다.</p>
+      </article>
+      <article>
+        <h2>운영</h2>
+        <p>시간당 수익, 월 이자 부담처럼 작은 사업과 개인 운영에 필요한 숫자를 정리합니다.</p>
+      </article>
+    </div>
+  </section>
 </BaseLayout>
+
+<style>
+  .about-page {
+    max-width: 920px;
+    display: grid;
+    gap: 18px;
+  }
+  h1 {
+    margin: 0;
+    color: #10221c;
+    font: 950 clamp(2rem, 5vw, 4rem)/1.05 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    letter-spacing: 0;
+  }
+  p {
+    margin: 0;
+    color: #52645b;
+    font: 700 1rem/1.7 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .about-page > div {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+  article {
+    border: 1px solid #d9e4df;
+    border-radius: 8px;
+    background: #fff;
+    padding: 16px;
+  }
+  h2 {
+    margin: 0 0 8px;
+    color: #10221c;
+    font: 950 1.15rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  @media (max-width: 720px) {
+    .about-page > div {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

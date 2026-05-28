@@ -17,6 +17,7 @@ const gtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-TXMPF75Z').trim();
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {
       gtmId && (
         <script
@@ -76,32 +77,45 @@ const gtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-TXMPF75Z').trim();
   }
   body {
     margin: 0;
-    font-family: 'Noto Serif KR', 'Apple SD Gothic Neo', sans-serif;
-    color: #111;
-    background: #fff;
-    line-height: 1.65;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #10221c;
+    background: #f7faf8;
+    line-height: 1.55;
   }
-  .container { width: min(1200px, 94vw); margin: 0 auto; }
-  .main-content { min-height: 68vh; padding: 24px 0 40px; }
+  .container { width: min(1180px, calc(100vw - 32px)); margin: 0 auto; }
+  .main-content { min-height: 68vh; padding: 26px 0 48px; }
   .site-header {
     background: #fff;
-    border-top: 3px solid #1f3f67;
-    border-bottom: 1px solid #d6d6d2;
+    border-top: 0;
+    border-bottom: 1px solid #d9e4df;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    backdrop-filter: blur(12px);
   }
   .site-footer {
     background: #fff;
-    border-top: 1px solid #d6d6d2;
+    border-top: 1px solid #d9e4df;
     border-bottom: 0;
   }
   .header-inner { padding: 14px 0; }
-  .logo { color: #172230; text-decoration: none; font-weight: 800; }
+  .logo {
+    color: #10221c;
+    text-decoration: none;
+    font: 950 1.35rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    letter-spacing: 0;
+  }
   nav { display: flex; gap: 14px; }
-  nav a { color: #44576e; text-decoration: none; font-weight: 600; }
+  nav a { color: #52645b; text-decoration: none; font-weight: 800; }
   .site-footer .container { padding: 18px 0; }
-  .muted { color: #616161; }
+  .site-footer p {
+    margin: 0 0 4px;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .muted { color: #63706a; }
   .meta {
     font-size: 0.9rem;
-    color: #5a5a5a;
+    color: #63706a;
     font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .tags { display: flex; flex-wrap: wrap; gap: 8px; }
