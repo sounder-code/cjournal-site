@@ -1,8 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import ArticleCard from '@/components/ArticleCard.astro';
 import { getCollection } from 'astro:content';
-import { toDate } from '@/lib/date';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -10,19 +7,21 @@ export async function getStaticPaths() {
   return [...tags].map((tag) => ({ params: { tag } }));
 }
 
-const tag = decodeURIComponent(Astro.params.tag ?? '');
-const posts = (await getCollection('posts'))
-  .filter((post) => post.data.tags.includes(tag))
-  .sort((a, b) => toDate(b.data.publishedAt).getTime() - toDate(a.data.publishedAt).getTime());
+const target = '/';
 ---
-<BaseLayout
-  title={`태그: ${tag}`}
-  description={`${tag} 관련 글 목록`}
-  canonical={`/tags/${tag}/`}
->
-  <h1>#{tag}</h1>
-  <p>{posts.length}개의 글</p>
-  <section style="display:grid;gap:12px;">
-    {posts.map((post) => <ArticleCard post={post} />)}
-  </section>
-</BaseLayout>
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>마진계산소로 이동</title>
+    <meta http-equiv="refresh" content={`0;url=${target}`} />
+    <link rel="canonical" href={target} />
+    <script is:inline>
+      window.location.replace('/');
+    </script>
+  </head>
+  <body>
+    <a href={target}>마진계산소 홈으로 이동</a>
+  </body>
+</html>

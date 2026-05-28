@@ -1,18 +1,28 @@
 ---
-import { getCollection, render } from 'astro:content';
-import ArticleLayout from '@/layouts/ArticleLayout.astro';
+import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
   return posts.map((post) => ({
-    params: { slug: post.slug },
-    props: { post }
+    params: { slug: post.slug }
   }));
 }
 
-const { post } = Astro.props;
-const { Content } = await render(post);
+const target = '/';
 ---
-<ArticleLayout post={post}>
-  <Content />
-</ArticleLayout>
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>마진계산소로 이동</title>
+    <meta http-equiv="refresh" content={`0;url=${target}`} />
+    <link rel="canonical" href={target} />
+    <script is:inline>
+      window.location.replace('/');
+    </script>
+  </head>
+  <body>
+    <a href={target}>마진계산소 홈으로 이동</a>
+  </body>
+</html>

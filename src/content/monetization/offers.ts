@@ -7,46 +7,45 @@ export type MonetizationOffer = {
   category?: string;
 };
 
-// Replace URLs with your real affiliate/referral destinations.
 export const MONETIZATION_OFFERS: MonetizationOffer[] = [
   {
-    id: 'offer-ai-writing',
-    title: 'AI 문서 자동화 툴 비교',
-    description: '보고서/기획안 작성 시간을 줄이는 생산성 툴 가이드입니다.',
-    url: 'https://example.com/ai-writing-tools',
-    tags: ['생산성', '업무', '문서', '메일', '정리', 'ai', '자동화'],
-    category: '생산성'
+    id: 'offer-seller-tools',
+    title: '판매자 비용 관리 도구',
+    description: '마진, 광고비, 재고 비용을 함께 관리할 때 확인할 만한 도구 모음입니다.',
+    url: 'https://example.com/seller-tools',
+    tags: ['마진', '판매자', '수수료', '광고비', '재고', '정산'],
+    category: '판매자'
   },
   {
-    id: 'offer-security-vpn',
-    title: '보안/VPN 추천 가이드',
-    description: '공용 와이파이와 계정 보호에 유용한 보안 도구 모음입니다.',
-    url: 'https://example.com/security-vpn',
-    tags: ['보안', '디지털', '와이파이', '개인정보', '계정', '비밀번호'],
-    category: '디지털'
+    id: 'offer-shipping',
+    title: '택배·포장비 비교',
+    description: '배송비와 포장비가 마진에 미치는 영향을 줄이고 싶을 때 확인하세요.',
+    url: 'https://example.com/shipping',
+    tags: ['배송비', '포장비', '택배', '판매자', '마진'],
+    category: '판매자'
   },
   {
     id: 'offer-budget-app',
-    title: '가계/사업 지출관리 앱',
-    description: '고정비 추적과 예산 관리에 도움 되는 도구를 정리했습니다.',
+    title: '고정비 관리 도구',
+    description: '구독비, 렌탈료, 약정 비용을 한 곳에서 점검할 때 참고할 수 있습니다.',
     url: 'https://example.com/budget-apps',
-    tags: ['가계부', '예산', '절약', '생활관리', '소비', '정산'],
-    category: '생활관리'
+    tags: ['구독비', '렌탈', '생활비', '예산', '절감'],
+    category: '생활비'
   },
   {
-    id: 'offer-travel-card',
-    title: '여행/교통 혜택 카드',
-    description: '교통비와 여행비를 줄일 수 있는 카드/멤버십 정보를 제공합니다.',
-    url: 'https://example.com/travel-card',
-    tags: ['교통', '여행', '항공', '기차', '버스', '전기차'],
-    category: '교통/이동'
+    id: 'offer-internet',
+    title: '인터넷·통신비 비교',
+    description: '약정 변경 전 월요금, 위약금, 사은품 조건을 비교할 때 확인하세요.',
+    url: 'https://example.com/internet',
+    tags: ['인터넷', '통신비', '위약금', '약정', '사은품'],
+    category: '생활비'
   },
   {
-    id: 'offer-wellness-app',
-    title: '수면/건강 루틴 앱',
-    description: '수면 기록, 스트레스 관리, 운동 루틴 추적용 도구 모음입니다.',
-    url: 'https://example.com/wellness-app',
-    tags: ['건강', '수면', '운동', '스트레스', '루틴'],
-    category: '건강생활'
+    id: 'offer-rental',
+    title: '렌탈 총비용 비교',
+    description: '월 렌탈료보다 약정 총액과 할인 조건을 먼저 비교하세요.',
+    url: 'https://example.com/rental',
+    tags: ['렌탈', '정수기', '비데', '공기청정기', '약정'],
+    category: '생활비'
   }
 ];
