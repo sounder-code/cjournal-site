@@ -53,6 +53,7 @@ const { calculator, compact = false } = Astro.props;
     <p data-result-primary-label>결과</p>
     <strong data-result-primary>0원</strong>
     <div class="metric-list" data-result-metrics></div>
+    <div class="schedule-wrap" data-result-schedule hidden></div>
     <p class="result-note" data-result-note></p>
   </aside>
 </section>
@@ -202,6 +203,46 @@ const { calculator, compact = false } = Astro.props;
   .metric-row strong {
     color: #fff;
     text-align: right;
+  }
+  .schedule-wrap {
+    margin-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    padding-top: 14px;
+  }
+  .schedule-wrap h3 {
+    margin: 0 0 10px;
+    color: #fff;
+    font: 900 0.95rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    font-size: 0.78rem;
+  }
+  .schedule-table th,
+  .schedule-table td {
+    padding: 8px 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .schedule-table th:first-child,
+  .schedule-table td:first-child {
+    text-align: left;
+  }
+  .schedule-table th {
+    color: #a8bbb3;
+    font-weight: 900;
+  }
+  .schedule-table td {
+    color: #f3faf6;
+    font-weight: 800;
+  }
+  .schedule-note {
+    margin: 10px 0 0;
+    color: #a8bbb3;
+    font: 700 0.78rem/1.45 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .result-note {
     margin: auto 0 0;

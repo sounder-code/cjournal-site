@@ -22,6 +22,11 @@ function repaymentTypeLabel(value) {
   return '원리금균등';
 }
 
+function summarizeSchedule(rows, months) {
+  if (rows.length <= 13) return rows;
+  return [...rows.slice(0, 12), rows[months - 1]];
+}
+
 function sellerMargin(v) {
   const fee = v.price * ((v.platformFee + v.paymentFee) / 100);
   const returnLoss = v.price * (v.returnRate / 100) * 0.35;
@@ -225,6 +230,7 @@ function loanInterest(v) {
   let lastPayment = 0;
   let totalPayment = 0;
   let totalInterest = 0;
+  let scheduleRows = [];
 
   if (v.repaymentType === 'bullet') {
     const monthlyInterest = principal * monthlyRate;
@@ -232,14 +238,35 @@ function loanInterest(v) {
     lastPayment = principal + monthlyInterest;
     totalInterest = monthlyInterest * months;
     totalPayment = principal + totalInterest;
+    scheduleRows = Array.from({ length: months }, (_, index) => {
+      const isLast = index === months - 1;
+      return {
+        month: index + 1,
+        payment: isLast ? lastPayment : monthlyInterest,
+        principal: isLast ? principal : 0,
+        interest: monthlyInterest,
+        balance: isLast ? 0 : principal
+      };
+    });
   } else if (v.repaymentType === 'equal-principal') {
     const monthlyPrincipal = principal / months;
     firstPayment = monthlyPrincipal + principal * monthlyRate;
     lastPayment = monthlyPrincipal + monthlyPrincipal * monthlyRate;
     totalInterest = 0;
+    scheduleRows = [];
     for (let i = 0; i < months; i += 1) {
       const remaining = principal - monthlyPrincipal * i;
-      totalInterest += remaining * monthlyRate;
+      const interest = remaining * monthlyRate;
+      const payment = monthlyPrincipal + interest;
+      const balance = Math.max(0, principal - monthlyPrincipal * (i + 1));
+      totalInterest += interest;
+      scheduleRows.push({
+        month: i + 1,
+        payment,
+        principal: monthlyPrincipal,
+        interest,
+        balance
+      });
     }
     totalPayment = principal + totalInterest;
   } else {
@@ -252,6 +279,20 @@ function loanInterest(v) {
     lastPayment = firstPayment;
     totalPayment = firstPayment * months;
     totalInterest = totalPayment - principal;
+    let balance = principal;
+    scheduleRows = [];
+    for (let i = 0; i < months; i += 1) {
+      const interest = balance * monthlyRate;
+      const principalPaid = i === months - 1 ? balance : Math.max(0, firstPayment - interest);
+      balance = Math.max(0, balance - principalPaid);
+      scheduleRows.push({
+        month: i + 1,
+        payment: firstPayment,
+        principal: principalPaid,
+        interest,
+        balance
+      });
+    }
   }
 
   return {
@@ -266,9 +307,14 @@ function loanInterest(v) {
       ...(v.repaymentType === 'bullet' ? [['만기월 납입액', formatWon(lastPayment)]] : [])
     ],
     status: totalInterest > principal * 0.5 ? '이자 부담 큼' : '계산 완료',
+    schedule: {
+      title: '상환 흐름',
+      note: months > 13 ? '1~12개월과 마지막 회차를 표시합니다. 이자와 원금 비중은 매월 달라집니다.' : '전체 회차를 표시합니다. 이자와 원금 비중은 매월 달라집니다.',
+      rows: summarizeSchedule(scheduleRows, months)
+    },
     note:
       v.repaymentType === 'equal-payment'
-        ? '원리금균등은 매월 같은 금액을 내는 방식이라 현금흐름을 예측하기 쉽습니다.'
+        ? '원리금균등은 매월 납입액은 같지만, 초반에는 이자 비중이 크고 시간이 갈수록 원금 상환 비중이 커집니다.'
         : v.repaymentType === 'equal-principal'
           ? '원금균등은 초반 납입액이 크지만 시간이 갈수록 월 납입액이 줄어듭니다.'
           : '만기일시는 기간 중 이자만 내고 만기월에 원금을 함께 갚는 방식입니다.'
@@ -314,6 +360,7 @@ function render(root, result) {
   const metrics = root.querySelector('[data-result-metrics]');
   const status = root.querySelector('[data-result-status]');
   const note = root.querySelector('[data-result-note]');
+  const schedule = root.querySelector('[data-result-schedule]');
 
   if (primary) primary.textContent = formatWon(result.primary);
   if (primaryLabel) primaryLabel.textContent = result.primaryLabel;
@@ -323,6 +370,44 @@ function render(root, result) {
     metrics.innerHTML = result.metrics
       .map(([label, value]) => `<div class="metric-row"><span>${label}</span><strong>${value}</strong></div>`)
       .join('');
+  }
+  if (schedule) {
+    if (!result.schedule?.rows?.length) {
+      schedule.hidden = true;
+      schedule.innerHTML = '';
+    } else {
+      schedule.hidden = false;
+      schedule.innerHTML = `
+        <h3>${result.schedule.title}</h3>
+        <table class="schedule-table">
+          <thead>
+            <tr>
+              <th>회차</th>
+              <th>납입액</th>
+              <th>원금</th>
+              <th>이자</th>
+              <th>잔금</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${result.schedule.rows
+              .map(
+                (row) => `
+                  <tr>
+                    <td>${row.month}개월</td>
+                    <td>${formatWon(row.payment)}</td>
+                    <td>${formatWon(row.principal)}</td>
+                    <td>${formatWon(row.interest)}</td>
+                    <td>${formatWon(row.balance)}</td>
+                  </tr>
+                `
+              )
+              .join('')}
+          </tbody>
+        </table>
+        <p class="schedule-note">${result.schedule.note}</p>
+      `;
+    }
   }
 }
 
