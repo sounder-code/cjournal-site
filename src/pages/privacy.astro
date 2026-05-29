@@ -1,7 +1,67 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
-<BaseLayout title="개인정보처리방침" description="개인정보처리방침" canonical="/privacy">
-  <h1>개인정보처리방침</h1>
-  <p>개인정보 수집을 최소화하며, 서비스 운영에 필요한 범위에서만 처리합니다.</p>
+<BaseLayout title="개인정보처리방침" description="마진계산소의 개인정보 처리, 브라우저 저장소, 광고와 분석 도구 사용 기준" canonical="/privacy">
+  <section class="policy-page">
+    <h1>개인정보처리방침</h1>
+    <p class="updated">최종 업데이트: 2026년 5월 29일</p>
+    <p class="lead">
+      마진계산소는 계산기 이용에 필요한 개인정보 입력을 요구하지 않습니다. 사이트 운영과 품질 개선에 필요한 범위에서만
+      제한적인 기술 정보를 처리합니다.
+    </p>
+
+    <h2>1. 수집하는 정보</h2>
+    <p>계산기 입력값은 기본적으로 서버로 전송되지 않으며 사용자의 브라우저 안에서 계산됩니다. 사이트 접속 과정에서는 IP 주소, 브라우저 정보, 접속 시간처럼 웹 서버와 분석 도구가 통상적으로 처리하는 기술 정보가 생성될 수 있습니다.</p>
+
+    <h2>2. 브라우저 저장소</h2>
+    <p>최근 사용한 계산기, 즐겨찾기, 저장한 입력값, 공유 링크용 설정은 사용자의 기기 브라우저 저장소(localStorage)에 저장될 수 있습니다. 이 정보는 사용자가 브라우저 데이터를 삭제하면 함께 삭제됩니다.</p>
+
+    <h2>3. 분석 도구와 쿠키</h2>
+    <p>서비스 개선을 위해 Google Tag Manager 등 분석 도구를 사용할 수 있습니다. 이 과정에서 쿠키나 유사 기술이 사용될 수 있으며, 사용자는 브라우저 설정을 통해 쿠키 저장을 제한할 수 있습니다.</p>
+
+    <h2>4. 광고와 제3자 서비스</h2>
+    <p>마진계산소는 Google AdSense 등 제3자 광고 서비스를 사용할 수 있습니다. 광고 제공자는 맞춤 광고, 부정 클릭 방지, 광고 성과 측정을 위해 쿠키나 기기 식별 정보를 처리할 수 있습니다.</p>
+
+    <h2>5. 제휴 링크</h2>
+    <p>일부 콘텐츠에는 제휴 링크가 포함될 수 있습니다. 사용자가 해당 링크를 통해 상품이나 서비스를 이용하면 사이트 운영자가 일정 수수료를 받을 수 있으나, 계산 결과나 설명의 기준은 제휴 여부와 분리해 관리합니다.</p>
+
+    <h2>6. 보관과 삭제</h2>
+    <p>브라우저 저장소 데이터는 사용자의 기기에 남으며, 사이트 운영자가 별도 회원 DB로 보관하지 않습니다. 분석 도구에서 처리되는 정보의 보관 기간은 각 제공자의 정책과 설정을 따릅니다.</p>
+
+    <h2>7. 문의</h2>
+    <p>개인정보 처리, 저장된 데이터, 광고와 분석 도구 사용에 관한 문의는 contact@cjournal.kr 로 보내주세요.</p>
+  </section>
 </BaseLayout>
+
+<style>
+  .policy-page {
+    max-width: 880px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: clamp(22px, 4vw, 38px);
+    box-shadow: var(--shadow-sm);
+  }
+  h1 {
+    margin: 0 0 8px;
+    font: 950 clamp(2rem, 5vw, 3.4rem)/1.08 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    color: var(--ink);
+  }
+  .updated {
+    margin: 0 0 18px;
+    color: var(--subtle);
+    font-weight: 800;
+  }
+  .lead,
+  p {
+    color: var(--muted);
+    font: 700 1rem/1.75 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .lead { margin-bottom: 26px; }
+  h2 {
+    margin: 24px 0 8px;
+    color: var(--ink);
+    font: 950 1.22rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  p { margin: 0; }
+</style>

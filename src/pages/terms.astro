@@ -1,7 +1,61 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
-<BaseLayout title="이용약관" description="이용약관" canonical="/terms">
-  <h1>이용약관</h1>
-  <p>본 사이트의 계산 결과는 입력값에 따른 참고용 결과이며, 실제 계약·세금·수수료 기준은 각 제공자의 공식 안내를 확인해야 합니다.</p>
+<BaseLayout title="이용약관" description="마진계산소 이용 조건, 계산 결과의 한계, 광고와 제휴 링크 안내" canonical="/terms">
+  <section class="policy-page">
+    <h1>이용약관</h1>
+    <p class="updated">최종 업데이트: 2026년 5월 29일</p>
+
+    <h2>1. 서비스 목적</h2>
+    <p>마진계산소는 판매, 생활비, 금융 운영과 관련된 비용을 빠르게 추정할 수 있는 계산기와 참고용 가이드를 제공합니다.</p>
+
+    <h2>2. 계산 결과의 성격</h2>
+    <p>모든 계산 결과는 사용자가 입력한 값과 사이트에 표시된 산식 또는 기준값을 바탕으로 한 참고용 정보입니다. 실제 계약, 세금 신고, 대출 실행, 요금 청구, 플랫폼 정산 결과와 다를 수 있습니다.</p>
+
+    <h2>3. 전문 자문 아님</h2>
+    <p>마진계산소의 내용은 법률, 세무, 회계, 투자, 금융 자문이 아닙니다. 중요한 의사결정 전에는 관련 기관, 전문가, 서비스 제공자의 공식 안내를 확인해야 합니다.</p>
+
+    <h2>4. 광고와 제휴</h2>
+    <p>사이트에는 광고 또는 제휴 링크가 포함될 수 있습니다. 제휴 수익은 사이트 운영에 사용되며, 계산기의 기본 산식과 참고 설명은 광고 여부와 분리해 관리합니다.</p>
+
+    <h2>5. 사용자의 책임</h2>
+    <p>사용자는 입력값의 정확성, 결과 해석, 최종 의사결정에 대한 책임을 집니다. 비정상적인 접근, 자동화된 과도한 요청, 사이트 기능을 방해하는 행위는 제한될 수 있습니다.</p>
+
+    <h2>6. 콘텐츠 수정</h2>
+    <p>수수료율, 세율, 상품 조건, 요금 기준은 변경될 수 있습니다. 사이트 운영자는 정확성을 높이기 위해 콘텐츠와 계산기를 예고 없이 수정할 수 있습니다.</p>
+
+    <h2>7. 문의</h2>
+    <p>오류 제보, 권리 침해 신고, 이용 관련 문의는 contact@cjournal.kr 로 보내주세요.</p>
+  </section>
 </BaseLayout>
+
+<style>
+  .policy-page {
+    max-width: 880px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: clamp(22px, 4vw, 38px);
+    box-shadow: var(--shadow-sm);
+  }
+  h1 {
+    margin: 0 0 8px;
+    font: 950 clamp(2rem, 5vw, 3.4rem)/1.08 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    color: var(--ink);
+  }
+  .updated {
+    margin: 0 0 22px;
+    color: var(--subtle);
+    font-weight: 800;
+  }
+  h2 {
+    margin: 24px 0 8px;
+    color: var(--ink);
+    font: 950 1.22rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  p {
+    margin: 0;
+    color: var(--muted);
+    font: 700 1rem/1.75 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+</style>

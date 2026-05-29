@@ -25,6 +25,9 @@ const articleJsonLd = {
   title={post.data.title}
   description={post.data.description}
   canonical={`/posts/${post.slug}/`}
+  type="article"
+  publishedTime={toDate(post.data.publishedAt).toISOString()}
+  updatedTime={toDate(post.data.updatedAt).toISOString()}
 >
   <article>
     <h1>{post.data.title}</h1>
@@ -49,8 +52,54 @@ const articleJsonLd = {
 
 <style>
   article {
+    max-width: 860px;
     min-width: 0;
     overflow-wrap: break-word;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: clamp(22px, 4vw, 42px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  article h1 {
+    margin: 0 0 10px;
+    color: var(--ink);
+    font: 950 clamp(2rem, 5vw, 3.6rem)/1.12 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    letter-spacing: 0;
+  }
+
+  article :global(h2) {
+    margin: 34px 0 12px;
+    color: var(--ink);
+    font: 950 1.45rem/1.28 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+
+  article :global(h3) {
+    margin: 26px 0 10px;
+    color: var(--ink);
+    font: 900 1.18rem/1.35 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+
+  article :global(p),
+  article :global(li) {
+    color: var(--muted);
+    font: 700 1rem/1.8 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+
+  article :global(p) {
+    margin: 0 0 16px;
+  }
+
+  article :global(ul),
+  article :global(ol) {
+    margin: 0 0 18px;
+    padding-left: 1.35rem;
+  }
+
+  article :global(strong) {
+    color: var(--ink);
+    font-weight: 950;
   }
 
   article img,
@@ -63,6 +112,7 @@ const articleJsonLd = {
     max-width: 100%;
     height: auto;
     margin-inline: auto;
+    border-radius: 8px;
   }
 
   article figure {
@@ -75,5 +125,11 @@ const articleJsonLd = {
     display: block;
     max-width: 100%;
     overflow-x: auto;
+  }
+
+  article section {
+    margin-top: 32px;
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
   }
 </style>

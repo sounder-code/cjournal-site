@@ -1,19 +1,162 @@
 ---
-const target = '/';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { calculators, groupLabels } from '@/data/calculators';
+
+const guideGroups = [
+  {
+    group: 'seller',
+    title: '판매 전 손익 점검',
+    description: '판매가를 정하기 전에 원가, 수수료, 광고비, 반품 손실을 먼저 확인하는 흐름입니다.',
+    steps: ['판매자 순이익 확인', '손익분기 판매가 역산', '광고비 허용 한도 점검', '반품률 손실 반영']
+  },
+  {
+    group: 'living',
+    title: '생활비 계약 총액 비교',
+    description: '월요금만 보고 결정하기 쉬운 렌탈, 인터넷, 할부, 이사 비용을 총액 기준으로 비교합니다.',
+    steps: ['월 고정비 줄이기', '인터넷 갈아타기 손익', '렌탈 약정 총액', '카드 할부 월부담']
+  },
+  {
+    group: 'utility',
+    title: '금융·운영 부담 계산',
+    description: '대출 상환, 예적금 만기, 투자 회수기간, 시간당 수익처럼 장기 부담을 숫자로 정리합니다.',
+    steps: ['대출 상환 방식 비교', '예금·적금 이자 확인', '투자 회수기간 계산', '시간당 수익 환산']
+  }
+] as const;
 ---
-<!doctype html>
-<html lang="ko">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>마진계산소로 이동</title>
-    <meta http-equiv="refresh" content={`0;url=${target}`} />
-    <link rel="canonical" href={target} />
-    <script is:inline>
-      window.location.replace('/');
-    </script>
-  </head>
-  <body>
-    <a href={target}>마진계산소 홈으로 이동</a>
-  </body>
-</html>
+<BaseLayout
+  title="계산 가이드"
+  description="판매 수익, 생활비 계약, 금융 운영 부담을 계산기와 함께 점검하는 실전 가이드"
+  canonical="/news"
+>
+  <section class="guide-index">
+    <div class="guide-hero">
+      <p class="kicker">Guide</p>
+      <h1>계산기 쓰는 순서를 바로 잡으면 결정이 쉬워집니다.</h1>
+      <p>
+        마진계산소의 가이드는 긴 설명보다 실제 입력 순서와 비교 기준에 집중합니다.
+        아래 흐름대로 계산하면 판매, 계약, 대출 판단에서 빠지는 비용을 줄일 수 있습니다.
+      </p>
+    </div>
+
+    <div class="guide-grid">
+      {guideGroups.map((guide) => {
+        const items = calculators.filter((calculator) => calculator.group === guide.group).slice(0, 5);
+        return (
+          <article>
+            <p class="group-label">{groupLabels[guide.group]}</p>
+            <h2>{guide.title}</h2>
+            <p class="desc">{guide.description}</p>
+            <ol>
+              {guide.steps.map((step) => <li>{step}</li>)}
+            </ol>
+            <div class="tool-links">
+              {items.map((calculator) => (
+                <a href={`/calculators/${calculator.slug}/`}>
+                  <span>{calculator.shortTitle}</span>
+                  <small>{calculator.intent}</small>
+                </a>
+              ))}
+            </div>
+          </article>
+        );
+      })}
+    </div>
+
+    <section class="review-note">
+      <h2>계산 결과를 볼 때 확인할 것</h2>
+      <p>
+        기본값은 예시일 뿐입니다. 실제 판단에는 본인의 수수료율, 계약 기간, 세금 처리, 배송비, 위약금, 이자율을 넣어야 합니다.
+        결과가 애매하면 낙관값과 보수값을 각각 저장해 비교하는 편이 안전합니다.
+      </p>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  .guide-index {
+    display: grid;
+    gap: 22px;
+  }
+  .guide-hero {
+    max-width: 900px;
+    display: grid;
+    gap: 10px;
+  }
+  .kicker,
+  .group-label {
+    margin: 0;
+    color: var(--green-strong);
+    font: 950 0.82rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    text-transform: uppercase;
+  }
+  h1 {
+    margin: 0;
+    color: var(--ink);
+    font: 950 clamp(2.1rem, 5vw, 4rem)/1.08 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    letter-spacing: 0;
+  }
+  .guide-hero p:last-child,
+  .desc,
+  .review-note p {
+    margin: 0;
+    color: var(--muted);
+    font: 700 1.02rem/1.75 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .guide-hero p:last-child { max-width: 760px; }
+  .guide-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+  article,
+  .review-note {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  h2 {
+    margin: 8px 0 8px;
+    color: var(--ink);
+    font: 950 1.35rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  ol {
+    margin: 16px 0;
+    padding-left: 1.25rem;
+    color: var(--ink);
+    font-weight: 850;
+  }
+  li + li { margin-top: 6px; }
+  .tool-links {
+    display: grid;
+    gap: 8px;
+  }
+  .tool-links a {
+    display: grid;
+    gap: 2px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px;
+    color: var(--ink);
+    background: var(--surface-soft);
+    text-decoration: none;
+  }
+  .tool-links a:hover {
+    border-color: var(--line-strong);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+  .tool-links span {
+    font-weight: 950;
+  }
+  .tool-links small {
+    color: var(--muted);
+    font-weight: 750;
+  }
+  @media (max-width: 960px) {
+    .guide-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
