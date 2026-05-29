@@ -12,6 +12,7 @@ const { calculator, compact = false } = Astro.props;
   <div class="tool-form">
     <div class="tool-heading">
       <div>
+        <span class="tool-kicker">입력값</span>
         <h2>{calculator.title}</h2>
         <p>{calculator.description}</p>
       </div>
@@ -55,6 +56,7 @@ const { calculator, compact = false } = Astro.props;
     <div class="metric-list" data-result-metrics></div>
     <div class="schedule-wrap" data-result-schedule hidden></div>
     <p class="result-note" data-result-note></p>
+    <p class="result-caption">입력값을 바꾸면 자동으로 다시 계산됩니다.</p>
   </aside>
 </section>
 
@@ -89,6 +91,12 @@ const { calculator, compact = false } = Astro.props;
     line-height: 1.28;
     letter-spacing: 0;
     color: #1c2a23;
+  }
+  .tool-kicker {
+    display: block;
+    margin-bottom: 7px;
+    color: #16824f;
+    font: 900 0.78rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .tool-heading p {
     margin: 0;
@@ -171,7 +179,17 @@ const { calculator, compact = false } = Astro.props;
     min-height: 100%;
     position: sticky;
     top: 96px;
+    overflow: hidden;
   }
+  .result-panel::before {
+    content: "";
+    display: block;
+    height: 4px;
+    margin: -24px -24px 20px;
+    background: #16824f;
+  }
+  .result-panel[data-tone="warn"]::before { background: #d98716; }
+  .result-panel[data-tone="bad"]::before { background: #c83b3b; }
   .result-head {
     display: flex;
     justify-content: space-between;
@@ -187,6 +205,16 @@ const { calculator, compact = false } = Astro.props;
     padding: 6px 10px;
     font: 800 0.78rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
+  .result-panel[data-tone="warn"] .result-head span {
+    background: #fff5e8;
+    border-color: #f1d4aa;
+    color: #a35c00;
+  }
+  .result-panel[data-tone="bad"] .result-head span {
+    background: #fff0ef;
+    border-color: #efc4c0;
+    color: #aa2e2e;
+  }
   .result-head p {
     margin: 0;
     color: #66736d;
@@ -201,23 +229,31 @@ const { calculator, compact = false } = Astro.props;
     color: #0f6c43;
     word-break: keep-all;
   }
+  .result-panel[data-tone="warn"] [data-result-primary] { color: #a35c00; }
+  .result-panel[data-tone="bad"] [data-result-primary] { color: #aa2e2e; }
   .metric-list {
     display: grid;
-    gap: 0;
-    border-top: 1px solid #edf1ef;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
-  .metric-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 12px 0;
-    border-bottom: 1px solid #edf1ef;
+  :global(.calculator-tool .metric-row) {
+    display: grid;
+    gap: 5px;
+    padding: 12px;
+    border: 1px solid #edf1ef;
+    border-radius: 8px;
+    background: #fbfdfc;
     font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
-  .metric-row span { color: #66736d; }
-  .metric-row strong {
+  :global(.calculator-tool .metric-row span) {
+    color: #66736d;
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+  :global(.calculator-tool .metric-row strong) {
     color: #1c2a23;
-    text-align: right;
+    font-size: 0.98rem;
+    line-height: 1.25;
   }
   .schedule-wrap {
     margin-top: 18px;
@@ -226,52 +262,62 @@ const { calculator, compact = false } = Astro.props;
     background: #fbfdfc;
     overflow-x: auto;
   }
-  .schedule-wrap h3 {
+  :global(.calculator-tool .schedule-wrap h3) {
     margin: 0;
     padding: 14px 14px 0;
     color: #1c2a23;
     font: 900 0.95rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    position: sticky;
+    left: 0;
   }
-  .schedule-table {
+  :global(.calculator-tool .schedule-table) {
     width: 100%;
     min-width: 520px;
     border-collapse: collapse;
     font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     font-size: 0.8rem;
   }
-  .schedule-table th,
-  .schedule-table td {
+  :global(.calculator-tool .schedule-table th),
+  :global(.calculator-tool .schedule-table td) {
     padding: 10px 12px;
     border-bottom: 1px solid #e7eeea;
     text-align: right;
     white-space: nowrap;
   }
-  .schedule-table th:first-child,
-  .schedule-table td:first-child {
+  :global(.calculator-tool .schedule-table th:first-child),
+  :global(.calculator-tool .schedule-table td:first-child) {
     text-align: left;
   }
-  .schedule-table th {
+  :global(.calculator-tool .schedule-table th) {
     color: #66736d;
     font-weight: 900;
     background: #f4f8f6;
+    position: sticky;
+    top: 0;
   }
-  .schedule-table td {
+  :global(.calculator-tool .schedule-table td) {
     color: #26372f;
     font-weight: 800;
   }
-  .schedule-note {
+  :global(.calculator-tool .schedule-note) {
     margin: 0;
     padding: 10px 14px 14px;
     color: #66736d;
     font: 700 0.78rem/1.45 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .result-note {
-    margin: auto 0 0;
+    margin: 18px 0 0;
+    border-top: 1px solid #edf1ef;
     padding-top: 20px;
     color: #66736d;
     font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     font-size: 0.9rem;
     line-height: 1.55;
+  }
+  .result-caption {
+    margin: 12px 0 0;
+    color: #8a9690;
+    font: 700 0.78rem/1.45 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .compact-tool {
     grid-template-columns: 1fr;
@@ -293,6 +339,9 @@ const { calculator, compact = false } = Astro.props;
       display: grid;
     }
     .input-grid {
+      grid-template-columns: 1fr;
+    }
+    .metric-list {
       grid-template-columns: 1fr;
     }
   }

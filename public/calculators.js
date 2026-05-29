@@ -361,11 +361,18 @@ function render(root, result) {
   const status = root.querySelector('[data-result-status]');
   const note = root.querySelector('[data-result-note]');
   const schedule = root.querySelector('[data-result-schedule]');
+  const panel = root.querySelector('.result-panel');
+  const tone = /손실|위험|주의|부담 큼|개선 필요|효과 낮음|유지 유리/.test(result.status)
+    ? /손실|위험|개선 필요/.test(result.status)
+      ? 'bad'
+      : 'warn'
+    : 'good';
 
   if (primary) primary.textContent = formatWon(result.primary);
   if (primaryLabel) primaryLabel.textContent = result.primaryLabel;
   if (status) status.textContent = result.status;
   if (note) note.textContent = result.note;
+  if (panel) panel.dataset.tone = tone;
   if (metrics) {
     metrics.innerHTML = result.metrics
       .map(([label, value]) => `<div class="metric-row"><span>${label}</span><strong>${value}</strong></div>`)
