@@ -93,6 +93,12 @@ const startRoutes = [
           판매자 비용과 월 고정비, 대출 이자처럼 놓치기 쉬운 숫자를 한 화면에서 확인합니다.
           기본값을 바꿔 실제 조건에 맞게 다시 계산해보세요.
         </p>
+        <div class="proof-row" aria-label="사이트 핵심 기능">
+          <span>{calculators.length}개 계산기</span>
+          <span>추천 입력값</span>
+          <span>결과 복사·공유</span>
+          <span>입력 자동 저장</span>
+        </div>
       </div>
       <div class="quick-box">
         <strong>자주 쓰는 계산기</strong>
@@ -335,40 +341,58 @@ const startRoutes = [
 <style>
   .hero-tool {
     display: grid;
-    gap: 18px;
+    gap: 20px;
   }
   .hero-copy {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(320px, 0.55fr);
-    gap: 22px;
+    gap: 26px;
     align-items: stretch;
-    padding: 12px 0 2px;
+    padding: 18px 0 4px;
   }
   h1 {
     margin: 0;
-    max-width: 720px;
-    color: #1c2a23;
-    font: 950 clamp(2rem, 4.2vw, 3.9rem)/1.08 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    max-width: 760px;
+    color: var(--ink);
+    font: 950 clamp(2.08rem, 4.4vw, 4.15rem)/1.06 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     letter-spacing: 0;
   }
   .hero-copy p {
     margin: 14px 0 0;
     max-width: 680px;
-    color: #596760;
+    color: var(--muted);
     font: 700 1rem/1.7 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
+  .proof-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .proof-row span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    border: 1px solid rgba(22, 130, 79, 0.18);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.68);
+    color: #2b4c3d;
+    padding: 0 11px;
+    box-shadow: var(--shadow-sm);
+    font: 900 0.8rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
   .quick-box {
-    border: 1px solid #d8dfdb;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
-    background: #fff;
-    padding: 16px;
+    background: var(--navy);
+    padding: 18px;
     align-self: end;
-    box-shadow: 0 1px 2px rgba(28, 42, 35, 0.04);
+    box-shadow: var(--shadow-lg);
   }
   .quick-box strong {
     display: block;
     margin-bottom: 12px;
-    color: #1c2a23;
+    color: #f6fbf8;
     font: 900 0.95rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .quick-row {
@@ -381,30 +405,32 @@ const startRoutes = [
     align-items: center;
     justify-content: center;
     min-height: 38px;
-    border: 1px solid #d8dfdb;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
-    background: #f8faf9;
-    color: #1c2a23;
+    background: rgba(255, 255, 255, 0.08);
+    color: #f6fbf8;
     text-decoration: none;
     font: 900 0.86rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     padding: 0 10px;
     text-align: center;
   }
   .quick-row a:hover {
-    border-color: #91b8a4;
-    background: #edf8f2;
+    border-color: rgba(142, 242, 188, 0.42);
+    background: rgba(142, 242, 188, 0.14);
   }
   .revenue-note,
   .ops-strip {
     margin-top: 28px;
-    border: 1px solid #d8dfdb;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.84);
     padding: 18px 20px;
     display: grid;
     grid-template-columns: 180px minmax(0, 1fr);
     gap: 18px;
     align-items: start;
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(10px);
   }
   .pathway {
     display: grid;
@@ -424,70 +450,74 @@ const startRoutes = [
     display: grid;
     gap: 9px;
     min-height: 166px;
-    border: 1px solid #d8dfdb;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.9);
     color: inherit;
     text-decoration: none;
     padding: 17px;
-    box-shadow: 0 1px 2px rgba(28, 42, 35, 0.04);
+    box-shadow: var(--shadow-sm);
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
   }
   .starter-grid a:hover {
+    transform: translateY(-2px);
     border-color: #91b8a4;
-    box-shadow: 0 8px 22px rgba(28, 42, 35, 0.07);
+    box-shadow: var(--shadow-md);
   }
   .starter-grid strong {
-    color: #1c2a23;
+    color: var(--ink);
     font: 950 1.05rem/1.28 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .starter-grid p {
     margin: 0;
-    color: #596760;
+    color: var(--muted);
     font: 700 0.9rem/1.55 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .starter-grid span {
     align-self: end;
-    color: #16824f;
+    color: var(--green);
     font: 900 0.82rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .path-card {
     display: grid;
     gap: 8px;
     min-height: 156px;
-    border: 1px solid #d8dfdb;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.88);
     padding: 18px;
     color: inherit;
     text-decoration: none;
-    box-shadow: 0 1px 2px rgba(28, 42, 35, 0.04);
+    box-shadow: var(--shadow-sm);
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
   }
   .path-card:hover {
+    transform: translateY(-2px);
     border-color: #91b8a4;
-    box-shadow: 0 8px 22px rgba(28, 42, 35, 0.07);
+    box-shadow: var(--shadow-md);
   }
   .path-card span,
   .path-card small {
-    color: #16824f;
+    color: var(--green);
     font: 900 0.78rem/1.3 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .path-card strong {
-    color: #1c2a23;
+    color: var(--ink);
     font: 950 1.35rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .path-card p {
     margin: 0;
-    color: #596760;
+    color: var(--muted);
     font: 700 0.92rem/1.55 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .recent-tools,
   .saved-tools {
     margin-top: 24px;
-    border: 1px solid #d8dfdb;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.88);
     padding: 18px 20px;
-    box-shadow: 0 1px 2px rgba(28, 42, 35, 0.04);
+    box-shadow: var(--shadow-sm);
   }
   .recent-tools[hidden],
   .saved-tools[hidden] {
@@ -500,19 +530,19 @@ const startRoutes = [
   .recent-tools button,
   .saved-tools button {
     min-height: 34px;
-    border: 1px solid #d8dfdb;
+    border: 1px solid var(--line);
     border-radius: 8px;
     background: #fff;
-    color: #596760;
+    color: var(--muted);
     padding: 0 11px;
     font: 900 0.82rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     cursor: pointer;
   }
   .recent-tools button:hover,
   .saved-tools button:hover {
-    border-color: #16824f;
-    background: #edf8f2;
-    color: #0f6c43;
+    border-color: var(--green);
+    background: var(--green-soft);
+    color: var(--green-strong);
   }
   .recent-list {
     display: flex;
@@ -534,20 +564,20 @@ const startRoutes = [
     border-color: #91b8a4;
   }
   .recent-list span {
-    color: #74817b;
+    color: var(--subtle);
     font: 800 0.74rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .recent-list strong {
-    color: #1c2a23;
+    color: var(--ink);
     font: 950 0.95rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .finder {
     margin-top: 24px;
-    border: 1px solid #d8dfdb;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.92);
     padding: 20px;
-    box-shadow: 0 1px 2px rgba(28, 42, 35, 0.04);
+    box-shadow: var(--shadow-sm);
   }
   .finder-head {
     display: grid;
@@ -557,12 +587,12 @@ const startRoutes = [
   }
   .finder h2 {
     margin: 0;
-    color: #1c2a23;
+    color: var(--ink);
     font: 950 1.25rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .finder p {
     margin: 7px 0 0;
-    color: #596760;
+    color: var(--muted);
     font: 700 0.94rem/1.55 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .search-box {
@@ -574,16 +604,16 @@ const startRoutes = [
   .search-box input {
     width: 100%;
     min-height: 46px;
-    border: 1px solid #ccd6d1;
+    border: 1px solid var(--line-strong);
     border-radius: 8px;
     background: #fff;
-    color: #1c2a23;
+    color: var(--ink);
     font: 800 0.98rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     padding: 0 12px;
     outline: none;
   }
   .search-box input:focus {
-    border-color: #16824f;
+    border-color: var(--green);
     box-shadow: 0 0 0 3px rgba(22, 130, 79, 0.12);
   }
   .filter-row {
@@ -601,10 +631,10 @@ const startRoutes = [
   .clear-search {
     min-height: 36px;
     margin-top: 16px;
-    border: 1px solid #d8dfdb;
+    border: 1px solid var(--line);
     border-radius: 8px;
     background: #fff;
-    color: #596760;
+    color: var(--muted);
     padding: 0 12px;
     font: 900 0.85rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     cursor: pointer;
@@ -612,9 +642,9 @@ const startRoutes = [
   }
   .filter-row button {
     min-height: 36px;
-    border: 1px solid #d8dfdb;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background: #f8faf9;
+    background: var(--surface-soft);
     color: #44544c;
     padding: 0 12px;
     font: 900 0.85rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
@@ -623,9 +653,9 @@ const startRoutes = [
   .filter-row button.active,
   .filter-row button:hover,
   .clear-search:hover {
-    border-color: #16824f;
-    background: #edf8f2;
-    color: #0f6c43;
+    border-color: var(--green);
+    background: var(--green-soft);
+    color: var(--green-strong);
   }
   .hint-row {
     display: flex;
@@ -638,14 +668,14 @@ const startRoutes = [
     border: 1px solid #e1e7e4;
     border-radius: 999px;
     background: #fbfdfc;
-    color: #596760;
+    color: var(--muted);
     padding: 0 11px;
     font: 900 0.8rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     cursor: pointer;
   }
   .hint-row button:hover {
     border-color: #91b8a4;
-    color: #0f6c43;
+    color: var(--green-strong);
   }
   .empty-state {
     margin-top: 16px;
@@ -658,7 +688,7 @@ const startRoutes = [
   .ops-strip h2,
   .tool-section h2 {
     margin: 0;
-    color: #1c2a23;
+    color: var(--ink);
     font: 950 1.25rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .revenue-note p,
@@ -695,13 +725,13 @@ const startRoutes = [
     min-height: 148px;
     display: flex;
     flex-direction: column;
-    border: 1px solid #d8dfdb;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.9);
     padding: 15px;
     text-decoration: none;
     color: inherit;
-    transition: border-color 160ms ease, box-shadow 160ms ease;
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
   }
   .tool-card[hidden],
   .tool-section[hidden],
@@ -709,27 +739,28 @@ const startRoutes = [
     display: none;
   }
   .tool-card:hover {
+    transform: translateY(-2px);
     border-color: #91b8a4;
-    box-shadow: 0 8px 22px rgba(28, 42, 35, 0.07);
+    box-shadow: var(--shadow-md);
   }
   .tool-card span {
-    color: #16824f;
+    color: var(--green);
     font: 900 0.78rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .tool-card h3 {
     margin: 14px 0 7px;
-    color: #1c2a23;
+    color: var(--ink);
     font: 950 1.08rem/1.3 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .tool-card p {
     margin: 0;
-    color: #596760;
+    color: var(--muted);
     font: 700 0.9rem/1.55 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .tool-card small {
     margin-top: auto;
     padding-top: 14px;
-    color: #16824f;
+    color: var(--green);
     font: 900 0.82rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   @media (max-width: 920px) {

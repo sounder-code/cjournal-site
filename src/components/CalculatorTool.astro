@@ -178,17 +178,20 @@ const presets = presetsBySlug[calculator.slug] ?? [];
   .calculator-tool {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(360px, 0.82fr);
-    gap: 18px;
+    gap: 20px;
     align-items: start;
   }
   .tool-form,
   .result-panel {
-    border: 1px solid #d6ddd9;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 1px 2px rgba(28, 42, 35, 0.04);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--shadow-sm);
   }
-  .tool-form { padding: 24px; }
+  .tool-form {
+    padding: 24px;
+    backdrop-filter: blur(10px);
+  }
   .tool-heading {
     display: flex;
     justify-content: space-between;
@@ -204,18 +207,18 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     font-size: clamp(1.18rem, 1.6vw, 1.55rem);
     line-height: 1.28;
     letter-spacing: 0;
-    color: #1c2a23;
+    color: var(--ink);
   }
   .tool-kicker {
     display: block;
     margin-bottom: 7px;
-    color: #16824f;
+    color: var(--green);
     font: 900 0.78rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .tool-heading p {
     margin: 0;
     max-width: 620px;
-    color: #66736d;
+    color: var(--muted);
     font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     font-size: 0.94rem;
     line-height: 1.6;
@@ -239,9 +242,9 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     display: grid;
     gap: 10px;
     margin-bottom: 18px;
-    border: 1px solid #e1e7e4;
+    border: 1px solid #dce5e0;
     border-radius: 8px;
-    background: #fbfdfc;
+    background: linear-gradient(180deg, #fbfdfc, #f4f8f6);
     padding: 14px;
   }
   .preset-panel strong {
@@ -264,9 +267,9 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     cursor: pointer;
   }
   .preset-panel button:hover {
-    border-color: #16824f;
-    background: #edf8f2;
-    color: #0f6c43;
+    border-color: var(--green);
+    background: var(--green-soft);
+    color: var(--green-strong);
   }
   .input-grid {
     display: grid;
@@ -287,7 +290,7 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     min-height: 48px;
-    border: 1px solid #ccd6d1;
+    border: 1px solid var(--line-strong);
     border-radius: 8px;
     background: #fff;
     overflow: hidden;
@@ -298,7 +301,7 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     min-width: 0;
     border: 0;
     background: transparent;
-    color: #1c2a23;
+    color: var(--ink);
     font: 800 1rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     padding: 14px 12px;
     outline: none;
@@ -308,32 +311,37 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     cursor: pointer;
   }
   .input-wrap:focus-within {
-    border-color: #16824f;
+    border-color: var(--green);
     box-shadow: 0 0 0 3px rgba(22, 130, 79, 0.12);
   }
   em {
     padding-right: 12px;
-    color: #74817b;
+    color: var(--subtle);
     font-style: normal;
     font-size: 0.82rem;
     white-space: nowrap;
   }
   .result-panel {
     padding: 24px;
-    color: #1c2a23;
+    color: #f6fbf8;
     display: flex;
     flex-direction: column;
     min-height: 100%;
     position: sticky;
     top: 96px;
     overflow: hidden;
+    border-color: rgba(16, 35, 27, 0.22);
+    background:
+      radial-gradient(circle at 100% 0, rgba(142, 242, 188, 0.16), transparent 32%),
+      linear-gradient(180deg, #123025, #0e2119);
+    box-shadow: var(--shadow-lg);
   }
   .result-panel::before {
     content: "";
     display: block;
     height: 4px;
     margin: -24px -24px 20px;
-    background: #16824f;
+    background: #8ef2bc;
   }
   .result-panel[data-tone="warn"]::before { background: #d98716; }
   .result-panel[data-tone="bad"]::before { background: #c83b3b; }
@@ -346,9 +354,9 @@ const presets = presetsBySlug[calculator.slug] ?? [];
   }
   .result-head span {
     border-radius: 999px;
-    background: #edf8f2;
-    color: #137047;
-    border: 1px solid #cce8d8;
+    background: rgba(142, 242, 188, 0.14);
+    color: #b7ffd3;
+    border: 1px solid rgba(142, 242, 188, 0.26);
     padding: 6px 10px;
     font: 800 0.78rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
@@ -364,7 +372,7 @@ const presets = presetsBySlug[calculator.slug] ?? [];
   }
   .result-head p {
     margin: 0;
-    color: #66736d;
+    color: rgba(246, 251, 248, 0.64);
     font: 800 0.9rem/1.3 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     text-align: right;
   }
@@ -373,11 +381,11 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     font: 950 clamp(1.8rem, 3.3vw, 3rem)/1.08 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     letter-spacing: 0;
     margin-bottom: 20px;
-    color: #0f6c43;
+    color: #8ef2bc;
     word-break: keep-all;
   }
-  .result-panel[data-tone="warn"] [data-result-primary] { color: #a35c00; }
-  .result-panel[data-tone="bad"] [data-result-primary] { color: #aa2e2e; }
+  .result-panel[data-tone="warn"] [data-result-primary] { color: #ffd89a; }
+  .result-panel[data-tone="bad"] [data-result-primary] { color: #ffb2a9; }
   .metric-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -387,32 +395,32 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     display: grid;
     gap: 5px;
     padding: 12px;
-    border: 1px solid #edf1ef;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    background: #fbfdfc;
+    background: rgba(255, 255, 255, 0.065);
     font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   :global(.calculator-tool .metric-row span) {
-    color: #66736d;
+    color: rgba(246, 251, 248, 0.64);
     font-size: 0.8rem;
     font-weight: 800;
   }
   :global(.calculator-tool .metric-row strong) {
-    color: #1c2a23;
+    color: #f6fbf8;
     font-size: 0.98rem;
     line-height: 1.25;
   }
   .schedule-wrap {
     margin-top: 18px;
-    border: 1px solid #dce5e0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
-    background: #fbfdfc;
+    background: rgba(255, 255, 255, 0.06);
     overflow-x: auto;
   }
   :global(.calculator-tool .schedule-wrap h3) {
     margin: 0;
     padding: 14px 14px 0;
-    color: #1c2a23;
+    color: #f6fbf8;
     font: 900 0.95rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     position: sticky;
     left: 0;
@@ -436,34 +444,34 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     text-align: left;
   }
   :global(.calculator-tool .schedule-table th) {
-    color: #66736d;
+    color: rgba(246, 251, 248, 0.7);
     font-weight: 900;
-    background: #f4f8f6;
+    background: rgba(255, 255, 255, 0.08);
     position: sticky;
     top: 0;
   }
   :global(.calculator-tool .schedule-table td) {
-    color: #26372f;
+    color: #f6fbf8;
     font-weight: 800;
   }
   :global(.calculator-tool .schedule-note) {
     margin: 0;
     padding: 10px 14px 14px;
-    color: #66736d;
+    color: rgba(246, 251, 248, 0.68);
     font: 700 0.78rem/1.45 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .result-note {
     margin: 18px 0 0;
-    border-top: 1px solid #edf1ef;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
     padding-top: 20px;
-    color: #66736d;
+    color: rgba(246, 251, 248, 0.72);
     font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     font-size: 0.9rem;
     line-height: 1.55;
   }
   .result-caption {
     margin: 12px 0 0;
-    color: #8a9690;
+    color: rgba(246, 251, 248, 0.56);
     font: 700 0.78rem/1.45 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .result-actions {
@@ -475,26 +483,26 @@ const presets = presetsBySlug[calculator.slug] ?? [];
   }
   .result-actions button {
     min-height: 36px;
-    border: 1px solid #cfd8d3;
+    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 8px;
-    background: #fff;
-    color: #1c2a23;
+    background: rgba(255, 255, 255, 0.09);
+    color: #f6fbf8;
     padding: 0 12px;
     font: 900 0.84rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     cursor: pointer;
   }
   .result-actions button:hover {
-    border-color: #16824f;
-    background: #edf8f2;
-    color: #0f6c43;
+    border-color: rgba(142, 242, 188, 0.42);
+    background: rgba(142, 242, 188, 0.14);
+    color: #b7ffd3;
   }
   .result-actions button[aria-pressed="true"] {
-    border-color: #16824f;
-    background: #16824f;
-    color: #fff;
+    border-color: #8ef2bc;
+    background: #8ef2bc;
+    color: #0e2119;
   }
   .result-actions span {
-    color: #74817b;
+    color: rgba(246, 251, 248, 0.68);
     font: 800 0.78rem/1.35 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .compact-tool {
