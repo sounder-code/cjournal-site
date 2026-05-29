@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /posts/
+Disallow: /tags/
 
 Sitemap: https://cjournal.kr/sitemap.xml
