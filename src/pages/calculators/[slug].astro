@@ -40,6 +40,64 @@ const guideByGroup = {
   ]
 };
 const guideItems = guideByGroup[calculator.group];
+const interpretationByGroup = {
+  seller: {
+    title: '결과를 해석하는 순서',
+    body: '먼저 주문당 순이익이 0보다 큰지 확인하고, 다음으로 마진율과 광고비 한도를 봅니다. 마진율이 낮으면 반품률이나 광고비가 조금만 올라가도 손실로 바뀔 수 있습니다.',
+    checks: ['순이익이 0원 아래로 내려가는 입력값 찾기', '수수료율과 배송비를 실제 정산 기준으로 교체', '광고비를 보수적으로 올려 다시 계산']
+  },
+  living: {
+    title: '총액 기준으로 비교하기',
+    body: '월 부담이 작아 보여도 약정 기간이 길면 총액 차이가 커집니다. 사은품, 위약금, 설치비처럼 한 번만 발생하는 금액까지 넣어야 실제 부담을 볼 수 있습니다.',
+    checks: ['약정 기간 전체 비용 확인', '할인 종료 후 월요금 반영', '해지 위약금과 설치비 누락 여부 확인']
+  },
+  utility: {
+    title: '월 부담과 총비용을 같이 보기',
+    body: '대출, 예금, 투자 회수기간은 월 금액과 전체 기간의 총액이 동시에 중요합니다. 월 납입액이 낮아도 기간이 길어지면 총이자나 기회비용이 커질 수 있습니다.',
+    checks: ['월 현금흐름이 감당 가능한지 확인', '기간을 바꿔 총비용 차이 비교', '금리와 세후 기준을 실제 조건으로 교체']
+  }
+};
+const interpretation = interpretationByGroup[calculator.group];
+const faqItems = [
+  {
+    question: `${calculator.shortTitle} 결과는 어디까지 믿어도 되나요?`,
+    answer: '입력한 값과 화면에 표시된 기준을 바탕으로 한 참고용 결과입니다. 실제 계약, 정산, 세금, 금융 조건은 사업자와 기관의 공식 안내를 함께 확인해야 합니다.'
+  },
+  {
+    question: '입력한 값이 서버로 저장되나요?',
+    answer: '계산은 브라우저에서 처리됩니다. 저장 기능을 사용하면 값이 사용자의 브라우저 저장소에 남을 수 있지만 별도 회원 DB로 전송하지 않습니다.'
+  },
+  {
+    question: '비교할 때 어떤 값을 바꿔봐야 하나요?',
+    answer: '가장 불확실한 값을 보수적으로 바꿔보는 것이 좋습니다. 판매자는 반품률과 광고비, 생활비 계약은 약정 기간과 위약금, 금융 계산은 금리와 기간을 먼저 바꿔보세요.'
+  }
+];
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqItems.map((item) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.answer
+    }
+  }))
+};
+const appJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: calculator.title,
+  applicationCategory: 'FinanceApplication',
+  operatingSystem: 'Web',
+  isAccessibleForFree: true,
+  description: calculator.description,
+  url: `${Astro.site}calculators/${calculator.slug}/`,
+  publisher: {
+    '@type': 'Organization',
+    name: '마진계산소'
+  }
+};
 ---
 <BaseLayout
   title={`${calculator.title} | 마진계산소`}
@@ -95,6 +153,28 @@ const guideItems = guideByGroup[calculator.group];
     </div>
   </section>
 
+  <section class="interpretation">
+    <div>
+      <h2>{interpretation.title}</h2>
+      <p>{interpretation.body}</p>
+    </div>
+    <ul>
+      {interpretation.checks.map((check) => <li>{check}</li>)}
+    </ul>
+  </section>
+
+  <section class="faq">
+    <h2>자주 묻는 질문</h2>
+    <div class="faq-list">
+      {faqItems.map((item) => (
+        <details>
+          <summary>{item.question}</summary>
+          <p>{item.answer}</p>
+        </details>
+      ))}
+    </div>
+  </section>
+
   <section class="related">
     <div class="section-title">
       <h2>같이 보면 좋은 계산기</h2>
@@ -137,6 +217,8 @@ const guideItems = guideByGroup[calculator.group];
       localStorage.setItem(key, JSON.stringify(next));
     } catch {}
   </script>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(appJsonLd)} />
 </BaseLayout>
 
 <style>
@@ -238,10 +320,14 @@ const guideItems = guideByGroup[calculator.group];
     color: #0f6c43;
   }
   .guide,
+  .interpretation,
+  .faq,
   .related {
     margin-top: 36px;
   }
   .guide h2,
+  .interpretation h2,
+  .faq h2,
   .section-title h2 {
     margin: 0 0 14px;
     color: #1c2a23;
@@ -254,6 +340,8 @@ const guideItems = guideByGroup[calculator.group];
     gap: 10px;
   }
   .guide article,
+  .interpretation,
+  .faq details,
   .related-list a {
     border: 1px solid #d8dfdb;
     border-radius: 8px;
@@ -267,10 +355,49 @@ const guideItems = guideByGroup[calculator.group];
     font: 950 1rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .guide p,
+  .interpretation p,
+  .faq p,
   .related-list p {
     margin: 0;
     color: #596760;
     font: 700 0.92rem/1.55 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .interpretation {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.44fr);
+    gap: 18px;
+    align-items: start;
+  }
+  .interpretation ul {
+    margin: 0;
+    padding-left: 1.2rem;
+    color: #1c2a23;
+    font: 850 0.95rem/1.65 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .interpretation li + li {
+    margin-top: 6px;
+  }
+  .faq-list {
+    display: grid;
+    gap: 10px;
+  }
+  .faq details {
+    padding: 0;
+    overflow: hidden;
+  }
+  .faq summary {
+    cursor: pointer;
+    padding: 15px 16px;
+    color: #1c2a23;
+    font: 950 0.98rem/1.35 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .faq summary::marker {
+    color: #16824f;
+  }
+  .faq details p {
+    border-top: 1px solid #e7ece9;
+    padding: 14px 16px 16px;
+    background: #f8faf9;
   }
   .section-title {
     display: flex;
@@ -306,6 +433,7 @@ const guideItems = guideByGroup[calculator.group];
       width: fit-content;
     }
     .guide-grid,
+    .interpretation,
     .related-list {
       grid-template-columns: 1fr;
     }
