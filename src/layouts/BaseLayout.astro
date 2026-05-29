@@ -74,22 +74,26 @@ const gtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-TXMPF75Z').trim();
 <style is:global>
   :root {
     color-scheme: light;
-    --ink: #17261f;
-    --muted: #5f6d66;
-    --subtle: #7b8881;
-    --line: #d8dfdb;
-    --line-strong: #c7d3cd;
+    --ink: #101614;
+    --muted: #59635e;
+    --subtle: #78827d;
+    --line: #dde4e0;
+    --line-strong: #c9d3ce;
     --surface: #ffffff;
-    --surface-soft: #f8faf9;
-    --canvas: #f3f6f4;
+    --surface-soft: #f6f8f7;
+    --canvas: #f7f9f8;
     --green: #16824f;
     --green-strong: #0f6c43;
-    --green-soft: #edf8f2;
-    --navy: #10231b;
-    --blue: #2f6686;
-    --shadow-sm: 0 1px 2px rgba(23, 38, 31, 0.05);
-    --shadow-md: 0 10px 28px rgba(23, 38, 31, 0.08);
-    --shadow-lg: 0 22px 48px rgba(23, 38, 31, 0.12);
+    --green-soft: #edf7f1;
+    --navy: #111c18;
+    --blue: #2563a7;
+    --blue-soft: #eef5ff;
+    --amber: #b7791f;
+    --amber-soft: #fff7e8;
+    --red: #b84a42;
+    --shadow-sm: 0 1px 2px rgba(16, 22, 20, 0.05);
+    --shadow-md: 0 12px 30px rgba(16, 22, 20, 0.08);
+    --shadow-lg: 0 24px 54px rgba(16, 22, 20, 0.14);
   }
   *,
   *::before,
@@ -101,7 +105,9 @@ const gtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-TXMPF75Z').trim();
     font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--ink);
     background:
-      linear-gradient(180deg, #eef5f1 0, var(--canvas) 340px, var(--canvas) 100%);
+      linear-gradient(90deg, rgba(16, 22, 20, 0.035) 1px, transparent 1px),
+      linear-gradient(180deg, #ffffff 0, var(--canvas) 420px, var(--canvas) 100%);
+    background-size: 44px 44px, auto;
     line-height: 1.55;
     text-rendering: optimizeLegibility;
   }
@@ -115,13 +121,13 @@ const gtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-TXMPF75Z').trim();
   .container { width: min(1180px, calc(100vw - 32px)); margin: 0 auto; }
   .main-content { min-height: 68vh; padding: 28px 0 58px; }
   .site-header {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.94);
     border-top: 0;
     border-bottom: 1px solid rgba(216, 223, 219, 0.9);
     position: sticky;
     top: 0;
     z-index: 20;
-    backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(130%);
   }
   .site-footer {
     background: var(--surface);

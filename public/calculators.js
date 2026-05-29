@@ -152,7 +152,7 @@ function breakEvenPrice(v) {
       ['주문당 비용 합계', formatWon(v.cost + v.fixedCost)],
       ['총 수수료율', formatPercent(v.feeRate)]
     ],
-    status: targetPrice > minPrice ? '계산 완료' : '주의',
+    status: targetPrice > minPrice ? '목표가' : '주의',
     note: '목표 마진율을 올릴수록 필요한 판매가는 비선형으로 올라갑니다.'
   };
 }
@@ -245,7 +245,7 @@ function discountMargin(v) {
       ['할인액', formatWon(v.regularPrice - salePrice)]
     ],
     status: net > 3000 ? '판매 가능' : net > 0 ? '주의' : '손실',
-    note: net > 0 ? '할인 후에도 이익은 남지만 광고비나 반품이 붙으면 마진이 더 줄어듭니다.' : '현재 할인율에서는 판매할수록 손실이 납니다. 할인율이나 원가 구조를 다시 확인하세요.'
+    note: net > 0 ? '할인 후에도 이익은 남지만 광고비나 반품이 붙으면 마진이 더 줄어듭니다.' : '현재 할인율에서는 판매할수록 손실이 납니다. 할인율이나 원가 구조를 다시 보세요.'
   };
 }
 
@@ -266,7 +266,7 @@ function couponBurden(v) {
       ['마진율', formatPercent(margin)]
     ],
     status: net > 3000 ? '참여 가능' : net > 0 ? '주의' : '손실',
-    note: '플랫폼 쿠폰은 부담 주체에 따라 정산액이 달라집니다. 실제 정산 정책을 확인하고 입력값을 맞추세요.'
+    note: '플랫폼 쿠폰은 부담 주체에 따라 정산액이 달라집니다. 실제 정산 정책에 맞춰 입력하세요.'
   };
 }
 
@@ -320,7 +320,7 @@ function internetSwitch(v) {
       ['위약금', formatWon(v.penalty)]
     ],
     status: benefit > 0 ? '갈아타기 유리' : '유지 유리',
-    note: benefit > 0 ? '숫자상으로는 변경이 유리합니다. 설치비와 결합할인 변화도 확인하세요.' : '현재 조건에서는 위약금과 월요금 차이를 감안하면 유지가 나을 수 있습니다.'
+    note: benefit > 0 ? '숫자상으로는 변경이 유리합니다. 설치비와 결합할인 변화도 함께 보세요.' : '현재 조건에서는 위약금과 월요금 차이를 감안하면 유지가 나을 수 있습니다.'
   };
 }
 
@@ -335,7 +335,7 @@ function rentalTotalCost(v) {
       ['설치/등록비', formatWon(v.install)],
       ['할인/사은품', formatWon(v.reward)]
     ],
-    status: '총액 확인',
+    status: '총액',
     note: '월요금이 낮아도 약정 기간과 등록비를 합치면 총액 순위가 바뀔 수 있습니다.'
   };
 }
@@ -392,7 +392,7 @@ function cardInstallment(v) {
       ['초기 수수료', formatWon(v.upfrontFee)],
       ['할부 기간', `${months.toLocaleString('ko-KR')}개월`]
     ],
-    status: totalInstallment > v.price ? '수수료 확인' : '무이자',
+    status: totalInstallment > v.price ? '수수료' : '무이자',
     note: '카드사별 할부 수수료율과 청구 방식은 다를 수 있으니 실제 청구 조건과 비교하세요.'
   };
 }
@@ -432,7 +432,7 @@ function savingsMaturity(v) {
       ['이자세금', formatWon(tax)],
       ['세후 이자', formatWon(afterTaxInterest)]
     ],
-    status: '만기액 확인',
+    status: '만기액',
     note: '일반적인 월 납입 적금의 단리 계산입니다. 실제 상품은 납입일과 우대금리에 따라 달라질 수 있습니다.'
   };
 }
@@ -550,8 +550,8 @@ function depositInterest(v) {
       ['세후 이자', formatWon(afterTaxInterest)],
       ['예치 기간', `${months.toLocaleString('ko-KR')}개월`]
     ],
-    status: '이자 확인',
-    note: '단리 예금 기준 계산입니다. 월복리, 중도해지, 우대금리는 실제 상품 조건에 맞춰 다시 확인하세요.'
+    status: '이자',
+    note: '단리 예금 기준 계산입니다. 월복리, 중도해지, 우대금리는 실제 상품 조건에 맞춰 다시 넣어보세요.'
   };
 }
 
@@ -745,7 +745,7 @@ function setupCalculator(root) {
       const values = readJsonFromText(button.dataset.presetValues || '{}', {});
       applyInputs(root, values);
       update();
-      setFeedback(root, '추천 입력값을 적용했습니다');
+      setFeedback(root, '예시값을 넣었습니다');
     });
   });
   root.querySelector('[data-result-copy]')?.addEventListener('click', async () => {

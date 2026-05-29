@@ -33,7 +33,7 @@ export const calculators: Calculator[] = [
     title: '판매자 순이익 마진 계산기',
     shortTitle: '마진 계산기',
     description: '판매가, 원가, 수수료, 배송비, 광고비, 반품률을 반영해 실제 남는 돈을 계산합니다.',
-    intent: '팔수록 손해인지 먼저 확인',
+    intent: '팔수록 손해인지 먼저 보기',
     inputs: [
       { key: 'price', label: '판매가', suffix: '원', value: 29900, min: 0, step: 100 },
       { key: 'cost', label: '매입/제조 원가', suffix: '원', value: 12000, min: 0, step: 100 },
@@ -50,7 +50,7 @@ export const calculators: Calculator[] = [
     title: '손익분기 판매가 계산기',
     shortTitle: '손익분기 판매가',
     description: '원가와 비용을 넣으면 최소 판매가와 목표 마진 판매가를 역산합니다.',
-    intent: '최소 얼마에 팔아야 하는지 확인',
+    intent: '최소 판매가 역산',
     inputs: [
       { key: 'cost', label: '원가', suffix: '원', value: 14000, min: 0, step: 100 },
       { key: 'fixedCost', label: '주문당 고정비', suffix: '원', value: 4200, min: 0, step: 100 },
@@ -79,7 +79,7 @@ export const calculators: Calculator[] = [
     title: '반품률 반영 순이익 계산기',
     shortTitle: '반품 손실',
     description: '반품률과 반품 1건 손실액을 반영해 월 순이익이 얼마나 깎이는지 봅니다.',
-    intent: '반품 많은 상품의 숨은 비용 확인',
+    intent: '반품 많은 상품의 숨은 비용',
     inputs: [
       { key: 'orders', label: '월 주문 수', suffix: '건', value: 120, min: 0, step: 1 },
       { key: 'profitPerOrder', label: '주문당 기본 이익', suffix: '원', value: 7200, min: 0, step: 100 },
@@ -122,7 +122,7 @@ export const calculators: Calculator[] = [
     title: '할인 판매 마진 계산기',
     shortTitle: '할인 마진',
     description: '정가에서 할인을 적용했을 때 수수료와 배송비를 빼고 실제 남는 금액을 계산합니다.',
-    intent: '쿠폰·세일 전에 손실 확인',
+    intent: '쿠폰·세일 전 손실 방지',
     inputs: [
       { key: 'regularPrice', label: '정가', suffix: '원', value: 39900, min: 0, step: 100 },
       { key: 'discountRate', label: '할인율', suffix: '%', value: 15, min: 0, max: 90, step: 0.1 },
@@ -138,7 +138,7 @@ export const calculators: Calculator[] = [
     title: '쿠폰 부담 후 마진 계산기',
     shortTitle: '쿠폰 부담',
     description: '쿠폰 금액 중 판매자 부담분을 반영해 정산 기준 매출과 순이익을 계산합니다.',
-    intent: '쿠폰행사 참여 전 확인',
+    intent: '쿠폰행사 참여 전 계산',
     inputs: [
       { key: 'price', label: '상품 판매가', suffix: '원', value: 45900, min: 0, step: 100 },
       { key: 'coupon', label: '쿠폰 금액', suffix: '원', value: 5000, min: 0, step: 100 },
@@ -154,7 +154,7 @@ export const calculators: Calculator[] = [
     title: '묶음배송 손익 계산기',
     shortTitle: '묶음배송 손익',
     description: '한 주문에 여러 개가 팔릴 때 상품 이익, 수수료, 실제 배송비를 합쳐 손익을 계산합니다.',
-    intent: '묶음 구매가 진짜 이득인지 확인',
+    intent: '묶음 구매 손익 비교',
     inputs: [
       { key: 'price', label: '개당 판매가', suffix: '원', value: 12900, min: 0, step: 100 },
       { key: 'cost', label: '개당 원가', suffix: '원', value: 5200, min: 0, step: 100 },
@@ -183,7 +183,7 @@ export const calculators: Calculator[] = [
     title: '인터넷 갈아타기 손익 계산기',
     shortTitle: '인터넷 갈아타기',
     description: '위약금, 사은품, 월요금 차이를 합쳐 갈아타기가 이득인지 계산합니다.',
-    intent: '상담 전에 손익 먼저 확인',
+    intent: '상담 전 손익 계산',
     inputs: [
       { key: 'penalty', label: '예상 위약금', suffix: '원', value: 180000, min: 0, step: 1000 },
       { key: 'reward', label: '사은품/지원금', suffix: '원', value: 420000, min: 0, step: 1000 },
@@ -241,7 +241,7 @@ export const calculators: Calculator[] = [
     title: '카드 할부 월납입 계산기',
     shortTitle: '카드 할부',
     description: '할부 원금, 기간, 수수료율로 월 납입액과 총 부담액을 계산합니다.',
-    intent: '무이자 아닌 할부 비용 확인',
+    intent: '무이자 아닌 할부 비용',
     inputs: [
       { key: 'price', label: '결제금액', suffix: '원', value: 1200000, min: 0, step: 10000 },
       { key: 'months', label: '할부 기간', suffix: '개월', value: 12, min: 1, max: 60, step: 1 },
@@ -255,7 +255,7 @@ export const calculators: Calculator[] = [
     title: '출퇴근 유류비 계산기',
     shortTitle: '출퇴근 유류비',
     description: '왕복 거리, 출근일, 연비, 유가로 월 출퇴근 기름값을 계산합니다.',
-    intent: '차로 출근할 때 월비용 확인',
+    intent: '차로 출근할 때 월비용',
     inputs: [
       { key: 'distance', label: '왕복 거리', suffix: 'km', value: 36, min: 0, step: 1 },
       { key: 'days', label: '월 출근일', suffix: '일', value: 22, min: 0, max: 31, step: 1 },
@@ -270,7 +270,7 @@ export const calculators: Calculator[] = [
     title: '적금 만기 수령액 계산기',
     shortTitle: '적금 만기액',
     description: '월 납입액, 기간, 금리, 이자세금을 반영해 만기 수령액을 계산합니다.',
-    intent: '매달 모으면 얼마가 되는지 확인',
+    intent: '매달 모을 때 만기액',
     inputs: [
       { key: 'monthlyDeposit', label: '월 납입액', suffix: '원', value: 300000, min: 0, step: 10000 },
       { key: 'months', label: '납입 기간', suffix: '개월', value: 24, min: 1, max: 120, step: 1 },
@@ -284,7 +284,7 @@ export const calculators: Calculator[] = [
     title: '대출 이자 계산기',
     shortTitle: '대출 이자',
     description: '대출금액, 기간, 금리, 상환방식으로 월 납입액과 총이자를 계산합니다.',
-    intent: '월 납입액과 총이자 확인',
+    intent: '월 납입액과 총이자',
     inputs: [
       { key: 'principal', label: '대출금액', suffix: '원', value: 100000000, min: 0, step: 1000000 },
       { key: 'annualRate', label: '연이자율', suffix: '%', value: 4.5, min: 0, max: 30, step: 0.1 },
@@ -308,7 +308,7 @@ export const calculators: Calculator[] = [
     title: '예금 이자 계산기',
     shortTitle: '예금 이자',
     description: '예치금, 기간, 금리, 이자세금을 반영해 만기 이자와 수령액을 계산합니다.',
-    intent: '예금 만기 수령액 확인',
+    intent: '예금 만기 수령액',
     inputs: [
       { key: 'principal', label: '예치금', suffix: '원', value: 10000000, min: 0, step: 100000 },
       { key: 'months', label: '예치 기간', suffix: '개월', value: 12, min: 1, max: 120, step: 1 },
@@ -336,7 +336,7 @@ export const calculators: Calculator[] = [
     title: '투자 회수기간 계산기',
     shortTitle: '회수기간',
     description: '초기 투자비와 월 순현금흐름으로 원금 회수까지 걸리는 기간을 계산합니다.',
-    intent: '투자비가 언제 회수되는지 확인',
+    intent: '투자비 회수 시점',
     inputs: [
       { key: 'initialCost', label: '초기 투자비', suffix: '원', value: 5000000, min: 0, step: 100000 },
       { key: 'monthlyRevenue', label: '월 추가 매출', suffix: '원', value: 900000, min: 0, step: 10000 },
@@ -350,7 +350,7 @@ export const calculators: Calculator[] = [
     title: '시간당 실제 수익 계산기',
     shortTitle: '시간당 수익',
     description: '월 매출, 비용, 투입 시간을 넣어 내 일이 시간당 얼마를 남기는지 계산합니다.',
-    intent: '바쁜데 돈이 안 남는지 확인',
+    intent: '시간당 남는 돈',
     inputs: [
       { key: 'revenue', label: '월 매출', suffix: '원', value: 3000000, min: 0, step: 10000 },
       { key: 'expense', label: '월 비용', suffix: '원', value: 1200000, min: 0, step: 10000 },

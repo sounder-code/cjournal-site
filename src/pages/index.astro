@@ -50,7 +50,7 @@ const startRoutes = [
   },
   {
     title: '쿠폰·세일 행사 전에',
-    body: '할인율을 넣고 행사 후 실제 순이익이 남는지 확인합니다.',
+    body: '할인율을 넣고 행사 후 주문당 순이익이 남는지 봅니다.',
     href: '/calculators/discount-margin/?regularPrice=39900&discountRate=15&cost=17000&feeRate=13.5&shipping=3500&adCost=1500',
     label: '할인 마진 보기'
   },
@@ -70,7 +70,7 @@ const startRoutes = [
     title: '렌탈·통신비 계약을 비교할 때',
     body: '월요금보다 약정 총액과 사은품, 위약금을 같이 놓고 봅니다.',
     href: '/calculators/rental-total-cost/?monthly=29900&months=36&install=0&reward=150000',
-    label: '렌탈 총액 확인'
+    label: '렌탈 총액 계산'
   },
   {
     title: '구독비와 고정비를 줄일 때',
@@ -81,8 +81,8 @@ const startRoutes = [
 ];
 ---
 <BaseLayout
-  title="마진계산소 | 판매자 마진·생활비 계산기 허브"
-  description="판매가, 원가, 수수료, 광고비, 반품률, 렌탈 총액, 인터넷 갈아타기 손익을 바로 계산하는 정적 계산기 허브입니다."
+  title="마진계산소 | 판매자 마진·생활비 계산기"
+  description="판매가, 원가, 수수료, 광고비, 반품률, 렌탈 총액, 인터넷 갈아타기 손익을 빠르게 계산하는 계산기 모음입니다."
   canonical="/"
 >
   <section class="hero-tool">
@@ -90,14 +90,14 @@ const startRoutes = [
       <div>
         <h1>마진, 이자, 생활비를 바로 계산하세요.</h1>
         <p>
-          판매자 비용과 월 고정비, 대출 이자처럼 놓치기 쉬운 숫자를 한 화면에서 확인합니다.
+          판매자 비용과 월 고정비, 대출 이자처럼 놓치기 쉬운 숫자를 한 화면에서 봅니다.
           기본값을 바꿔 실제 조건에 맞게 다시 계산해보세요.
         </p>
         <div class="proof-row" aria-label="사이트 핵심 기능">
           <span>{calculators.length}개 계산기</span>
-          <span>추천 입력값</span>
+          <span>예시값 제공</span>
           <span>결과 복사·공유</span>
-          <span>입력 자동 저장</span>
+          <span>브라우저 저장</span>
         </div>
       </div>
       <div class="quick-box">
@@ -113,7 +113,7 @@ const startRoutes = [
   </section>
 
   <section class="revenue-note">
-    <h2>계산 전 체크</h2>
+      <h2>빠뜨리기 쉬운 비용</h2>
     <p>
       판매가만 보면 남는 것 같아도 수수료, 결제비, 배송비, 광고비, 반품 손실을 넣으면
       실제 마진이 크게 달라집니다. 기본값을 바꿔 내 상품 기준으로 다시 계산해보세요.
@@ -122,8 +122,8 @@ const startRoutes = [
 
   <section class="starter-routes" aria-labelledby="starter-title">
     <div class="section-title">
-      <h2 id="starter-title">상황별 바로 시작</h2>
-      <p>추천 입력값 적용</p>
+      <h2 id="starter-title">자주 쓰는 상황</h2>
+      <p>예시 조건으로 시작</p>
     </div>
     <div class="starter-grid">
       {startRoutes.map((route) => (
@@ -167,7 +167,7 @@ const startRoutes = [
     <div class="finder-head">
       <div>
         <h2 id="finder-title">필요한 계산기 찾기</h2>
-        <p><span data-tool-count>{calculators.length}</span>개 계산기 중 지금 확인할 숫자를 검색하세요.</p>
+        <p><span data-tool-count>{calculators.length}</span>개 계산기 중 지금 볼 항목을 검색하세요.</p>
       </div>
       <label class="search-box">
         <span>검색</span>
@@ -194,7 +194,7 @@ const startRoutes = [
     <section class="tool-section" id={group} data-tool-section={group}>
       <div class="section-title">
         <h2>{groupLabels[group]}</h2>
-        <p>{items.length}개 도구</p>
+        <p>{items.length}개 계산기</p>
       </div>
       <div class="tool-list">
         {items.map((calculator) => (
@@ -216,7 +216,7 @@ const startRoutes = [
   ))}
 
   <section class="ops-strip">
-    <h2>계산기 선택 기준</h2>
+    <h2>무엇부터 볼까</h2>
     <div>
       <p>주문 1건 기준으로 볼 때는 판매자 계산기</p>
       <p>약정 기간 전체 비용을 볼 때는 생활비 계산기</p>
@@ -226,6 +226,7 @@ const startRoutes = [
 
   <script is:inline src="/calculators.js" defer></script>
   <script is:inline>
+    {
     const searchInput = document.querySelector('[data-tool-search]');
     const filterButtons = [...document.querySelectorAll('[data-tool-filter]')];
     const cards = [...document.querySelectorAll('[data-tool-card]')];
@@ -335,20 +336,21 @@ const startRoutes = [
     });
     renderRecentTools();
     renderFavoriteTools();
+    }
   </script>
 </BaseLayout>
 
 <style>
   .hero-tool {
     display: grid;
-    gap: 20px;
+    gap: 22px;
   }
   .hero-copy {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(320px, 0.55fr);
-    gap: 26px;
+    gap: 28px;
     align-items: stretch;
-    padding: 18px 0 4px;
+    padding: 24px 0 6px;
   }
   h1 {
     margin: 0;
@@ -360,7 +362,7 @@ const startRoutes = [
   .hero-copy p {
     margin: 14px 0 0;
     max-width: 680px;
-    color: var(--muted);
+    color: #4f5a55;
     font: 700 1rem/1.7 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .proof-row {
@@ -373,10 +375,10 @@ const startRoutes = [
     display: inline-flex;
     align-items: center;
     min-height: 32px;
-    border: 1px solid rgba(22, 130, 79, 0.18);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.68);
-    color: #2b4c3d;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: #33403a;
     padding: 0 11px;
     box-shadow: var(--shadow-sm);
     font: 900 0.8rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
@@ -384,7 +386,9 @@ const startRoutes = [
   .quick-box {
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
-    background: var(--navy);
+    background:
+      linear-gradient(135deg, rgba(37, 99, 167, 0.12), transparent 44%),
+      var(--navy);
     padding: 18px;
     align-self: end;
     box-shadow: var(--shadow-lg);
@@ -405,7 +409,7 @@ const startRoutes = [
     align-items: center;
     justify-content: center;
     min-height: 38px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.08);
     color: #f6fbf8;
@@ -415,22 +419,22 @@ const startRoutes = [
     text-align: center;
   }
   .quick-row a:hover {
-    border-color: rgba(142, 242, 188, 0.42);
-    background: rgba(142, 242, 188, 0.14);
+    border-color: rgba(151, 194, 255, 0.48);
+    background: rgba(151, 194, 255, 0.16);
   }
   .revenue-note,
   .ops-strip {
     margin-top: 28px;
     border: 1px solid var(--line);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.84);
+    background: #fff;
     padding: 18px 20px;
     display: grid;
     grid-template-columns: 180px minmax(0, 1fr);
     gap: 18px;
     align-items: start;
     box-shadow: var(--shadow-sm);
-    backdrop-filter: blur(10px);
+    border-left: 4px solid var(--blue);
   }
   .pathway {
     display: grid;
@@ -452,7 +456,7 @@ const startRoutes = [
     min-height: 166px;
     border: 1px solid var(--line);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.9);
+    background: #fff;
     color: inherit;
     text-decoration: none;
     padding: 17px;
@@ -461,7 +465,7 @@ const startRoutes = [
   }
   .starter-grid a:hover {
     transform: translateY(-2px);
-    border-color: #91b8a4;
+    border-color: #9bb7d8;
     box-shadow: var(--shadow-md);
   }
   .starter-grid strong {
@@ -475,7 +479,7 @@ const startRoutes = [
   }
   .starter-grid span {
     align-self: end;
-    color: var(--green);
+    color: var(--blue);
     font: 900 0.82rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .path-card {
@@ -484,7 +488,7 @@ const startRoutes = [
     min-height: 156px;
     border: 1px solid var(--line);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.88);
+    background: #fff;
     padding: 18px;
     color: inherit;
     text-decoration: none;
@@ -493,12 +497,12 @@ const startRoutes = [
   }
   .path-card:hover {
     transform: translateY(-2px);
-    border-color: #91b8a4;
+    border-color: #9bb7d8;
     box-shadow: var(--shadow-md);
   }
   .path-card span,
   .path-card small {
-    color: var(--green);
+    color: var(--blue);
     font: 900 0.78rem/1.3 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .path-card strong {
@@ -515,7 +519,7 @@ const startRoutes = [
     margin-top: 24px;
     border: 1px solid var(--line);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.88);
+    background: #fff;
     padding: 18px 20px;
     box-shadow: var(--shadow-sm);
   }
@@ -540,9 +544,9 @@ const startRoutes = [
   }
   .recent-tools button:hover,
   .saved-tools button:hover {
-    border-color: var(--green);
-    background: var(--green-soft);
-    color: var(--green-strong);
+    border-color: var(--blue);
+    background: var(--blue-soft);
+    color: var(--blue);
   }
   .recent-list {
     display: flex;
@@ -555,13 +559,13 @@ const startRoutes = [
     min-width: 150px;
     border: 1px solid #e1e7e4;
     border-radius: 8px;
-    background: #fbfdfc;
+    background: var(--surface-soft);
     color: inherit;
     text-decoration: none;
     padding: 10px 12px;
   }
   .recent-list a:hover {
-    border-color: #91b8a4;
+    border-color: #9bb7d8;
   }
   .recent-list span {
     color: var(--subtle);
@@ -575,7 +579,7 @@ const startRoutes = [
     margin-top: 24px;
     border: 1px solid var(--line);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.92);
+    background: #fff;
     padding: 20px;
     box-shadow: var(--shadow-sm);
   }
@@ -613,8 +617,8 @@ const startRoutes = [
     outline: none;
   }
   .search-box input:focus {
-    border-color: var(--green);
-    box-shadow: 0 0 0 3px rgba(22, 130, 79, 0.12);
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 167, 0.12);
   }
   .filter-row {
     display: flex;
@@ -653,9 +657,9 @@ const startRoutes = [
   .filter-row button.active,
   .filter-row button:hover,
   .clear-search:hover {
-    border-color: var(--green);
-    background: var(--green-soft);
-    color: var(--green-strong);
+    border-color: var(--blue);
+    background: var(--blue-soft);
+    color: var(--blue);
   }
   .hint-row {
     display: flex;
@@ -666,22 +670,22 @@ const startRoutes = [
   .hint-row button {
     min-height: 32px;
     border: 1px solid #e1e7e4;
-    border-radius: 999px;
-    background: #fbfdfc;
+    border-radius: 8px;
+    background: var(--surface-soft);
     color: var(--muted);
     padding: 0 11px;
     font: 900 0.8rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     cursor: pointer;
   }
   .hint-row button:hover {
-    border-color: #91b8a4;
-    color: var(--green-strong);
+    border-color: #9bb7d8;
+    color: var(--blue);
   }
   .empty-state {
     margin-top: 16px;
     border: 1px dashed #cfd8d3;
     border-radius: 8px;
-    background: #f8faf9;
+    background: var(--surface-soft);
     padding: 14px;
   }
   .revenue-note h2,
@@ -727,7 +731,7 @@ const startRoutes = [
     flex-direction: column;
     border: 1px solid var(--line);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.9);
+    background: #fff;
     padding: 15px;
     text-decoration: none;
     color: inherit;
@@ -740,11 +744,11 @@ const startRoutes = [
   }
   .tool-card:hover {
     transform: translateY(-2px);
-    border-color: #91b8a4;
+    border-color: #9bb7d8;
     box-shadow: var(--shadow-md);
   }
   .tool-card span {
-    color: var(--green);
+    color: var(--blue);
     font: 900 0.78rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .tool-card h3 {
@@ -760,7 +764,7 @@ const startRoutes = [
   .tool-card small {
     margin-top: auto;
     padding-top: 14px;
-    color: var(--green);
+    color: var(--blue);
     font: 900 0.82rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   @media (max-width: 920px) {

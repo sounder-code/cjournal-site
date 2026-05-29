@@ -27,16 +27,16 @@ const guideByGroup = {
   seller: [
     ['1. 비용을 빠짐없이 입력', '판매가만 보지 말고 수수료, 결제비, 배송비, 광고비, 반품 손실까지 함께 넣으세요.'],
     ['2. 주문 1건과 월 기준을 분리', '주문당 이익이 남아도 월 고정비와 광고비가 커지면 전체 손익은 달라질 수 있습니다.'],
-    ['3. 플랫폼 기준 확인', '카테고리별 수수료, 정산 방식, 배송 정책은 플랫폼마다 다르므로 최종 판매 전 공식 기준을 확인하세요.']
+    ['3. 플랫폼 조건 대조', '카테고리별 수수료, 정산 방식, 배송 정책은 플랫폼마다 다르므로 최종 판매 전 공식 안내와 맞춰보세요.']
   ],
   living: [
-    ['1. 월요금보다 총액 확인', '렌탈료나 통신비는 월 납입액보다 약정 기간 전체 비용으로 비교해야 조건이 보입니다.'],
+    ['1. 월요금보다 총액', '렌탈료나 통신비는 월 납입액보다 약정 기간 전체 비용으로 비교해야 조건이 보입니다.'],
     ['2. 할인과 위약금을 같이 계산', '사은품, 설치비, 위약금, 기존 할인 해지 여부를 함께 넣어야 실제 이득을 볼 수 있습니다.'],
-    ['3. 계약 조건 확인', '프로모션과 약정 조건은 바뀔 수 있으니 신청 전 사업자 안내를 다시 확인하세요.']
+    ['3. 계약 조건 대조', '프로모션과 약정 조건은 바뀔 수 있으니 신청 전 사업자 안내와 다시 맞춰보세요.']
   ],
   utility: [
-    ['1. 월 현금흐름 확인', '대출이나 사업 손익은 총액뿐 아니라 매월 빠져나가는 금액을 먼저 확인해야 합니다.'],
-    ['2. 기간을 길게 볼수록 총비용 확인', '월 납입액이 작아도 기간이 길면 총이자나 기회비용이 크게 늘어날 수 있습니다.'],
+    ['1. 월 현금흐름', '대출이나 사업 손익은 총액뿐 아니라 매월 빠져나가는 금액을 먼저 봐야 합니다.'],
+    ['2. 기간이 길수록 총비용', '월 납입액이 작아도 기간이 길면 총이자나 기회비용이 크게 늘어날 수 있습니다.'],
     ['3. 실제 조건으로 재계산', '금리, 상환방식, 세금, 보험료 같은 조건이 달라지면 결과도 달라집니다.']
   ]
 };
@@ -52,25 +52,25 @@ function formatInputDefault(input: (typeof calculator.inputs)[number]) {
 const interpretationByGroup = {
   seller: {
     title: '결과를 해석하는 순서',
-    body: '먼저 주문당 순이익이 0보다 큰지 확인하고, 다음으로 마진율과 광고비 한도를 봅니다. 마진율이 낮으면 반품률이나 광고비가 조금만 올라가도 손실로 바뀔 수 있습니다.',
+    body: '먼저 주문당 순이익이 0보다 큰지 보고, 다음으로 마진율과 광고비 한도를 봅니다. 마진율이 낮으면 반품률이나 광고비가 조금만 올라가도 손실로 바뀔 수 있습니다.',
     checks: ['순이익이 0원 아래로 내려가는 입력값 찾기', '수수료율과 배송비를 실제 정산 기준으로 교체', '광고비를 보수적으로 올려 다시 계산']
   },
   living: {
     title: '총액 기준으로 비교하기',
     body: '월 부담이 작아 보여도 약정 기간이 길면 총액 차이가 커집니다. 사은품, 위약금, 설치비처럼 한 번만 발생하는 금액까지 넣어야 실제 부담을 볼 수 있습니다.',
-    checks: ['약정 기간 전체 비용 확인', '할인 종료 후 월요금 반영', '해지 위약금과 설치비 누락 여부 확인']
+    checks: ['약정 기간 전체 비용 보기', '할인 종료 후 월요금 반영', '해지 위약금과 설치비 누락 여부 점검']
   },
   utility: {
     title: '월 부담과 총비용을 같이 보기',
     body: '대출, 예금, 투자 회수기간은 월 금액과 전체 기간의 총액이 동시에 중요합니다. 월 납입액이 낮아도 기간이 길어지면 총이자나 기회비용이 커질 수 있습니다.',
-    checks: ['월 현금흐름이 감당 가능한지 확인', '기간을 바꿔 총비용 차이 비교', '금리와 세후 기준을 실제 조건으로 교체']
+    checks: ['월 현금흐름이 감당 가능한지 보기', '기간을 바꿔 총비용 차이 비교', '금리와 세후 기준을 실제 조건으로 교체']
   }
 };
 const interpretation = interpretationByGroup[calculator.group];
 const faqItems = [
   {
     question: `${calculator.shortTitle} 결과는 어디까지 믿어도 되나요?`,
-    answer: '입력한 값과 화면에 표시된 기준을 바탕으로 한 참고용 결과입니다. 실제 계약, 정산, 세금, 금융 조건은 사업자와 기관의 공식 안내를 함께 확인해야 합니다.'
+    answer: '입력한 값과 화면에 표시된 계산식으로 나온 참고용 결과입니다. 실제 계약, 정산, 세금, 금융 조건은 사업자와 기관의 공식 안내를 함께 봐야 합니다.'
   },
   {
     question: '입력한 값이 서버로 저장되나요?',
@@ -151,7 +151,7 @@ const appJsonLd = {
   <CalculatorTool calculator={calculator} />
 
   <section class="guide">
-    <h2>이 계산기를 쓰는 기준</h2>
+      <h2>입력 순서</h2>
     <div class="guide-grid">
       {guideItems.map(([title, body]) => (
         <article>
@@ -175,7 +175,7 @@ const appJsonLd = {
   <section class="detail-guide">
     <div class="detail-copy">
       <p class="section-eyebrow">계산 공식</p>
-      <h2>{calculator.shortTitle} 기준 설명</h2>
+      <h2>{calculator.shortTitle} 계산식</h2>
       <p>{detail.formula}</p>
       <div class="detail-note">
         <strong>예시</strong>
@@ -183,7 +183,7 @@ const appJsonLd = {
       </div>
     </div>
     <div class="input-reference">
-      <h3>입력값 기준</h3>
+      <h3>처음 들어가는 값</h3>
       <dl>
         {calculator.inputs.map((input) => (
           <>
@@ -197,11 +197,11 @@ const appJsonLd = {
 
   <section class="quality-guide">
     <article>
-      <h2>주의할 점</h2>
+      <h2>놓치기 쉬운 항목</h2>
       <p>{detail.caution}</p>
     </article>
     <article>
-      <h2>검토 포인트</h2>
+      <h2>마지막 점검</h2>
       <p>{detail.review}</p>
     </article>
   </section>
@@ -274,7 +274,7 @@ const appJsonLd = {
     font: 800 0.86rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .crumb a {
-    color: #16824f;
+    color: var(--blue);
     text-decoration: none;
   }
   .page-head {
@@ -286,21 +286,21 @@ const appJsonLd = {
   }
   h1 {
     margin: 0;
-    color: #1c2a23;
+    color: var(--ink);
     font: 950 clamp(1.9rem, 3.8vw, 3.4rem)/1.08 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     letter-spacing: 0;
   }
   .page-head p {
     margin: 12px 0 0;
     max-width: 760px;
-    color: #596760;
+    color: var(--muted);
     font: 700 1rem/1.65 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .back-link {
-    border: 1px solid #cfd8d3;
+    border: 1px solid var(--line-strong);
     border-radius: 8px;
     background: #fff;
-    color: #1c2a23;
+    color: var(--ink);
     padding: 11px 13px;
     text-decoration: none;
     font: 900 0.88rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
@@ -312,11 +312,11 @@ const appJsonLd = {
     gap: 12px;
     align-items: end;
     margin-bottom: 18px;
-    border: 1px solid #d8dfdb;
+    border: 1px solid var(--line);
     border-radius: 8px;
     background: #fff;
     padding: 16px;
-    box-shadow: 0 1px 2px rgba(28, 42, 35, 0.04);
+    box-shadow: var(--shadow-sm);
   }
   .switcher label {
     display: grid;
@@ -327,17 +327,17 @@ const appJsonLd = {
   .switcher select {
     width: 100%;
     min-height: 44px;
-    border: 1px solid #ccd6d1;
+    border: 1px solid var(--line-strong);
     border-radius: 8px;
     background: #fff;
-    color: #1c2a23;
+    color: var(--ink);
     font: 900 0.94rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     padding: 0 12px;
     outline: none;
   }
   .switcher select:focus {
-    border-color: #16824f;
-    box-shadow: 0 0 0 3px rgba(22, 130, 79, 0.12);
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 167, 0.12);
   }
   .pager {
     display: flex;
@@ -349,18 +349,18 @@ const appJsonLd = {
     display: inline-flex;
     align-items: center;
     min-height: 38px;
-    border: 1px solid #d8dfdb;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background: #f8faf9;
-    color: #1c2a23;
+    background: var(--surface-soft);
+    color: var(--ink);
     padding: 0 11px;
     text-decoration: none;
     font: 900 0.84rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .pager a:hover {
-    border-color: #91b8a4;
-    background: #edf8f2;
-    color: #0f6c43;
+    border-color: #9bb7d8;
+    background: var(--blue-soft);
+    color: var(--blue);
   }
   .guide,
   .interpretation,
@@ -377,7 +377,7 @@ const appJsonLd = {
   .faq h2,
   .section-title h2 {
     margin: 0 0 14px;
-    color: #1c2a23;
+    color: var(--ink);
     font: 950 1.22rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .guide-grid,
@@ -392,15 +392,15 @@ const appJsonLd = {
   .quality-guide article,
   .faq details,
   .related-list a {
-    border: 1px solid #d8dfdb;
+    border: 1px solid var(--line);
     border-radius: 8px;
     background: #fff;
     padding: 16px;
-    box-shadow: 0 1px 2px rgba(28, 42, 35, 0.04);
+    box-shadow: var(--shadow-sm);
   }
   .guide h3 {
     margin: 0 0 8px;
-    color: #1c2a23;
+    color: var(--ink);
     font: 950 1rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .guide p,
@@ -412,7 +412,7 @@ const appJsonLd = {
   .faq p,
   .related-list p {
     margin: 0;
-    color: #596760;
+    color: var(--muted);
     font: 700 0.92rem/1.55 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .interpretation {
@@ -423,7 +423,7 @@ const appJsonLd = {
   }
   .section-eyebrow {
     margin: 0 0 6px;
-    color: #16824f;
+    color: var(--blue);
     font: 950 0.76rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .detail-guide {
@@ -436,16 +436,16 @@ const appJsonLd = {
     display: grid;
     gap: 4px;
     margin-top: 14px;
-    border-left: 4px solid #16824f;
+    border-left: 4px solid var(--blue);
     padding-left: 12px;
   }
   .detail-note strong {
-    color: #1c2a23;
+    color: var(--ink);
     font-weight: 950;
   }
   .input-reference h3 {
     margin: 0 0 10px;
-    color: #1c2a23;
+    color: var(--ink);
     font: 950 1rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .input-reference dl {
@@ -455,7 +455,7 @@ const appJsonLd = {
     margin: 0;
   }
   .input-reference dt {
-    color: #1c2a23;
+    color: var(--ink);
     font-weight: 900;
   }
   .input-reference dd {
@@ -471,7 +471,7 @@ const appJsonLd = {
   .interpretation ul {
     margin: 0;
     padding-left: 1.2rem;
-    color: #1c2a23;
+    color: var(--ink);
     font: 850 0.95rem/1.65 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .interpretation li + li {
@@ -492,12 +492,12 @@ const appJsonLd = {
     font: 950 0.98rem/1.35 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .faq summary::marker {
-    color: #16824f;
+    color: var(--blue);
   }
   .faq details p {
     border-top: 1px solid #e7ece9;
     padding: 14px 16px 16px;
-    background: #f8faf9;
+    background: var(--surface-soft);
   }
   .section-title {
     display: flex;
@@ -517,11 +517,11 @@ const appJsonLd = {
     text-decoration: none;
   }
   .related-list span {
-    color: #16824f;
+    color: var(--blue);
     font: 900 0.76rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .related-list strong {
-    color: #1c2a23;
+    color: var(--ink);
     font: 950 1.1rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   @media (max-width: 820px) {
