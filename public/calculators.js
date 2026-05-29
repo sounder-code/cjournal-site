@@ -18,6 +18,14 @@ function readJson(key, fallback) {
   }
 }
 
+function readJsonFromText(text, fallback) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return fallback;
+  }
+}
+
 function writeJson(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
@@ -731,6 +739,14 @@ function setupCalculator(root) {
       input.value = input.dataset.default || input.value;
     });
     update();
+  });
+  root.querySelectorAll('[data-preset-values]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const values = readJsonFromText(button.dataset.presetValues || '{}', {});
+      applyInputs(root, values);
+      update();
+      setFeedback(root, '추천 입력값을 적용했습니다');
+    });
   });
   root.querySelector('[data-result-copy]')?.addEventListener('click', async () => {
     const summary = root.dataset.resultSummary || '';

@@ -8,6 +8,97 @@ interface Props {
 }
 
 const { calculator, compact = false } = Astro.props;
+const presetsBySlug: Record<string, Array<{ label: string; values: Record<string, number | string> }>> = {
+  'seller-margin': [
+    { label: '스마트스토어 소형 상품', values: { price: 29900, cost: 12000, platformFee: 5.6, paymentFee: 3.3, shipping: 3000, adCost: 1200, returnRate: 2 } },
+    { label: '광고비 높은 신상품', values: { price: 39900, cost: 18500, platformFee: 10.8, paymentFee: 3.3, shipping: 3500, adCost: 4500, returnRate: 5 } }
+  ],
+  'break-even-price': [
+    { label: '저마진 생활용품', values: { cost: 9000, fixedCost: 3600, feeRate: 12, targetMargin: 18 } },
+    { label: '브랜드 상품 목표가', values: { cost: 28000, fixedCost: 6200, feeRate: 14, targetMargin: 30 } }
+  ],
+  'ad-roas-limit': [
+    { label: '검색광고 시작 전', values: { price: 34900, cost: 16000, feeRate: 13.5, shipping: 3500, targetProfit: 5000 } },
+    { label: '마진 낮은 상품 점검', values: { price: 21900, cost: 11000, feeRate: 14, shipping: 3200, targetProfit: 3500 } }
+  ],
+  'return-loss': [
+    { label: '반품 적은 생활용품', values: { orders: 120, profitPerOrder: 7200, returnRate: 3, lossPerReturn: 8000 } },
+    { label: '의류/사이즈 반품 많음', values: { orders: 180, profitPerOrder: 9200, returnRate: 12, lossPerReturn: 13000 } }
+  ],
+  'platform-fee-compare': [
+    { label: '스마트스토어 vs 자사몰', values: { price: 39900, orders: 200, feeA: 5.6, feeB: 3.3, fixedB: 99000 } },
+    { label: '마켓 vs 저수수료 채널', values: { price: 45900, orders: 350, feeA: 13, feeB: 7, fixedB: 55000 } }
+  ],
+  'vat-profit': [
+    { label: '부가세 포함 판매가', values: { grossPrice: 55000, cost: 26000, expense: 8000, vatRate: 10 } },
+    { label: 'B2B 납품가 확인', values: { grossPrice: 220000, cost: 135000, expense: 26000, vatRate: 10 } }
+  ],
+  'discount-margin': [
+    { label: '15% 쿠폰 행사', values: { regularPrice: 39900, discountRate: 15, cost: 17000, feeRate: 13.5, shipping: 3500, adCost: 1500 } },
+    { label: '시즌오프 30%', values: { regularPrice: 69000, discountRate: 30, cost: 31000, feeRate: 12.5, shipping: 3500, adCost: 2500 } }
+  ],
+  'coupon-burden': [
+    { label: '반반 부담 쿠폰', values: { price: 45900, coupon: 5000, sellerBurdenRate: 50, cost: 21000, feeRate: 12.5, shipping: 3500 } },
+    { label: '판매자 전액 부담', values: { price: 32900, coupon: 4000, sellerBurdenRate: 100, cost: 14500, feeRate: 13, shipping: 3200 } }
+  ],
+  'bundle-shipping-profit': [
+    { label: '3개 묶음 구매', values: { price: 12900, cost: 5200, quantity: 3, feeRate: 13, shippingCharge: 3000, actualShipping: 4200 } },
+    { label: '무료배송 묶음', values: { price: 18900, cost: 7600, quantity: 2, feeRate: 12, shippingCharge: 0, actualShipping: 3800 } }
+  ],
+  'subscription-cut': [
+    { label: 'OTT/앱 구독 정리', values: { monthlyTotal: 89000, cutRate: 35, newService: 12000 } },
+    { label: '업무툴 비용 점검', values: { monthlyTotal: 180000, cutRate: 25, newService: 35000 } }
+  ],
+  'internet-switch': [
+    { label: '3년 약정 갈아타기', values: { penalty: 180000, reward: 420000, oldMonthly: 42000, newMonthly: 36000, months: 36 } },
+    { label: '위약금 큰 상황', values: { penalty: 360000, reward: 450000, oldMonthly: 39000, newMonthly: 33000, months: 24 } }
+  ],
+  'rental-total-cost': [
+    { label: '정수기 3년 약정', values: { monthly: 29900, months: 36, install: 0, reward: 150000 } },
+    { label: '비데/공청기 묶음', values: { monthly: 49900, months: 60, install: 50000, reward: 300000 } }
+  ],
+  'electricity-cost': [
+    { label: '에어컨 하루 6시간', values: { watt: 900, hours: 6, days: 30, rate: 180 } },
+    { label: '전기히터 집중 사용', values: { watt: 1800, hours: 5, days: 25, rate: 220 } }
+  ],
+  'moving-cost': [
+    { label: '원룸/소형 이사', values: { base: 350000, options: 80000, cleaning: 150000, brokerage: 250000, bufferRate: 10 } },
+    { label: '가족 이사 예산', values: { base: 1200000, options: 280000, cleaning: 350000, brokerage: 800000, bufferRate: 12 } }
+  ],
+  'card-installment': [
+    { label: '가전 12개월 할부', values: { price: 1200000, months: 12, annualRate: 8.5, upfrontFee: 0 } },
+    { label: '무이자 할부 확인', values: { price: 800000, months: 6, annualRate: 0, upfrontFee: 0 } }
+  ],
+  'commute-fuel-cost': [
+    { label: '자가용 출퇴근', values: { distance: 36, days: 22, fuelEconomy: 11, fuelPrice: 1680, parking: 0 } },
+    { label: '주차비 포함', values: { distance: 52, days: 20, fuelEconomy: 9.5, fuelPrice: 1720, parking: 80000 } }
+  ],
+  'savings-maturity': [
+    { label: '월 30만원 2년', values: { monthlyDeposit: 300000, months: 24, annualRate: 3.8, taxRate: 15.4 } },
+    { label: '월 100만원 1년', values: { monthlyDeposit: 1000000, months: 12, annualRate: 4.2, taxRate: 15.4 } }
+  ],
+  'loan-interest': [
+    { label: '주담대 30년 원리금', values: { principal: 300000000, annualRate: 4.2, years: 30, repaymentType: 'equal-payment' } },
+    { label: '신용대출 5년 원금균등', values: { principal: 50000000, annualRate: 5.8, years: 5, repaymentType: 'equal-principal' } }
+  ],
+  'deposit-interest': [
+    { label: '1천만원 1년 예금', values: { principal: 10000000, months: 12, annualRate: 3.6, taxRate: 15.4 } },
+    { label: '5천만원 6개월 예금', values: { principal: 50000000, months: 6, annualRate: 3.4, taxRate: 15.4 } }
+  ],
+  'loan-affordability': [
+    { label: '월 70만원 부담', values: { monthlyPayment: 700000, annualRate: 4.5, years: 30, income: 3500000 } },
+    { label: '맞벌이 월 180만원', values: { monthlyPayment: 1800000, annualRate: 4.2, years: 30, income: 8000000 } }
+  ],
+  'payback-period': [
+    { label: '장비 구매 회수', values: { initialCost: 5000000, monthlyRevenue: 900000, monthlyCost: 350000, resaleValue: 500000 } },
+    { label: '광고/외주 투자', values: { initialCost: 2500000, monthlyRevenue: 650000, monthlyCost: 180000, resaleValue: 0 } }
+  ],
+  'hourly-rate': [
+    { label: '부업 월수익 점검', values: { revenue: 3000000, expense: 1200000, hours: 120, taxRate: 10 } },
+    { label: '프리랜서 단가 점검', values: { revenue: 6500000, expense: 1800000, hours: 150, taxRate: 18 } }
+  ]
+};
+const presets = presetsBySlug[calculator.slug] ?? [];
 ---
 <section
   class={`calculator-tool ${compact ? 'compact-tool' : ''}`}
@@ -25,6 +116,16 @@ const { calculator, compact = false } = Astro.props;
       </div>
       <button type="button" data-reset>초기값</button>
     </div>
+    {presets.length > 0 && (
+      <div class="preset-panel" aria-label="추천 입력값">
+        <strong>추천 입력값</strong>
+        <div>
+          {presets.map((preset) => (
+            <button type="button" data-preset-values={JSON.stringify(preset.values)}>{preset.label}</button>
+          ))}
+        </div>
+      </div>
+    )}
     <div class="input-grid">
       {calculator.inputs.map((input) => (
         <label>
@@ -133,6 +234,39 @@ const { calculator, compact = false } = Astro.props;
   .tool-heading button:hover {
     border-color: #91b8a4;
     background: #f3faf6;
+  }
+  .preset-panel {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 18px;
+    border: 1px solid #e1e7e4;
+    border-radius: 8px;
+    background: #fbfdfc;
+    padding: 14px;
+  }
+  .preset-panel strong {
+    color: #33443c;
+    font: 900 0.84rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .preset-panel div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .preset-panel button {
+    min-height: 34px;
+    border: 1px solid #cfd8d3;
+    border-radius: 8px;
+    background: #fff;
+    color: #1c2a23;
+    padding: 0 11px;
+    font: 900 0.8rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    cursor: pointer;
+  }
+  .preset-panel button:hover {
+    border-color: #16824f;
+    background: #edf8f2;
+    color: #0f6c43;
   }
   .input-grid {
     display: grid;
