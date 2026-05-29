@@ -7,6 +7,22 @@ const formatPercent = (value) =>
   })}%`;
 
 const clampRate = (value) => Math.max(0, Math.min(95, value));
+const savedInputKey = (slug) => `margin-calculator-inputs:${slug}`;
+const favoriteKey = 'margin-calculator-favorites';
+
+function readJson(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {}
+}
 
 function readInputs(root) {
   const values = {};
@@ -14,6 +30,73 @@ function readInputs(root) {
     values[input.name] = input.tagName === 'SELECT' ? input.value : Number(input.value || 0);
   });
   return values;
+}
+
+function applyInputs(root, values) {
+  root.querySelectorAll('[data-calc-input]').forEach((input) => {
+    if (!Object.prototype.hasOwnProperty.call(values, input.name)) return;
+    input.value = values[input.name];
+  });
+}
+
+function readQueryInputs(root) {
+  const params = new URLSearchParams(window.location.search);
+  const values = {};
+  root.querySelectorAll('[data-calc-input]').forEach((input) => {
+    if (!params.has(input.name)) return;
+    values[input.name] = input.tagName === 'SELECT' ? params.get(input.name) : Number(params.get(input.name) || 0);
+  });
+  return values;
+}
+
+function hasInputValues(values) {
+  return Object.keys(values).length > 0;
+}
+
+function calculatorMeta(root) {
+  const slug = root.dataset.calculator;
+  return {
+    slug,
+    title: root.dataset.calculatorTitle || slug,
+    group: root.dataset.calculatorGroup || '저장한 계산기',
+    href: root.dataset.calculatorHref || `/calculators/${slug}/`
+  };
+}
+
+function favoriteItems() {
+  return readJson(favoriteKey, []);
+}
+
+function setFeedback(root, message) {
+  const feedback = root.querySelector('[data-result-feedback]');
+  if (!feedback) return;
+  feedback.textContent = message;
+  window.setTimeout(() => {
+    feedback.textContent = '';
+  }, 1800);
+}
+
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await Promise.race([
+        navigator.clipboard.writeText(text),
+        new Promise((_, reject) => {
+          window.setTimeout(() => reject(new Error('clipboard timeout')), 700);
+        })
+      ]);
+      return;
+    } catch {}
+  }
+  const area = document.createElement('textarea');
+  area.value = text;
+  area.setAttribute('readonly', '');
+  area.style.position = 'fixed';
+  area.style.opacity = '0';
+  document.body.append(area);
+  area.select();
+  document.execCommand('copy');
+  area.remove();
 }
 
 function repaymentTypeLabel(value) {
@@ -621,8 +704,28 @@ function render(root, result) {
 function setupCalculator(root) {
   const slug = root.dataset.calculator;
   const calculate = calculators[slug] || sellerMargin;
-  const update = () => render(root, calculate(readInputs(root)));
+  const saveInputs = () => writeJson(savedInputKey(slug), readInputs(root));
+  const updateFavoriteButton = () => {
+    const button = root.querySelector('[data-favorite-toggle]');
+    if (!button) return;
+    const isFavorite = favoriteItems().some((item) => item.slug === slug);
+    button.setAttribute('aria-pressed', String(isFavorite));
+    button.textContent = isFavorite ? '즐겨찾기됨' : '즐겨찾기';
+  };
+  const update = () => {
+    render(root, calculate(readInputs(root)));
+    saveInputs();
+  };
+
+  const queryInputs = readQueryInputs(root);
+  if (hasInputValues(queryInputs)) {
+    applyInputs(root, queryInputs);
+  } else {
+    applyInputs(root, readJson(savedInputKey(slug), {}));
+  }
+
   root.addEventListener('input', update);
+  root.addEventListener('change', update);
   root.querySelector('[data-reset]')?.addEventListener('click', () => {
     root.querySelectorAll('[data-calc-input]').forEach((input) => {
       input.value = input.dataset.default || input.value;
@@ -630,18 +733,39 @@ function setupCalculator(root) {
     update();
   });
   root.querySelector('[data-result-copy]')?.addEventListener('click', async () => {
-    const feedback = root.querySelector('[data-result-feedback]');
     const summary = root.dataset.resultSummary || '';
     try {
-      await navigator.clipboard.writeText(summary);
-      if (feedback) feedback.textContent = '복사했습니다';
+      await copyText(summary);
+      setFeedback(root, '복사했습니다');
     } catch {
-      if (feedback) feedback.textContent = '복사할 수 없습니다';
+      setFeedback(root, '복사할 수 없습니다');
     }
-    window.setTimeout(() => {
-      if (feedback) feedback.textContent = '';
-    }, 1800);
   });
+  root.querySelector('[data-share-link]')?.addEventListener('click', async () => {
+    const url = new URL(root.dataset.calculatorHref || window.location.pathname, window.location.origin);
+    const values = readInputs(root);
+    Object.entries(values).forEach(([key, value]) => {
+      url.searchParams.set(key, String(value));
+    });
+    try {
+      await copyText(url.toString());
+      setFeedback(root, '링크를 복사했습니다');
+    } catch {
+      setFeedback(root, '링크를 복사할 수 없습니다');
+    }
+  });
+  root.querySelector('[data-favorite-toggle]')?.addEventListener('click', () => {
+    const meta = calculatorMeta(root);
+    const current = favoriteItems();
+    const isFavorite = current.some((item) => item.slug === slug);
+    const next = isFavorite
+      ? current.filter((item) => item.slug !== slug)
+      : [meta, ...current.filter((item) => item.slug !== slug)].slice(0, 8);
+    writeJson(favoriteKey, next);
+    updateFavoriteButton();
+    setFeedback(root, isFavorite ? '즐겨찾기에서 뺐습니다' : '즐겨찾기에 담았습니다');
+  });
+  updateFavoriteButton();
   update();
 }
 

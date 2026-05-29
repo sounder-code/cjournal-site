@@ -1,5 +1,6 @@
 ---
 import type { Calculator } from '@/data/calculators';
+import { groupLabels } from '@/data/calculators';
 
 interface Props {
   calculator: Calculator;
@@ -8,7 +9,13 @@ interface Props {
 
 const { calculator, compact = false } = Astro.props;
 ---
-<section class={`calculator-tool ${compact ? 'compact-tool' : ''}`} data-calculator={calculator.slug}>
+<section
+  class={`calculator-tool ${compact ? 'compact-tool' : ''}`}
+  data-calculator={calculator.slug}
+  data-calculator-title={calculator.shortTitle}
+  data-calculator-group={groupLabels[calculator.group]}
+  data-calculator-href={`/calculators/${calculator.slug}/`}
+>
   <div class="tool-form">
     <div class="tool-heading">
       <div>
@@ -58,9 +65,11 @@ const { calculator, compact = false } = Astro.props;
     <p class="result-note" data-result-note></p>
     <div class="result-actions">
       <button type="button" data-result-copy>결과 복사</button>
+      <button type="button" data-share-link>공유 링크</button>
+      <button type="button" data-favorite-toggle aria-pressed="false">즐겨찾기</button>
       <span data-result-feedback aria-live="polite"></span>
     </div>
-    <p class="result-caption">입력값을 바꾸면 자동으로 다시 계산됩니다.</p>
+    <p class="result-caption">입력값은 이 브라우저에 자동 저장되고, 바꾸면 바로 다시 계산됩니다.</p>
   </aside>
 </section>
 
@@ -344,6 +353,11 @@ const { calculator, compact = false } = Astro.props;
     border-color: #16824f;
     background: #edf8f2;
     color: #0f6c43;
+  }
+  .result-actions button[aria-pressed="true"] {
+    border-color: #16824f;
+    background: #16824f;
+    color: #fff;
   }
   .result-actions span {
     color: #74817b;
