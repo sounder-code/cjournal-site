@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import CalculatorTool from '@/components/CalculatorTool.astro';
 import { calculators, groupLabels } from '@/data/calculators';
+import { calculatorDetails } from '@/data/calculatorDetails';
 
 export function getStaticPaths() {
   return calculators.map((calculator) => ({
@@ -40,6 +41,14 @@ const guideByGroup = {
   ]
 };
 const guideItems = guideByGroup[calculator.group];
+const detail = calculatorDetails[calculator.slug];
+function formatInputDefault(input: (typeof calculator.inputs)[number]) {
+  if (input.type === 'select') {
+    return input.options?.find((option) => option.value === input.value)?.label ?? String(input.value);
+  }
+  const value = typeof input.value === 'number' ? input.value.toLocaleString('ko-KR') : String(input.value);
+  return `${value}${input.suffix ?? ''}`;
+}
 const interpretationByGroup = {
   seller: {
     title: '결과를 해석하는 순서',
@@ -161,6 +170,40 @@ const appJsonLd = {
     <ul>
       {interpretation.checks.map((check) => <li>{check}</li>)}
     </ul>
+  </section>
+
+  <section class="detail-guide">
+    <div class="detail-copy">
+      <p class="section-eyebrow">계산 공식</p>
+      <h2>{calculator.shortTitle} 기준 설명</h2>
+      <p>{detail.formula}</p>
+      <div class="detail-note">
+        <strong>예시</strong>
+        <span>{detail.example}</span>
+      </div>
+    </div>
+    <div class="input-reference">
+      <h3>입력값 기준</h3>
+      <dl>
+        {calculator.inputs.map((input) => (
+          <>
+            <dt>{input.label}</dt>
+            <dd>기본값 {formatInputDefault(input)}</dd>
+          </>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="quality-guide">
+    <article>
+      <h2>주의할 점</h2>
+      <p>{detail.caution}</p>
+    </article>
+    <article>
+      <h2>검토 포인트</h2>
+      <p>{detail.review}</p>
+    </article>
   </section>
 
   <section class="faq">
@@ -321,12 +364,16 @@ const appJsonLd = {
   }
   .guide,
   .interpretation,
+  .detail-guide,
+  .quality-guide,
   .faq,
   .related {
     margin-top: 36px;
   }
   .guide h2,
   .interpretation h2,
+  .detail-guide h2,
+  .quality-guide h2,
   .faq h2,
   .section-title h2 {
     margin: 0 0 14px;
@@ -341,6 +388,8 @@ const appJsonLd = {
   }
   .guide article,
   .interpretation,
+  .detail-guide,
+  .quality-guide article,
   .faq details,
   .related-list a {
     border: 1px solid #d8dfdb;
@@ -356,6 +405,10 @@ const appJsonLd = {
   }
   .guide p,
   .interpretation p,
+  .detail-guide p,
+  .detail-note,
+  .input-reference dd,
+  .quality-guide p,
   .faq p,
   .related-list p {
     margin: 0;
@@ -367,6 +420,53 @@ const appJsonLd = {
     grid-template-columns: minmax(0, 1fr) minmax(260px, 0.44fr);
     gap: 18px;
     align-items: start;
+  }
+  .section-eyebrow {
+    margin: 0 0 6px;
+    color: #16824f;
+    font: 950 0.76rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .detail-guide {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.42fr);
+    gap: 18px;
+    align-items: start;
+  }
+  .detail-note {
+    display: grid;
+    gap: 4px;
+    margin-top: 14px;
+    border-left: 4px solid #16824f;
+    padding-left: 12px;
+  }
+  .detail-note strong {
+    color: #1c2a23;
+    font-weight: 950;
+  }
+  .input-reference h3 {
+    margin: 0 0 10px;
+    color: #1c2a23;
+    font: 950 1rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .input-reference dl {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    margin: 0;
+  }
+  .input-reference dt {
+    color: #1c2a23;
+    font-weight: 900;
+  }
+  .input-reference dd {
+    margin: 0;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .quality-guide {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
   .interpretation ul {
     margin: 0;
@@ -434,6 +534,8 @@ const appJsonLd = {
     }
     .guide-grid,
     .interpretation,
+    .detail-guide,
+    .quality-guide,
     .related-list {
       grid-template-columns: 1fr;
     }
