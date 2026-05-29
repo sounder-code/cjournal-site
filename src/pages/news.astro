@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { calculators, groupLabels } from '@/data/calculators';
+import { guides } from '@/data/guides';
 
 const guideGroups = [
   {
@@ -62,6 +63,22 @@ const guideGroups = [
       })}
     </div>
 
+    <section class="article-guides">
+      <div class="section-title">
+        <h2>상황별 자세히 보기</h2>
+        <p>{guides.length}개 가이드</p>
+      </div>
+      <div class="article-list">
+        {guides.map((guide) => (
+          <a href={`/guides/${guide.slug}/`}>
+            <span>{guide.category} · {guide.readMinutes}분</span>
+            <strong>{guide.title}</strong>
+            <p>{guide.description}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+
     <section class="review-note">
       <h2>결과를 볼 때 놓치기 쉬운 것</h2>
       <p>
@@ -109,7 +126,8 @@ const guideGroups = [
     gap: 14px;
   }
   article,
-  .review-note {
+  .review-note,
+  .article-guides {
     border: 1px solid var(--line);
     border-radius: 8px;
     background: var(--surface);
@@ -120,6 +138,54 @@ const guideGroups = [
     margin: 8px 0 8px;
     color: var(--ink);
     font: 950 1.35rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .section-title {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: end;
+    margin-bottom: 14px;
+  }
+  .section-title h2 {
+    margin: 0;
+  }
+  .section-title p {
+    margin: 0;
+    color: var(--subtle);
+    font: 850 0.88rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .article-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .article-list a {
+    display: grid;
+    gap: 8px;
+    min-height: 154px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-soft);
+    color: inherit;
+    padding: 16px;
+    text-decoration: none;
+  }
+  .article-list a:hover {
+    border-color: #9bb7d8;
+    box-shadow: var(--shadow-sm);
+  }
+  .article-list span {
+    color: var(--blue);
+    font: 900 0.78rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .article-list strong {
+    color: var(--ink);
+    font: 950 1.1rem/1.3 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .article-list p {
+    margin: 0;
+    color: var(--muted);
+    font: 700 0.94rem/1.58 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   ol {
     margin: 16px 0;
@@ -156,6 +222,9 @@ const guideGroups = [
   }
   @media (max-width: 960px) {
     .guide-grid {
+      grid-template-columns: 1fr;
+    }
+    .article-list {
       grid-template-columns: 1fr;
     }
   }

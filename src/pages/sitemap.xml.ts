@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { calculators } from '@/data/calculators';
+import { guides } from '@/data/guides';
 
 export const GET: APIRoute = async ({ site }) => {
   const base = site?.toString().replace(/\/$/, '') ?? '';
@@ -10,8 +11,10 @@ export const GET: APIRoute = async ({ site }) => {
     '/about',
     '/contact',
     '/methodology',
+    '/editorial-policy',
     '/privacy',
     '/terms',
+    ...guides.map((guide) => `/guides/${guide.slug}/`),
     ...calculators.map((calculator) => `/calculators/${calculator.slug}/`)
   ];
 

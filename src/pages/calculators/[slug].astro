@@ -3,6 +3,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import CalculatorTool from '@/components/CalculatorTool.astro';
 import { calculators, groupLabels } from '@/data/calculators';
 import { calculatorDetails } from '@/data/calculatorDetails';
+import { guides } from '@/data/guides';
 
 export function getStaticPaths() {
   return calculators.map((calculator) => ({
@@ -15,6 +16,7 @@ const { calculator } = Astro.props;
 const related = calculators
   .filter((item) => item.slug !== calculator.slug && item.group === calculator.group)
   .slice(0, 5);
+const relatedGuides = guides.filter((guide) => guide.calculators.includes(calculator.slug)).slice(0, 3);
 const currentIndex = calculators.findIndex((item) => item.slug === calculator.slug);
 const previousCalculator = calculators[(currentIndex - 1 + calculators.length) % calculators.length];
 const nextCalculator = calculators[(currentIndex + 1) % calculators.length];
@@ -218,6 +220,24 @@ const appJsonLd = {
     </div>
   </section>
 
+  {relatedGuides.length > 0 && (
+    <section class="guide-links">
+      <div class="section-title">
+        <h2>계산 전에 읽어볼 글</h2>
+        <p>{groupLabels[calculator.group]}</p>
+      </div>
+      <div class="guide-link-list">
+        {relatedGuides.map((guide) => (
+          <a href={`/guides/${guide.slug}/`}>
+            <span>{guide.category} · {guide.readMinutes}분</span>
+            <strong>{guide.title}</strong>
+            <p>{guide.description}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
   <section class="related">
     <div class="section-title">
       <h2>같이 보면 좋은 계산기</h2>
@@ -367,6 +387,7 @@ const appJsonLd = {
   .detail-guide,
   .quality-guide,
   .faq,
+  .guide-links,
   .related {
     margin-top: 36px;
   }
@@ -385,6 +406,39 @@ const appJsonLd = {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
+  }
+  .guide-link-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .guide-link-list a {
+    display: grid;
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: inherit;
+    padding: 16px;
+    text-decoration: none;
+    box-shadow: var(--shadow-sm);
+  }
+  .guide-link-list a:hover {
+    border-color: #9bb7d8;
+    box-shadow: var(--shadow-md);
+  }
+  .guide-link-list span {
+    color: var(--blue);
+    font: 900 0.76rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .guide-link-list strong {
+    color: var(--ink);
+    font: 950 1.08rem/1.28 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .guide-link-list p {
+    margin: 0;
+    color: var(--muted);
+    font: 700 0.92rem/1.55 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .guide article,
   .interpretation,
@@ -536,6 +590,7 @@ const appJsonLd = {
     .interpretation,
     .detail-guide,
     .quality-guide,
+    .guide-link-list,
     .related-list {
       grid-template-columns: 1fr;
     }

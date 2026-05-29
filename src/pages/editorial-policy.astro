@@ -1,0 +1,96 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="편집·검산 원칙"
+  description="마진계산소의 계산기 작성, 검산, 수정, 광고 분리 원칙을 설명합니다."
+  canonical="/editorial-policy"
+>
+  <section class="policy-page">
+    <p class="kicker">Editorial Policy</p>
+    <h1>계산식과 광고를 분리해서 운영합니다.</h1>
+    <p class="lead">
+      마진계산소는 계산기와 가이드를 먼저 만들고, 광고와 제휴 링크는 계산 결과와 분리해 관리합니다.
+      사용자가 어떤 숫자를 넣어 어떤 결과가 나왔는지 이해할 수 있도록 산식과 한계를 함께 표시합니다.
+    </p>
+
+    <div class="policy-grid">
+      <article>
+        <h2>계산기 작성</h2>
+        <p>계산기는 판매가, 원가, 기간, 금리, 수수료처럼 결과에 직접 영향을 주는 입력값을 중심으로 설계합니다. 한 화면에서 입력값과 결과를 함께 볼 수 있게 만들고, 기본값은 예시로만 사용합니다.</p>
+      </article>
+      <article>
+        <h2>검산 방식</h2>
+        <p>새 계산기를 추가하거나 산식을 바꿀 때 대표 입력값으로 손계산 가능한 결과를 대조합니다. 대출처럼 방식별 결과가 다른 계산은 원리금균등, 원금균등, 만기일시처럼 조건을 분리합니다.</p>
+      </article>
+      <article>
+        <h2>광고 분리</h2>
+        <p>광고나 제휴 링크는 계산 결과처럼 보이지 않게 구분합니다. 광고 클릭을 유도하는 문구를 쓰지 않고, 계산기의 산식과 설명은 광고 여부와 분리해 관리합니다.</p>
+      </article>
+      <article>
+        <h2>수정 기준</h2>
+        <p>수수료율, 세율, 요금 조건, 금융상품 조건은 바뀔 수 있습니다. 오류 제보가 들어오면 입력값, 기대 결과, 참고 자료를 확인한 뒤 재현 가능한 문제부터 수정합니다.</p>
+      </article>
+      <article>
+        <h2>개인정보</h2>
+        <p>계산은 브라우저에서 처리됩니다. 최근 사용 계산기, 즐겨찾기, 입력값 저장은 사용자의 브라우저 저장소를 사용하며 별도 회원 DB로 계산 내역을 수집하지 않습니다.</p>
+      </article>
+      <article>
+        <h2>문의</h2>
+        <p>계산 오류, 오래된 조건, 정책 문의는 jonghosf1@gmail.com 으로 받을 수 있습니다. 모든 문의에 즉시 답변을 보장하지는 않지만 계산 오류는 우선순위를 높게 둡니다.</p>
+      </article>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .policy-page {
+    display: grid;
+    gap: 20px;
+  }
+  .kicker {
+    margin: 0;
+    color: var(--blue);
+    font: 950 0.82rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    text-transform: uppercase;
+  }
+  h1 {
+    max-width: 900px;
+    margin: 0;
+    color: var(--ink);
+    font: 950 clamp(2rem, 5vw, 4rem)/1.08 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    letter-spacing: 0;
+  }
+  .lead,
+  article p {
+    margin: 0;
+    color: var(--muted);
+    font: 700 1rem/1.75 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .lead {
+    max-width: 780px;
+    font-size: 1.08rem;
+  }
+  .policy-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  article {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  h2 {
+    margin: 0 0 8px;
+    color: var(--ink);
+    font: 950 1.2rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  @media (max-width: 860px) {
+    .policy-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

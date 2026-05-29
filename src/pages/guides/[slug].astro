@@ -1,0 +1,246 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { calculators, groupLabels, type Calculator } from '@/data/calculators';
+import { guides } from '@/data/guides';
+
+export function getStaticPaths() {
+  return guides.map((guide) => ({
+    params: { slug: guide.slug },
+    props: { guide }
+  }));
+}
+
+const { guide } = Astro.props;
+const linkedCalculators = guide.calculators
+  .map((slug: string) => calculators.find((calculator) => calculator.slug === slug))
+  .filter((calculator: Calculator | undefined): calculator is Calculator => Boolean(calculator));
+const relatedGuides = guides.filter((item) => item.slug !== guide.slug && item.category === guide.category).slice(0, 3);
+const articleJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: guide.title,
+  description: guide.description,
+  dateModified: guide.updatedAt,
+  datePublished: guide.updatedAt,
+  author: {
+    '@type': 'Organization',
+    name: '마진계산소'
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: '마진계산소'
+  }
+};
+---
+<BaseLayout title={`${guide.title} | 마진계산소`} description={guide.description} canonical={`/guides/${guide.slug}/`}>
+  <nav class="crumb" aria-label="현재 위치">
+    <a href="/">홈</a>
+    <span>/</span>
+    <a href="/news">계산 가이드</a>
+  </nav>
+
+  <article class="guide-page">
+    <header class="guide-head">
+      <div>
+        <p class="meta-line">{guide.category} · {guide.readMinutes}분 읽기 · {guide.updatedAt}</p>
+        <h1>{guide.title}</h1>
+        <p>{guide.description}</p>
+      </div>
+      <aside class="summary-box">
+        <strong>핵심 요약</strong>
+        <p>{guide.summary}</p>
+      </aside>
+    </header>
+
+    <section class="linked-tools" aria-label="이 가이드에서 쓰는 계산기">
+      <h2>같이 쓰는 계산기</h2>
+      <div>
+        {linkedCalculators.map((calculator) => (
+          <a href={`/calculators/${calculator.slug}/`}>
+            <span>{groupLabels[calculator.group]}</span>
+            <strong>{calculator.shortTitle}</strong>
+            <small>{calculator.intent}</small>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <div class="guide-body">
+      {guide.sections.map((section) => (
+        <section>
+          <h2>{section.title}</h2>
+          {section.body.map((paragraph) => <p>{paragraph}</p>)}
+          {section.checks && (
+            <ul>
+              {section.checks.map((check) => <li>{check}</li>)}
+            </ul>
+          )}
+        </section>
+      ))}
+    </div>
+
+    <section class="final-checks">
+      <h2>마지막으로 볼 것</h2>
+      <ol>
+        {guide.finalChecks.map((check) => <li>{check}</li>)}
+      </ol>
+    </section>
+
+    {relatedGuides.length > 0 && (
+      <section class="related-guides">
+        <h2>이어 읽기</h2>
+        <div>
+          {relatedGuides.map((item) => (
+            <a href={`/guides/${item.slug}/`}>
+              <strong>{item.title}</strong>
+              <span>{item.description}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+  </article>
+
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
+</BaseLayout>
+
+<style>
+  .crumb {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+    color: var(--subtle);
+    font: 800 0.86rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .crumb a {
+    color: var(--blue);
+    text-decoration: none;
+  }
+  .guide-page {
+    display: grid;
+    gap: 28px;
+  }
+  .guide-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr);
+    gap: 22px;
+    align-items: end;
+  }
+  .meta-line {
+    margin: 0 0 10px;
+    color: var(--blue);
+    font: 950 0.82rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  h1 {
+    max-width: 860px;
+    margin: 0;
+    color: var(--ink);
+    font: 950 clamp(2rem, 5vw, 4rem)/1.08 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    letter-spacing: 0;
+  }
+  .guide-head > div > p:last-child,
+  .summary-box p,
+  .guide-body p,
+  .related-guides span {
+    margin: 0;
+    color: var(--muted);
+    font: 700 1rem/1.75 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .guide-head > div > p:last-child {
+    max-width: 780px;
+    margin-top: 14px;
+    font-size: 1.08rem;
+  }
+  .summary-box,
+  .linked-tools,
+  .guide-body section,
+  .final-checks,
+  .related-guides {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+  }
+  .summary-box {
+    border-left: 4px solid var(--blue);
+    padding: 18px;
+  }
+  .summary-box strong,
+  .linked-tools h2,
+  .guide-body h2,
+  .final-checks h2,
+  .related-guides h2 {
+    margin: 0;
+    color: var(--ink);
+    font: 950 1.22rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .summary-box p {
+    margin-top: 10px;
+  }
+  .linked-tools,
+  .final-checks,
+  .related-guides {
+    padding: 18px;
+  }
+  .linked-tools > div,
+  .related-guides > div {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .linked-tools a,
+  .related-guides a {
+    display: grid;
+    gap: 5px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-soft);
+    color: inherit;
+    padding: 13px;
+    text-decoration: none;
+  }
+  .linked-tools a:hover,
+  .related-guides a:hover {
+    border-color: #9bb7d8;
+    box-shadow: var(--shadow-sm);
+  }
+  .linked-tools span,
+  .linked-tools small {
+    color: var(--blue);
+    font: 850 0.78rem/1.35 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .linked-tools strong,
+  .related-guides strong {
+    color: var(--ink);
+    font: 950 1.02rem/1.3 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .guide-body {
+    display: grid;
+    gap: 14px;
+  }
+  .guide-body section {
+    display: grid;
+    gap: 12px;
+    padding: clamp(18px, 3vw, 26px);
+  }
+  .guide-body ul,
+  .final-checks ol {
+    margin: 2px 0 0;
+    padding-left: 1.25rem;
+    color: var(--ink);
+    font: 850 0.98rem/1.65 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .guide-body li + li,
+  .final-checks li + li {
+    margin-top: 6px;
+  }
+  @media (max-width: 900px) {
+    .guide-head,
+    .linked-tools > div,
+    .related-guides > div {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
