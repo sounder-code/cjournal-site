@@ -14,6 +14,14 @@ const { calculator } = Astro.props;
 const related = calculators
   .filter((item) => item.slug !== calculator.slug && item.group === calculator.group)
   .slice(0, 5);
+const currentIndex = calculators.findIndex((item) => item.slug === calculator.slug);
+const previousCalculator = calculators[(currentIndex - 1 + calculators.length) % calculators.length];
+const nextCalculator = calculators[(currentIndex + 1) % calculators.length];
+const groupedCalculators = Object.entries(groupLabels).map(([group, label]) => ({
+  group,
+  label,
+  items: calculators.filter((item) => item.group === group)
+}));
 const guideByGroup = {
   seller: [
     ['1. 비용을 빠짐없이 입력', '판매가만 보지 말고 수수료, 결제비, 배송비, 광고비, 반품 손실까지 함께 넣으세요.'],
@@ -52,6 +60,27 @@ const guideItems = guideByGroup[calculator.group];
     <a class="back-link" href="/">전체 계산기 보기</a>
   </section>
 
+  <section class="switcher" aria-label="계산기 이동">
+    <label>
+      <span>다른 계산기 바로가기</span>
+      <select data-calculator-jump>
+        {groupedCalculators.map(({ label, items }) => (
+          <optgroup label={label}>
+            {items.map((item) => (
+              <option value={`/calculators/${item.slug}/`} selected={item.slug === calculator.slug}>
+                {item.shortTitle}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </label>
+    <div class="pager">
+      <a href={`/calculators/${previousCalculator.slug}/`}>이전: {previousCalculator.shortTitle}</a>
+      <a href={`/calculators/${nextCalculator.slug}/`}>다음: {nextCalculator.shortTitle}</a>
+    </div>
+  </section>
+
   <CalculatorTool calculator={calculator} />
 
   <section class="guide">
@@ -83,6 +112,14 @@ const guideItems = guideByGroup[calculator.group];
   </section>
 
   <script is:inline src="/calculators.js" defer></script>
+  <script is:inline>
+    document.querySelector('[data-calculator-jump]')?.addEventListener('change', (event) => {
+      const select = event.currentTarget;
+      if (select instanceof HTMLSelectElement && select.value) {
+        window.location.href = select.value;
+      }
+    });
+  </script>
 </BaseLayout>
 
 <style>
@@ -126,6 +163,62 @@ const guideItems = guideByGroup[calculator.group];
     text-decoration: none;
     font: 900 0.88rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     white-space: nowrap;
+  }
+  .switcher {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.42fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 18px;
+    border: 1px solid #d8dfdb;
+    border-radius: 8px;
+    background: #fff;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(28, 42, 35, 0.04);
+  }
+  .switcher label {
+    display: grid;
+    gap: 7px;
+    color: #33443c;
+    font: 900 0.82rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .switcher select {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #ccd6d1;
+    border-radius: 8px;
+    background: #fff;
+    color: #1c2a23;
+    font: 900 0.94rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    padding: 0 12px;
+    outline: none;
+  }
+  .switcher select:focus {
+    border-color: #16824f;
+    box-shadow: 0 0 0 3px rgba(22, 130, 79, 0.12);
+  }
+  .pager {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .pager a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    border: 1px solid #d8dfdb;
+    border-radius: 8px;
+    background: #f8faf9;
+    color: #1c2a23;
+    padding: 0 11px;
+    text-decoration: none;
+    font: 900 0.84rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .pager a:hover {
+    border-color: #91b8a4;
+    background: #edf8f2;
+    color: #0f6c43;
   }
   .guide,
   .related {
@@ -188,7 +281,8 @@ const guideItems = guideByGroup[calculator.group];
     font: 950 1.1rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   @media (max-width: 820px) {
-    .page-head {
+    .page-head,
+    .switcher {
       grid-template-columns: 1fr;
     }
     .back-link {
@@ -197,6 +291,9 @@ const guideItems = guideByGroup[calculator.group];
     .guide-grid,
     .related-list {
       grid-template-columns: 1fr;
+    }
+    .pager {
+      justify-content: flex-start;
     }
   }
 </style>

@@ -24,6 +24,23 @@ const finderGroups: Array<['all' | CalculatorGroup, string]> = [
   ['living', groupLabels.living],
   ['utility', groupLabels.utility]
 ];
+
+const groupSummaries: Record<CalculatorGroup, { body: string; examples: string[] }> = {
+  seller: {
+    body: '가격, 수수료, 쿠폰, 광고비처럼 판매 전 손익을 흔드는 숫자를 봅니다.',
+    examples: ['마진', '쿠폰', '묶음배송']
+  },
+  living: {
+    body: '렌탈, 할부, 구독, 유류비처럼 매달 빠져나가는 돈을 총액으로 비교합니다.',
+    examples: ['렌탈', '할부', '적금']
+  },
+  utility: {
+    body: '대출, 예금, 회수기간처럼 기간이 길수록 차이가 커지는 숫자를 계산합니다.',
+    examples: ['대출', '예금', '회수기간']
+  }
+};
+
+const searchHints = ['대출', '할부', '쿠폰', '렌탈', '적금', '배송비'];
 ---
 <BaseLayout
   title="마진계산소 | 판매자 마진·생활비 계산기 허브"
@@ -59,20 +76,39 @@ const finderGroups: Array<['all' | CalculatorGroup, string]> = [
     </p>
   </section>
 
-  <section class="finder" aria-labelledby="finder-title">
+  <section class="pathway" aria-label="계산기 분류 바로가기">
+    {([...groups.entries()] as Array<[CalculatorGroup, typeof calculators]>).map(([group, items]) => (
+      <a class="path-card" href={`#${group}`}>
+        <span>{groupLabels[group]}</span>
+        <strong>{items.length}개 계산기</strong>
+        <p>{groupSummaries[group].body}</p>
+        <small>{groupSummaries[group].examples.join(' · ')}</small>
+      </a>
+    ))}
+  </section>
+
+  <section class="finder" id="finder" aria-labelledby="finder-title">
     <div class="finder-head">
       <div>
         <h2 id="finder-title">필요한 계산기 찾기</h2>
-        <p>대출, 렌탈, 광고비, 반품처럼 지금 확인할 숫자를 검색하세요.</p>
+        <p><span data-tool-count>{calculators.length}</span>개 계산기 중 지금 확인할 숫자를 검색하세요.</p>
       </div>
       <label class="search-box">
         <span>검색</span>
         <input type="search" placeholder="예: 대출, 광고비, 수수료" data-tool-search />
       </label>
     </div>
-    <div class="filter-row" role="list" aria-label="계산기 분류">
-      {finderGroups.map(([group, label]) => (
-        <button type="button" data-tool-filter={group} class={group === 'all' ? 'active' : ''}>{label}</button>
+    <div class="finder-actions">
+      <div class="filter-row" role="list" aria-label="계산기 분류">
+        {finderGroups.map(([group, label]) => (
+          <button type="button" data-tool-filter={group} class={group === 'all' ? 'active' : ''}>{label}</button>
+        ))}
+      </div>
+      <button class="clear-search" type="button" data-tool-clear>초기화</button>
+    </div>
+    <div class="hint-row" aria-label="추천 검색어">
+      {searchHints.map((hint) => (
+        <button type="button" data-tool-hint={hint}>{hint}</button>
       ))}
     </div>
     <p class="empty-state" data-tool-empty hidden>조건에 맞는 계산기가 없습니다. 다른 단어로 검색해보세요.</p>
@@ -96,6 +132,7 @@ const finderGroups: Array<['all' | CalculatorGroup, string]> = [
             <span>{calculator.intent}</span>
             <h3>{calculator.shortTitle}</h3>
             <p>{calculator.description}</p>
+            <small>계산하기</small>
           </a>
         ))}
       </div>
@@ -118,6 +155,9 @@ const finderGroups: Array<['all' | CalculatorGroup, string]> = [
     const cards = [...document.querySelectorAll('[data-tool-card]')];
     const sections = [...document.querySelectorAll('[data-tool-section]')];
     const empty = document.querySelector('[data-tool-empty]');
+    const count = document.querySelector('[data-tool-count]');
+    const clearButton = document.querySelector('[data-tool-clear]');
+    const hintButtons = [...document.querySelectorAll('[data-tool-hint]')];
     let activeGroup = 'all';
 
     function applyToolFilter() {
@@ -138,6 +178,7 @@ const finderGroups: Array<['all' | CalculatorGroup, string]> = [
       });
 
       if (empty) empty.hidden = visibleCount > 0;
+      if (count) count.textContent = String(visibleCount);
     }
 
     searchInput?.addEventListener('input', applyToolFilter);
@@ -146,6 +187,21 @@ const finderGroups: Array<['all' | CalculatorGroup, string]> = [
         activeGroup = button.dataset.toolFilter || 'all';
         filterButtons.forEach((item) => item.classList.toggle('active', item === button));
         applyToolFilter();
+      });
+    });
+    clearButton?.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      activeGroup = 'all';
+      filterButtons.forEach((item) => item.classList.toggle('active', item.dataset.toolFilter === 'all'));
+      applyToolFilter();
+    });
+    hintButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        if (searchInput) searchInput.value = button.dataset.toolHint || '';
+        activeGroup = 'all';
+        filterButtons.forEach((item) => item.classList.toggle('active', item.dataset.toolFilter === 'all'));
+        applyToolFilter();
+        searchInput?.focus();
       });
     });
   </script>
@@ -225,6 +281,42 @@ const finderGroups: Array<['all' | CalculatorGroup, string]> = [
     gap: 18px;
     align-items: start;
   }
+  .pathway {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .path-card {
+    display: grid;
+    gap: 8px;
+    min-height: 156px;
+    border: 1px solid #d8dfdb;
+    border-radius: 8px;
+    background: #fff;
+    padding: 18px;
+    color: inherit;
+    text-decoration: none;
+    box-shadow: 0 1px 2px rgba(28, 42, 35, 0.04);
+  }
+  .path-card:hover {
+    border-color: #91b8a4;
+    box-shadow: 0 8px 22px rgba(28, 42, 35, 0.07);
+  }
+  .path-card span,
+  .path-card small {
+    color: #16824f;
+    font: 900 0.78rem/1.3 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .path-card strong {
+    color: #1c2a23;
+    font: 950 1.35rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .path-card p {
+    margin: 0;
+    color: #596760;
+    font: 700 0.92rem/1.55 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
   .finder {
     margin-top: 24px;
     border: 1px solid #d8dfdb;
@@ -276,6 +368,24 @@ const finderGroups: Array<['all' | CalculatorGroup, string]> = [
     gap: 8px;
     margin-top: 16px;
   }
+  .finder-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  .clear-search {
+    min-height: 36px;
+    margin-top: 16px;
+    border: 1px solid #d8dfdb;
+    border-radius: 8px;
+    background: #fff;
+    color: #596760;
+    padding: 0 12px;
+    font: 900 0.85rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+  }
   .filter-row button {
     min-height: 36px;
     border: 1px solid #d8dfdb;
@@ -287,9 +397,30 @@ const finderGroups: Array<['all' | CalculatorGroup, string]> = [
     cursor: pointer;
   }
   .filter-row button.active,
-  .filter-row button:hover {
+  .filter-row button:hover,
+  .clear-search:hover {
     border-color: #16824f;
     background: #edf8f2;
+    color: #0f6c43;
+  }
+  .hint-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .hint-row button {
+    min-height: 32px;
+    border: 1px solid #e1e7e4;
+    border-radius: 999px;
+    background: #fbfdfc;
+    color: #596760;
+    padding: 0 11px;
+    font: 900 0.8rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    cursor: pointer;
+  }
+  .hint-row button:hover {
+    border-color: #91b8a4;
     color: #0f6c43;
   }
   .empty-state {
@@ -371,6 +502,12 @@ const finderGroups: Array<['all' | CalculatorGroup, string]> = [
     color: #596760;
     font: 700 0.9rem/1.55 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
+  .tool-card small {
+    margin-top: auto;
+    padding-top: 14px;
+    color: #16824f;
+    font: 900 0.82rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
   @media (max-width: 920px) {
     .hero-copy,
     .revenue-note,
@@ -381,8 +518,17 @@ const finderGroups: Array<['all' | CalculatorGroup, string]> = [
     .tool-list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+    .pathway {
+      grid-template-columns: 1fr;
+    }
   }
   @media (max-width: 620px) {
+    .finder-actions {
+      display: grid;
+    }
+    .clear-search {
+      width: fit-content;
+    }
     .quick-row {
       grid-template-columns: 1fr;
     }
