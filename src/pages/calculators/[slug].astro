@@ -112,13 +112,30 @@ const guideItems = guideByGroup[calculator.group];
   </section>
 
   <script is:inline src="/calculators.js" defer></script>
-  <script is:inline>
+  <script
+    is:inline
+    define:vars={{
+      recentCalculator: {
+        slug: calculator.slug,
+        title: calculator.shortTitle,
+        href: `/calculators/${calculator.slug}/`,
+        group: groupLabels[calculator.group]
+      }
+    }}
+  >
     document.querySelector('[data-calculator-jump]')?.addEventListener('change', (event) => {
       const select = event.currentTarget;
       if (select instanceof HTMLSelectElement && select.value) {
         window.location.href = select.value;
       }
     });
+
+    try {
+      const key = 'margin-calculator-recent';
+      const previous = JSON.parse(localStorage.getItem(key) || '[]');
+      const next = [recentCalculator, ...previous.filter((item) => item.slug !== recentCalculator.slug)].slice(0, 5);
+      localStorage.setItem(key, JSON.stringify(next));
+    } catch {}
   </script>
 </BaseLayout>
 

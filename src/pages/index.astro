@@ -87,6 +87,14 @@ const searchHints = ['대출', '할부', '쿠폰', '렌탈', '적금', '배송�
     ))}
   </section>
 
+  <section class="recent-tools" data-recent-tools hidden>
+    <div class="section-title">
+      <h2>최근 본 계산기</h2>
+      <button type="button" data-recent-clear>비우기</button>
+    </div>
+    <div class="recent-list" data-recent-list></div>
+  </section>
+
   <section class="finder" id="finder" aria-labelledby="finder-title">
     <div class="finder-head">
       <div>
@@ -204,6 +212,38 @@ const searchHints = ['대출', '할부', '쿠폰', '렌탈', '적금', '배송�
         searchInput?.focus();
       });
     });
+
+    const recentWrap = document.querySelector('[data-recent-tools]');
+    const recentList = document.querySelector('[data-recent-list]');
+    const recentClear = document.querySelector('[data-recent-clear]');
+    const recentKey = 'margin-calculator-recent';
+
+    function renderRecentTools() {
+      if (!recentWrap || !recentList) return;
+      let recent = [];
+      try {
+        recent = JSON.parse(localStorage.getItem(recentKey) || '[]');
+      } catch {
+        recent = [];
+      }
+      recentWrap.hidden = recent.length === 0;
+      recentList.innerHTML = recent
+        .map(
+          (item) => `
+            <a href="${item.href}">
+              <span>${item.group}</span>
+              <strong>${item.title}</strong>
+            </a>
+          `
+        )
+        .join('');
+    }
+
+    recentClear?.addEventListener('click', () => {
+      localStorage.removeItem(recentKey);
+      renderRecentTools();
+    });
+    renderRecentTools();
   </script>
 </BaseLayout>
 
@@ -316,6 +356,62 @@ const searchHints = ['대출', '할부', '쿠폰', '렌탈', '적금', '배송�
     margin: 0;
     color: #596760;
     font: 700 0.92rem/1.55 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .recent-tools {
+    margin-top: 24px;
+    border: 1px solid #d8dfdb;
+    border-radius: 8px;
+    background: #fff;
+    padding: 18px 20px;
+    box-shadow: 0 1px 2px rgba(28, 42, 35, 0.04);
+  }
+  .recent-tools[hidden] {
+    display: none;
+  }
+  .recent-tools .section-title {
+    margin-bottom: 12px;
+  }
+  .recent-tools button {
+    min-height: 34px;
+    border: 1px solid #d8dfdb;
+    border-radius: 8px;
+    background: #fff;
+    color: #596760;
+    padding: 0 11px;
+    font: 900 0.82rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    cursor: pointer;
+  }
+  .recent-tools button:hover {
+    border-color: #16824f;
+    background: #edf8f2;
+    color: #0f6c43;
+  }
+  .recent-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .recent-list a {
+    display: inline-grid;
+    gap: 3px;
+    min-width: 150px;
+    border: 1px solid #e1e7e4;
+    border-radius: 8px;
+    background: #fbfdfc;
+    color: inherit;
+    text-decoration: none;
+    padding: 10px 12px;
+  }
+  .recent-list a:hover {
+    border-color: #91b8a4;
+  }
+  .recent-list span {
+    color: #74817b;
+    font: 800 0.74rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .recent-list strong {
+    color: #1c2a23;
+    font: 950 0.95rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .finder {
     margin-top: 24px;

@@ -56,6 +56,10 @@ const { calculator, compact = false } = Astro.props;
     <div class="metric-list" data-result-metrics></div>
     <div class="schedule-wrap" data-result-schedule hidden></div>
     <p class="result-note" data-result-note></p>
+    <div class="result-actions">
+      <button type="button" data-result-copy>결과 복사</button>
+      <span data-result-feedback aria-live="polite"></span>
+    </div>
     <p class="result-caption">입력값을 바꾸면 자동으로 다시 계산됩니다.</p>
   </aside>
 </section>
@@ -318,6 +322,32 @@ const { calculator, compact = false } = Astro.props;
     margin: 12px 0 0;
     color: #8a9690;
     font: 700 0.78rem/1.45 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .result-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .result-actions button {
+    min-height: 36px;
+    border: 1px solid #cfd8d3;
+    border-radius: 8px;
+    background: #fff;
+    color: #1c2a23;
+    padding: 0 12px;
+    font: 900 0.84rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    cursor: pointer;
+  }
+  .result-actions button:hover {
+    border-color: #16824f;
+    background: #edf8f2;
+    color: #0f6c43;
+  }
+  .result-actions span {
+    color: #74817b;
+    font: 800 0.78rem/1.35 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .compact-tool {
     grid-template-columns: 1fr;

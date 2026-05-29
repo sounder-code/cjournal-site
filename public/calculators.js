@@ -555,17 +555,24 @@ function render(root, result) {
   const note = root.querySelector('[data-result-note]');
   const schedule = root.querySelector('[data-result-schedule]');
   const panel = root.querySelector('.result-panel');
+  const displayPrimary = result.primaryLabel.includes('회수기간') ? `${result.primary.toFixed(1)}개월` : formatWon(result.primary);
   const tone = /손실|위험|주의|부담 큼|개선 필요|효과 낮음|유지 유리/.test(result.status)
     ? /손실|위험|개선 필요/.test(result.status)
       ? 'bad'
       : 'warn'
     : 'good';
 
-  if (primary) primary.textContent = result.primaryLabel.includes('회수기간') ? `${result.primary.toFixed(1)}개월` : formatWon(result.primary);
+  if (primary) primary.textContent = displayPrimary;
   if (primaryLabel) primaryLabel.textContent = result.primaryLabel;
   if (status) status.textContent = result.status;
   if (note) note.textContent = result.note;
   if (panel) panel.dataset.tone = tone;
+  root.dataset.resultSummary = [
+    `${result.primaryLabel}: ${displayPrimary}`,
+    `상태: ${result.status}`,
+    ...result.metrics.map(([label, value]) => `${label}: ${value}`),
+    result.note
+  ].join('\n');
   if (metrics) {
     metrics.innerHTML = result.metrics
       .map(([label, value]) => `<div class="metric-row"><span>${label}</span><strong>${value}</strong></div>`)
@@ -621,6 +628,19 @@ function setupCalculator(root) {
       input.value = input.dataset.default || input.value;
     });
     update();
+  });
+  root.querySelector('[data-result-copy]')?.addEventListener('click', async () => {
+    const feedback = root.querySelector('[data-result-feedback]');
+    const summary = root.dataset.resultSummary || '';
+    try {
+      await navigator.clipboard.writeText(summary);
+      if (feedback) feedback.textContent = '복사했습니다';
+    } catch {
+      if (feedback) feedback.textContent = '복사할 수 없습니다';
+    }
+    window.setTimeout(() => {
+      if (feedback) feedback.textContent = '';
+    }, 1800);
   });
   update();
 }
