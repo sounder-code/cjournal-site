@@ -1,0 +1,60 @@
+---
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  const tags = new Set(posts.flatMap((post) => post.data.tags));
+  return [...tags].map((tag) => ({ params: { tag } }));
+}
+---
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>비공개된 태그 | 마진계산소</title>
+    <link rel="canonical" href="https://cjournal.kr/" />
+  </head>
+  <body>
+    <main>
+      <h1>비공개된 태그 페이지입니다.</h1>
+      <p>마진계산소는 계산기 중심 사이트로 개편하면서 이전 글 태그 페이지를 공개하지 않습니다.</p>
+      <a href="/">계산기 홈으로 이동</a>
+    </main>
+  </body>
+</html>
+
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #f3f6f4;
+    color: #17261f;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  main {
+    width: min(560px, calc(100vw - 32px));
+    border: 1px solid #d8dfdb;
+    border-radius: 8px;
+    background: #fff;
+    padding: 28px;
+  }
+  h1 {
+    margin: 0 0 10px;
+    font-size: 1.8rem;
+    line-height: 1.2;
+  }
+  p {
+    margin: 0 0 18px;
+    color: #5f6d66;
+    font-weight: 700;
+    line-height: 1.7;
+  }
+  a {
+    color: #0f6c43;
+    font-weight: 900;
+  }
+</style>
