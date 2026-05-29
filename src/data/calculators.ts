@@ -117,6 +117,54 @@ export const calculators: Calculator[] = [
     ]
   },
   {
+    slug: 'discount-margin',
+    group: 'seller',
+    title: '할인 판매 마진 계산기',
+    shortTitle: '할인 마진',
+    description: '정가에서 할인을 적용했을 때 수수료와 배송비를 빼고 실제 남는 금액을 계산합니다.',
+    intent: '쿠폰·세일 전에 손실 확인',
+    inputs: [
+      { key: 'regularPrice', label: '정가', suffix: '원', value: 39900, min: 0, step: 100 },
+      { key: 'discountRate', label: '할인율', suffix: '%', value: 15, min: 0, max: 90, step: 0.1 },
+      { key: 'cost', label: '원가', suffix: '원', value: 17000, min: 0, step: 100 },
+      { key: 'feeRate', label: '총 수수료율', suffix: '%', value: 13.5, min: 0, max: 50, step: 0.1 },
+      { key: 'shipping', label: '배송/포장비', suffix: '원', value: 3500, min: 0, step: 100 },
+      { key: 'adCost', label: '주문당 광고비', suffix: '원', value: 1500, min: 0, step: 100 }
+    ]
+  },
+  {
+    slug: 'coupon-burden',
+    group: 'seller',
+    title: '쿠폰 부담 후 마진 계산기',
+    shortTitle: '쿠폰 부담',
+    description: '쿠폰 금액 중 판매자 부담분을 반영해 정산 기준 매출과 순이익을 계산합니다.',
+    intent: '쿠폰행사 참여 전 확인',
+    inputs: [
+      { key: 'price', label: '상품 판매가', suffix: '원', value: 45900, min: 0, step: 100 },
+      { key: 'coupon', label: '쿠폰 금액', suffix: '원', value: 5000, min: 0, step: 100 },
+      { key: 'sellerBurdenRate', label: '판매자 부담률', suffix: '%', value: 50, min: 0, max: 100, step: 1 },
+      { key: 'cost', label: '원가', suffix: '원', value: 21000, min: 0, step: 100 },
+      { key: 'feeRate', label: '수수료율', suffix: '%', value: 12.5, min: 0, max: 50, step: 0.1 },
+      { key: 'shipping', label: '배송/포장비', suffix: '원', value: 3500, min: 0, step: 100 }
+    ]
+  },
+  {
+    slug: 'bundle-shipping-profit',
+    group: 'seller',
+    title: '묶음배송 손익 계산기',
+    shortTitle: '묶음배송 손익',
+    description: '한 주문에 여러 개가 팔릴 때 상품 이익, 수수료, 실제 배송비를 합쳐 손익을 계산합니다.',
+    intent: '묶음 구매가 진짜 이득인지 확인',
+    inputs: [
+      { key: 'price', label: '개당 판매가', suffix: '원', value: 12900, min: 0, step: 100 },
+      { key: 'cost', label: '개당 원가', suffix: '원', value: 5200, min: 0, step: 100 },
+      { key: 'quantity', label: '주문 수량', suffix: '개', value: 3, min: 1, step: 1 },
+      { key: 'feeRate', label: '수수료율', suffix: '%', value: 13, min: 0, max: 50, step: 0.1 },
+      { key: 'shippingCharge', label: '고객 배송비', suffix: '원', value: 3000, min: 0, step: 100 },
+      { key: 'actualShipping', label: '실제 배송/포장비', suffix: '원', value: 4200, min: 0, step: 100 }
+    ]
+  },
+  {
     slug: 'subscription-cut',
     group: 'living',
     title: '월 구독비 절감 계산기',
@@ -188,6 +236,49 @@ export const calculators: Calculator[] = [
     ]
   },
   {
+    slug: 'card-installment',
+    group: 'living',
+    title: '카드 할부 월납입 계산기',
+    shortTitle: '카드 할부',
+    description: '할부 원금, 기간, 수수료율로 월 납입액과 총 부담액을 계산합니다.',
+    intent: '무이자 아닌 할부 비용 확인',
+    inputs: [
+      { key: 'price', label: '결제금액', suffix: '원', value: 1200000, min: 0, step: 10000 },
+      { key: 'months', label: '할부 기간', suffix: '개월', value: 12, min: 1, max: 60, step: 1 },
+      { key: 'annualRate', label: '연 수수료율', suffix: '%', value: 8.5, min: 0, max: 30, step: 0.1 },
+      { key: 'upfrontFee', label: '초기 수수료', suffix: '원', value: 0, min: 0, step: 1000 }
+    ]
+  },
+  {
+    slug: 'commute-fuel-cost',
+    group: 'living',
+    title: '출퇴근 유류비 계산기',
+    shortTitle: '출퇴근 유류비',
+    description: '왕복 거리, 출근일, 연비, 유가로 월 출퇴근 기름값을 계산합니다.',
+    intent: '차로 출근할 때 월비용 확인',
+    inputs: [
+      { key: 'distance', label: '왕복 거리', suffix: 'km', value: 36, min: 0, step: 1 },
+      { key: 'days', label: '월 출근일', suffix: '일', value: 22, min: 0, max: 31, step: 1 },
+      { key: 'fuelEconomy', label: '연비', suffix: 'km/L', value: 11, min: 1, step: 0.1 },
+      { key: 'fuelPrice', label: '유가', suffix: '원/L', value: 1680, min: 0, step: 10 },
+      { key: 'parking', label: '월 주차비', suffix: '원', value: 0, min: 0, step: 1000 }
+    ]
+  },
+  {
+    slug: 'savings-maturity',
+    group: 'living',
+    title: '적금 만기 수령액 계산기',
+    shortTitle: '적금 만기액',
+    description: '월 납입액, 기간, 금리, 이자세금을 반영해 만기 수령액을 계산합니다.',
+    intent: '매달 모으면 얼마가 되는지 확인',
+    inputs: [
+      { key: 'monthlyDeposit', label: '월 납입액', suffix: '원', value: 300000, min: 0, step: 10000 },
+      { key: 'months', label: '납입 기간', suffix: '개월', value: 24, min: 1, max: 120, step: 1 },
+      { key: 'annualRate', label: '연 이율', suffix: '%', value: 3.8, min: 0, max: 20, step: 0.1 },
+      { key: 'taxRate', label: '이자 과세율', suffix: '%', value: 15.4, min: 0, max: 30, step: 0.1 }
+    ]
+  },
+  {
     slug: 'loan-interest',
     group: 'utility',
     title: '대출 이자 계산기',
@@ -209,6 +300,48 @@ export const calculators: Calculator[] = [
           { label: '만기일시', value: 'bullet' }
         ]
       }
+    ]
+  },
+  {
+    slug: 'deposit-interest',
+    group: 'utility',
+    title: '예금 이자 계산기',
+    shortTitle: '예금 이자',
+    description: '예치금, 기간, 금리, 이자세금을 반영해 만기 이자와 수령액을 계산합니다.',
+    intent: '예금 만기 수령액 확인',
+    inputs: [
+      { key: 'principal', label: '예치금', suffix: '원', value: 10000000, min: 0, step: 100000 },
+      { key: 'months', label: '예치 기간', suffix: '개월', value: 12, min: 1, max: 120, step: 1 },
+      { key: 'annualRate', label: '연 이율', suffix: '%', value: 3.6, min: 0, max: 20, step: 0.1 },
+      { key: 'taxRate', label: '이자 과세율', suffix: '%', value: 15.4, min: 0, max: 30, step: 0.1 }
+    ]
+  },
+  {
+    slug: 'loan-affordability',
+    group: 'utility',
+    title: '월 납입액 기준 대출금 계산기',
+    shortTitle: '대출 가능액',
+    description: '감당 가능한 월 납입액에서 금리와 기간을 반영해 대출 원금을 역산합니다.',
+    intent: '월 부담에서 대출 규모 역산',
+    inputs: [
+      { key: 'monthlyPayment', label: '감당 가능한 월 납입액', suffix: '원', value: 700000, min: 0, step: 10000 },
+      { key: 'annualRate', label: '연이자율', suffix: '%', value: 4.5, min: 0, max: 30, step: 0.1 },
+      { key: 'years', label: '대출기간', suffix: '년', value: 30, min: 1, max: 50, step: 1 },
+      { key: 'income', label: '월 실수령 소득', suffix: '원', value: 3500000, min: 0, step: 10000 }
+    ]
+  },
+  {
+    slug: 'payback-period',
+    group: 'utility',
+    title: '투자 회수기간 계산기',
+    shortTitle: '회수기간',
+    description: '초기 투자비와 월 순현금흐름으로 원금 회수까지 걸리는 기간을 계산합니다.',
+    intent: '투자비가 언제 회수되는지 확인',
+    inputs: [
+      { key: 'initialCost', label: '초기 투자비', suffix: '원', value: 5000000, min: 0, step: 100000 },
+      { key: 'monthlyRevenue', label: '월 추가 매출', suffix: '원', value: 900000, min: 0, step: 10000 },
+      { key: 'monthlyCost', label: '월 추가 비용', suffix: '원', value: 350000, min: 0, step: 10000 },
+      { key: 'resaleValue', label: '잔존/회수 가치', suffix: '원', value: 500000, min: 0, step: 10000 }
     ]
   },
   {

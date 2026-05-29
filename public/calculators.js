@@ -139,6 +139,67 @@ function vatProfit(v) {
   };
 }
 
+function discountMargin(v) {
+  const salePrice = v.regularPrice * (1 - clampRate(v.discountRate) / 100);
+  const fee = salePrice * (v.feeRate / 100);
+  const net = salePrice - v.cost - fee - v.shipping - v.adCost;
+  const margin = salePrice > 0 ? (net / salePrice) * 100 : 0;
+  return {
+    primary: net,
+    primaryLabel: '할인 후 주문당 순이익',
+    metrics: [
+      ['할인 판매가', formatWon(salePrice)],
+      ['마진율', formatPercent(margin)],
+      ['수수료', formatWon(fee)],
+      ['할인액', formatWon(v.regularPrice - salePrice)]
+    ],
+    status: net > 3000 ? '판매 가능' : net > 0 ? '주의' : '손실',
+    note: net > 0 ? '할인 후에도 이익은 남지만 광고비나 반품이 붙으면 마진이 더 줄어듭니다.' : '현재 할인율에서는 판매할수록 손실이 납니다. 할인율이나 원가 구조를 다시 확인하세요.'
+  };
+}
+
+function couponBurden(v) {
+  const sellerCoupon = v.coupon * (v.sellerBurdenRate / 100);
+  const customerPrice = Math.max(0, v.price - v.coupon);
+  const settlement = Math.max(0, v.price - sellerCoupon);
+  const fee = settlement * (v.feeRate / 100);
+  const net = settlement - v.cost - fee - v.shipping;
+  const margin = settlement > 0 ? (net / settlement) * 100 : 0;
+  return {
+    primary: net,
+    primaryLabel: '쿠폰 반영 순이익',
+    metrics: [
+      ['고객 결제 예상', formatWon(customerPrice)],
+      ['판매자 쿠폰 부담', formatWon(sellerCoupon)],
+      ['정산 기준 매출', formatWon(settlement)],
+      ['마진율', formatPercent(margin)]
+    ],
+    status: net > 3000 ? '참여 가능' : net > 0 ? '주의' : '손실',
+    note: '플랫폼 쿠폰은 부담 주체에 따라 정산액이 달라집니다. 실제 정산 정책을 확인하고 입력값을 맞추세요.'
+  };
+}
+
+function bundleShippingProfit(v) {
+  const quantity = Math.max(1, Math.round(v.quantity));
+  const revenue = v.price * quantity + v.shippingCharge;
+  const productRevenue = v.price * quantity;
+  const productCost = v.cost * quantity;
+  const fee = productRevenue * (v.feeRate / 100);
+  const net = revenue - productCost - fee - v.actualShipping;
+  return {
+    primary: net,
+    primaryLabel: '묶음 주문 순이익',
+    metrics: [
+      ['개당 환산 이익', formatWon(net / quantity)],
+      ['상품 매출', formatWon(productRevenue)],
+      ['상품 원가', formatWon(productCost)],
+      ['배송비 차이', formatWon(v.shippingCharge - v.actualShipping)]
+    ],
+    status: net > 5000 ? '좋음' : net > 0 ? '주의' : '손실',
+    note: '묶음배송은 객단가가 올라가지만 중량 증가로 실제 배송비가 올라가면 이익이 줄 수 있습니다.'
+  };
+}
+
 function subscriptionCut(v) {
   const cut = Math.max(0, v.monthlyTotal * (v.cutRate / 100) - v.newService);
   return {
@@ -219,6 +280,69 @@ function movingCost(v) {
     ],
     status: '예산 확보',
     note: '이사비는 당일 옵션과 폐기 비용이 붙기 쉬워 예비비를 따로 잡는 편이 안전합니다.'
+  };
+}
+
+function cardInstallment(v) {
+  const months = Math.max(1, Math.round(v.months));
+  const monthlyRate = Math.max(0, v.annualRate) / 100 / 12;
+  const payment =
+    monthlyRate === 0
+      ? v.price / months
+      : v.price * ((monthlyRate * (1 + monthlyRate) ** months) / ((1 + monthlyRate) ** months - 1));
+  const totalInstallment = payment * months;
+  const total = totalInstallment + v.upfrontFee;
+  return {
+    primary: payment,
+    primaryLabel: '예상 월 납입액',
+    metrics: [
+      ['총 납입액', formatWon(total)],
+      ['할부 수수료', formatWon(totalInstallment - v.price)],
+      ['초기 수수료', formatWon(v.upfrontFee)],
+      ['할부 기간', `${months.toLocaleString('ko-KR')}개월`]
+    ],
+    status: totalInstallment > v.price ? '수수료 확인' : '무이자',
+    note: '카드사별 할부 수수료율과 청구 방식은 다를 수 있으니 실제 청구 조건과 비교하세요.'
+  };
+}
+
+function commuteFuelCost(v) {
+  const monthlyKm = v.distance * v.days;
+  const liters = monthlyKm / Math.max(1, v.fuelEconomy);
+  const fuelCost = liters * v.fuelPrice;
+  const total = fuelCost + v.parking;
+  return {
+    primary: total,
+    primaryLabel: '월 출퇴근 차량비',
+    metrics: [
+      ['월 주행거리', `${monthlyKm.toLocaleString('ko-KR')}km`],
+      ['예상 주유량', `${liters.toFixed(1)}L`],
+      ['순수 유류비', formatWon(fuelCost)],
+      ['일 평균 비용', formatWon(total / Math.max(1, v.days))]
+    ],
+    status: total > 250000 ? '비용 큼' : '계산 완료',
+    note: '보험료, 정비비, 감가상각까지 넣으면 실제 차량 유지비는 더 커질 수 있습니다.'
+  };
+}
+
+function savingsMaturity(v) {
+  const months = Math.max(1, Math.round(v.months));
+  const principal = v.monthlyDeposit * months;
+  const monthlyRate = Math.max(0, v.annualRate) / 100 / 12;
+  const interest = v.monthlyDeposit * monthlyRate * ((months * (months + 1)) / 2);
+  const tax = interest * (v.taxRate / 100);
+  const afterTaxInterest = interest - tax;
+  return {
+    primary: principal + afterTaxInterest,
+    primaryLabel: '예상 만기 수령액',
+    metrics: [
+      ['납입 원금', formatWon(principal)],
+      ['세전 이자', formatWon(interest)],
+      ['이자세금', formatWon(tax)],
+      ['세후 이자', formatWon(afterTaxInterest)]
+    ],
+    status: '만기액 확인',
+    note: '일반적인 월 납입 적금의 단리 계산입니다. 실제 상품은 납입일과 우대금리에 따라 달라질 수 있습니다.'
   };
 }
 
@@ -321,6 +445,66 @@ function loanInterest(v) {
   };
 }
 
+function depositInterest(v) {
+  const months = Math.max(1, Math.round(v.months));
+  const interest = v.principal * (Math.max(0, v.annualRate) / 100) * (months / 12);
+  const tax = interest * (v.taxRate / 100);
+  const afterTaxInterest = interest - tax;
+  return {
+    primary: v.principal + afterTaxInterest,
+    primaryLabel: '예상 만기 수령액',
+    metrics: [
+      ['세전 이자', formatWon(interest)],
+      ['이자세금', formatWon(tax)],
+      ['세후 이자', formatWon(afterTaxInterest)],
+      ['예치 기간', `${months.toLocaleString('ko-KR')}개월`]
+    ],
+    status: '이자 확인',
+    note: '단리 예금 기준 계산입니다. 월복리, 중도해지, 우대금리는 실제 상품 조건에 맞춰 다시 확인하세요.'
+  };
+}
+
+function loanAffordability(v) {
+  const months = Math.max(1, Math.round(v.years * 12));
+  const monthlyRate = Math.max(0, v.annualRate) / 100 / 12;
+  const principal =
+    monthlyRate === 0
+      ? v.monthlyPayment * months
+      : v.monthlyPayment * ((1 - (1 + monthlyRate) ** -months) / monthlyRate);
+  const totalPayment = v.monthlyPayment * months;
+  const paymentRatio = v.income > 0 ? (v.monthlyPayment / v.income) * 100 : 0;
+  return {
+    primary: principal,
+    primaryLabel: '역산 대출 원금',
+    metrics: [
+      ['총 납입액', formatWon(totalPayment)],
+      ['예상 총이자', formatWon(totalPayment - principal)],
+      ['상환 기간', `${months.toLocaleString('ko-KR')}개월`],
+      ['소득 대비 납입률', formatPercent(paymentRatio)]
+    ],
+    status: paymentRatio > 35 ? '부담 큼' : '계산 완료',
+    note: '월 납입액을 기준으로 원리금균등 대출 원금을 역산합니다. 실제 한도는 DSR, 신용, 담보 조건에 따라 달라집니다.'
+  };
+}
+
+function paybackPeriod(v) {
+  const netInvestment = Math.max(0, v.initialCost - v.resaleValue);
+  const monthlyCashflow = v.monthlyRevenue - v.monthlyCost;
+  const months = monthlyCashflow > 0 ? netInvestment / monthlyCashflow : Infinity;
+  return {
+    primary: Number.isFinite(months) ? months : 0,
+    primaryLabel: '예상 회수기간',
+    metrics: [
+      ['월 순현금흐름', formatWon(monthlyCashflow)],
+      ['회수 대상 투자비', formatWon(netInvestment)],
+      ['연 순현금흐름', formatWon(monthlyCashflow * 12)],
+      ['회수 후 월 이익', formatWon(Math.max(0, monthlyCashflow))]
+    ],
+    status: monthlyCashflow <= 0 ? '회수 불가' : months <= 12 ? '빠른 회수' : months <= 36 ? '검토 가능' : '부담 큼',
+    note: monthlyCashflow <= 0 ? '월 순현금흐름이 0원 이하라 투자비를 회수할 수 없습니다.' : `약 ${months.toFixed(1)}개월 뒤 초기 투자비를 회수하는 구조입니다.`
+  };
+}
+
 function hourlyRate(v) {
   const net = (v.revenue - v.expense) * (1 - v.taxRate / 100);
   const hourly = net / Math.max(1, v.hours);
@@ -345,12 +529,21 @@ const calculators = {
   'return-loss': returnLoss,
   'platform-fee-compare': platformCompare,
   'vat-profit': vatProfit,
+  'discount-margin': discountMargin,
+  'coupon-burden': couponBurden,
+  'bundle-shipping-profit': bundleShippingProfit,
   'subscription-cut': subscriptionCut,
   'internet-switch': internetSwitch,
   'rental-total-cost': rentalTotalCost,
   'electricity-cost': electricityCost,
   'moving-cost': movingCost,
+  'card-installment': cardInstallment,
+  'commute-fuel-cost': commuteFuelCost,
+  'savings-maturity': savingsMaturity,
   'loan-interest': loanInterest,
+  'deposit-interest': depositInterest,
+  'loan-affordability': loanAffordability,
+  'payback-period': paybackPeriod,
   'hourly-rate': hourlyRate
 };
 
@@ -368,7 +561,7 @@ function render(root, result) {
       : 'warn'
     : 'good';
 
-  if (primary) primary.textContent = formatWon(result.primary);
+  if (primary) primary.textContent = result.primaryLabel.includes('회수기간') ? `${result.primary.toFixed(1)}개월` : formatWon(result.primary);
   if (primaryLabel) primaryLabel.textContent = result.primaryLabel;
   if (status) status.textContent = result.status;
   if (note) note.textContent = result.note;
