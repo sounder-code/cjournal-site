@@ -49,6 +49,10 @@ const presetsBySlug: Record<string, Array<{ label: string; values: Record<string
     { label: 'OTT/앱 구독 정리', values: { monthlyTotal: 89000, cutRate: 35, newService: 12000 } },
     { label: '업무툴 비용 점검', values: { monthlyTotal: 180000, cutRate: 25, newService: 35000 } }
   ],
+  'unit-price-compare': [
+    { label: '대용량 할인 비교', values: { priceA: 12900, quantityA: 500, priceB: 18900, quantityB: 900 } },
+    { label: '묶음상품 비교', values: { priceA: 7900, quantityA: 3, priceB: 24900, quantityB: 10 } }
+  ],
   'internet-switch': [
     { label: '3년 약정 갈아타기', values: { penalty: 180000, reward: 420000, oldMonthly: 42000, newMonthly: 36000, months: 36 } },
     { label: '위약금 큰 상황', values: { penalty: 360000, reward: 450000, oldMonthly: 39000, newMonthly: 33000, months: 24 } }
@@ -73,6 +77,10 @@ const presetsBySlug: Record<string, Array<{ label: string; values: Record<string
     { label: '자가용 출퇴근', values: { distance: 36, days: 22, fuelEconomy: 11, fuelPrice: 1680, parking: 0 } },
     { label: '주차비 포함', values: { distance: 52, days: 20, fuelEconomy: 9.5, fuelPrice: 1720, parking: 80000 } }
   ],
+  'car-total-cost': [
+    { label: '출퇴근 차량', values: { monthlyPayment: 450000, fuelCost: 220000, insurance: 1200000, parking: 80000, maintenance: 90000 } },
+    { label: '할부 끝난 차량', values: { monthlyPayment: 0, fuelCost: 180000, insurance: 900000, parking: 50000, maintenance: 130000 } }
+  ],
   'savings-maturity': [
     { label: '월 30만원 2년', values: { monthlyDeposit: 300000, months: 24, annualRate: 3.8, taxRate: 15.4 } },
     { label: '월 100만원 1년', values: { monthlyDeposit: 1000000, months: 12, annualRate: 4.2, taxRate: 15.4 } }
@@ -85,6 +93,14 @@ const presetsBySlug: Record<string, Array<{ label: string; values: Record<string
     { label: '1천만원 1년 예금', values: { principal: 10000000, months: 12, annualRate: 3.6, taxRate: 15.4 } },
     { label: '5천만원 6개월 예금', values: { principal: 50000000, months: 6, annualRate: 3.4, taxRate: 15.4 } }
   ],
+  'compound-return': [
+    { label: '월 30만원 10년', values: { initialAmount: 3000000, monthlyDeposit: 300000, annualReturn: 5, years: 10 } },
+    { label: '공격적 장기 적립', values: { initialAmount: 10000000, monthlyDeposit: 800000, annualReturn: 7, years: 20 } }
+  ],
+  'goal-savings': [
+    { label: '3천만원 모으기', values: { goalAmount: 30000000, currentAmount: 5000000, monthlyDeposit: 800000, annualReturn: 3 } },
+    { label: '1억원 목표', values: { goalAmount: 100000000, currentAmount: 20000000, monthlyDeposit: 1500000, annualReturn: 4 } }
+  ],
   'loan-affordability': [
     { label: '월 70만원 부담', values: { monthlyPayment: 700000, annualRate: 4.5, years: 30, income: 3500000 } },
     { label: '맞벌이 월 180만원', values: { monthlyPayment: 1800000, annualRate: 4.2, years: 30, income: 8000000 } }
@@ -96,6 +112,10 @@ const presetsBySlug: Record<string, Array<{ label: string; values: Record<string
   'hourly-rate': [
     { label: '부업 월수익 점검', values: { revenue: 3000000, expense: 1200000, hours: 120, taxRate: 10 } },
     { label: '프리랜서 단가 점검', values: { revenue: 6500000, expense: 1800000, hours: 150, taxRate: 18 } }
+  ],
+  'percentage-change': [
+    { label: '가격 인상률', values: { beforeValue: 120000, afterValue: 150000 } },
+    { label: '매출 감소율', values: { beforeValue: 5000000, afterValue: 4200000 } }
   ],
   'monthly-rent-total': [
     { label: '오피스텔 2년 거주', values: { deposit: 10000000, monthlyRent: 650000, maintenance: 90000, months: 24, depositRate: 3.5 } },
@@ -120,6 +140,10 @@ const presetsBySlug: Record<string, Array<{ label: string; values: Record<string
   'annual-leave-pay': [
     { label: '연차 5일', values: { monthlyPay: 3200000, monthlyHours: 209, days: 5, hoursPerDay: 8 } },
     { label: '연차 12.5일', values: { monthlyPay: 4500000, monthlyHours: 209, days: 12.5, hoursPerDay: 8 } }
+  ],
+  'severance-pay-simple': [
+    { label: '3년 근속', values: { threeMonthWage: 9600000, threeMonthDays: 92, years: 3, extraPay: 0 } },
+    { label: '상여 포함', values: { threeMonthWage: 12000000, threeMonthDays: 92, years: 5.5, extraPay: 1500000 } }
   ],
   bmi: [
     { label: '성인 예시', values: { height: 170, weight: 68 } },

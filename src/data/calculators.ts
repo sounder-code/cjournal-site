@@ -181,6 +181,20 @@ export const calculators: Calculator[] = [
     ]
   },
   {
+    slug: 'unit-price-compare',
+    group: 'living',
+    title: '단위가격 비교 계산기',
+    shortTitle: '단가 비교',
+    description: '두 상품의 가격과 용량을 넣어 1개·1g·1ml 기준으로 어느 쪽이 싼지 비교합니다.',
+    intent: '마트·온라인 최저 단가 비교',
+    inputs: [
+      { key: 'priceA', label: '상품 A 가격', suffix: '원', value: 12900, min: 0, step: 100 },
+      { key: 'quantityA', label: '상품 A 용량', suffix: '단위', value: 500, min: 0.01, step: 0.01 },
+      { key: 'priceB', label: '상품 B 가격', suffix: '원', value: 18900, min: 0, step: 100 },
+      { key: 'quantityB', label: '상품 B 용량', suffix: '단위', value: 900, min: 0.01, step: 0.01 }
+    ]
+  },
+  {
     slug: 'internet-switch',
     group: 'living',
     title: '인터넷 갈아타기 손익 계산기',
@@ -268,6 +282,21 @@ export const calculators: Calculator[] = [
     ]
   },
   {
+    slug: 'car-total-cost',
+    group: 'living',
+    title: '자동차 월 유지비 계산기',
+    shortTitle: '자동차 유지비',
+    description: '할부금, 유류비, 보험료, 주차비, 정비비를 합쳐 월 차량 유지비를 계산합니다.',
+    intent: '차를 계속 탈 때 월비용',
+    inputs: [
+      { key: 'monthlyPayment', label: '월 할부/리스료', suffix: '원', value: 450000, min: 0, step: 10000 },
+      { key: 'fuelCost', label: '월 유류비', suffix: '원', value: 220000, min: 0, step: 10000 },
+      { key: 'insurance', label: '연 보험료', suffix: '원', value: 1200000, min: 0, step: 10000 },
+      { key: 'parking', label: '월 주차비', suffix: '원', value: 80000, min: 0, step: 1000 },
+      { key: 'maintenance', label: '월 정비·소모품', suffix: '원', value: 90000, min: 0, step: 1000 }
+    ]
+  },
+  {
     slug: 'savings-maturity',
     group: 'living',
     title: '적금 만기 수령액 계산기',
@@ -320,6 +349,34 @@ export const calculators: Calculator[] = [
     ]
   },
   {
+    slug: 'compound-return',
+    group: 'utility',
+    title: '복리 수익 계산기',
+    shortTitle: '복리 수익',
+    description: '초기금액, 월 적립액, 연 수익률, 기간으로 예상 자산과 수익을 계산합니다.',
+    intent: '장기 적립 투자 결과',
+    inputs: [
+      { key: 'initialAmount', label: '초기 금액', suffix: '원', value: 3000000, min: 0, step: 10000 },
+      { key: 'monthlyDeposit', label: '월 적립액', suffix: '원', value: 300000, min: 0, step: 10000 },
+      { key: 'annualReturn', label: '연 수익률', suffix: '%', value: 5, min: -50, max: 100, step: 0.1 },
+      { key: 'years', label: '투자 기간', suffix: '년', value: 10, min: 1, max: 60, step: 1 }
+    ]
+  },
+  {
+    slug: 'goal-savings',
+    group: 'utility',
+    title: '목표 저축 기간 계산기',
+    shortTitle: '목표 저축',
+    description: '목표금액, 현재금액, 월 저축액, 예상 수익률로 목표 달성 기간을 계산합니다.',
+    intent: '목표금액까지 걸리는 시간',
+    inputs: [
+      { key: 'goalAmount', label: '목표 금액', suffix: '원', value: 30000000, min: 0, step: 100000 },
+      { key: 'currentAmount', label: '현재 모은 금액', suffix: '원', value: 5000000, min: 0, step: 100000 },
+      { key: 'monthlyDeposit', label: '월 저축액', suffix: '원', value: 800000, min: 0, step: 10000 },
+      { key: 'annualReturn', label: '연 수익률', suffix: '%', value: 3, min: -50, max: 100, step: 0.1 }
+    ]
+  },
+  {
     slug: 'loan-affordability',
     group: 'utility',
     title: '월 납입액 기준 대출금 계산기',
@@ -359,6 +416,18 @@ export const calculators: Calculator[] = [
       { key: 'expense', label: '월 비용', suffix: '원', value: 1200000, min: 0, step: 10000 },
       { key: 'hours', label: '월 투입 시간', suffix: '시간', value: 120, min: 1, step: 1 },
       { key: 'taxRate', label: '세금/보험 여유율', suffix: '%', value: 10, min: 0, max: 60, step: 1 }
+    ]
+  },
+  {
+    slug: 'percentage-change',
+    group: 'utility',
+    title: '퍼센트 증감 계산기',
+    shortTitle: '퍼센트 증감',
+    description: '기준값과 변경값을 넣어 증감액, 증감률, 역산 기준을 계산합니다.',
+    intent: '가격·매출 변화율 확인',
+    inputs: [
+      { key: 'beforeValue', label: '기준값', value: 120000, min: -1000000000, step: 1 },
+      { key: 'afterValue', label: '변경값', value: 150000, min: -1000000000, step: 1 }
     ]
   },
   {
@@ -443,6 +512,20 @@ export const calculators: Calculator[] = [
       { key: 'monthlyHours', label: '월 소정근로시간', suffix: '시간', value: 209, min: 1, max: 300, step: 1 },
       { key: 'days', label: '남은 연차', suffix: '일', value: 5, min: 0, max: 40, step: 0.5 },
       { key: 'hoursPerDay', label: '1일 근로시간', suffix: '시간', value: 8, min: 1, max: 12, step: 0.5 }
+    ]
+  },
+  {
+    slug: 'severance-pay-simple',
+    group: 'work',
+    title: '퇴직금 간편 계산기',
+    shortTitle: '퇴직금 간편',
+    description: '최근 3개월 임금과 근속 기간으로 세전 퇴직금 예상액을 간편 계산합니다.',
+    intent: '퇴사 전 대략 금액 확인',
+    inputs: [
+      { key: 'threeMonthWage', label: '최근 3개월 임금 합계', suffix: '원', value: 9600000, min: 0, step: 10000 },
+      { key: 'threeMonthDays', label: '최근 3개월 일수', suffix: '일', value: 92, min: 1, max: 100, step: 1 },
+      { key: 'years', label: '근속 연수', suffix: '년', value: 3, min: 0, max: 50, step: 0.1 },
+      { key: 'extraPay', label: '상여·연차 가산액', suffix: '원', value: 0, min: 0, step: 10000 }
     ]
   },
   {

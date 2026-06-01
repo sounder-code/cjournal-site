@@ -13,7 +13,7 @@ for (const calculator of calculators) {
 
 const quickLinks = [
   ['마진 계산', '/calculators/seller-margin/'],
-  ['손익분기', '/calculators/break-even-price/'],
+  ['단가 비교', '/calculators/unit-price-compare/'],
   ['대출 이자', '/calculators/loan-interest/'],
   ['월세 총부담', '/calculators/monthly-rent-total/']
 ];
@@ -30,11 +30,11 @@ const groupSummaries: Record<CalculatorGroup, { body: string; examples: string[]
   },
   living: {
     body: '렌탈, 할부, 구독, 유류비처럼 매달 빠져나가는 돈을 총액으로 비교합니다.',
-    examples: ['렌탈', '할부', '적금']
+    examples: ['렌탈', '단가', '자동차']
   },
   utility: {
     body: '대출, 예금, 회수기간처럼 기간이 길수록 차이가 커지는 숫자를 계산합니다.',
-    examples: ['대출', '예금', '회수기간']
+    examples: ['대출', '복리', '퍼센트']
   },
   housing: {
     body: '월세, 관리비, 중개보수처럼 계약 전에 총부담을 알아야 하는 주거비를 봅니다.',
@@ -46,11 +46,11 @@ const groupSummaries: Record<CalculatorGroup, { body: string; examples: string[]
   },
   work: {
     body: '급여, 프리랜서 정산, 연차수당처럼 일한 뒤 실제 남는 금액을 계산합니다.',
-    examples: ['급여', '외주', '연차']
+    examples: ['급여', '퇴직금', '연차']
   }
 };
 
-const searchHints = ['대출', '월세', '급여', 'BMI', '쿠폰', '렌탈', '프리랜서', '관리비'];
+const searchHints = ['대출', '월세', '급여', '퇴직금', '복리', '단가', '자동차', 'BMI'];
 const calculatorScriptVersion = calculators.length;
 const startRoutes = [
   {
@@ -88,6 +88,18 @@ const startRoutes = [
     body: '보험·연금 공제율, 세금, 기타 공제를 넣고 실제 입금액을 확인합니다.',
     href: '/calculators/salary-net-pay/?grossPay=3500000&insuranceRate=9.4&incomeTax=95000&otherDeduction=0',
     label: '급여 실수령 계산'
+  },
+  {
+    title: '대용량 상품이 정말 싼지 볼 때',
+    body: '가격과 용량을 같은 단위로 맞춰 1개·1g·1ml 기준 단가를 비교합니다.',
+    href: '/calculators/unit-price-compare/?priceA=12900&quantityA=500&priceB=18900&quantityB=900',
+    label: '단가 비교 계산'
+  },
+  {
+    title: '목표금액까지 얼마나 걸릴지 볼 때',
+    body: '현재 모은 금액과 월 저축액, 예상 수익률을 넣어 목표 달성 기간을 계산합니다.',
+    href: '/calculators/goal-savings/?goalAmount=30000000&currentAmount=5000000&monthlyDeposit=800000&annualReturn=3',
+    label: '목표 저축 계산'
   },
   {
     title: '렌탈·통신비 계약을 비교할 때',

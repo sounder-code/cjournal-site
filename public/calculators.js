@@ -317,6 +317,25 @@ function subscriptionCut(v) {
   };
 }
 
+function unitPriceCompare(v) {
+  const unitA = v.priceA / Math.max(0.01, v.quantityA);
+  const unitB = v.priceB / Math.max(0.01, v.quantityB);
+  const diff = unitA - unitB;
+  const cheaper = diff > 0 ? '상품 B' : diff < 0 ? '상품 A' : '동일';
+  return {
+    primary: Math.abs(diff),
+    primaryLabel: cheaper === '동일' ? '단위가격 차이' : `${cheaper} 단위당 절감`,
+    metrics: [
+      ['상품 A 단가', formatWon(unitA)],
+      ['상품 B 단가', formatWon(unitB)],
+      ['저렴한 상품', cheaper],
+      ['절감률', formatPercent(Math.max(unitA, unitB) > 0 ? (Math.abs(diff) / Math.max(unitA, unitB)) * 100 : 0)]
+    ],
+    status: cheaper === '동일' ? '동일' : `${cheaper} 유리`,
+    note: '용량 단위가 같아야 정확합니다. g, ml, 개수처럼 같은 기준으로 맞춰 넣으세요.'
+  };
+}
+
 function internetSwitch(v) {
   const monthlySaving = v.oldMonthly - v.newMonthly;
   const benefit = v.reward - v.penalty + monthlySaving * v.months;
@@ -423,6 +442,23 @@ function commuteFuelCost(v) {
     ],
     status: total > 250000 ? '비용 큼' : '계산 완료',
     note: '보험료, 정비비, 감가상각까지 넣으면 실제 차량 유지비는 더 커질 수 있습니다.'
+  };
+}
+
+function carTotalCost(v) {
+  const monthlyInsurance = v.insurance / 12;
+  const total = v.monthlyPayment + v.fuelCost + monthlyInsurance + v.parking + v.maintenance;
+  return {
+    primary: total,
+    primaryLabel: '월 차량 유지비',
+    metrics: [
+      ['연 환산 비용', formatWon(total * 12)],
+      ['보험 월 환산', formatWon(monthlyInsurance)],
+      ['고정비 합계', formatWon(v.monthlyPayment + v.parking + monthlyInsurance)],
+      ['운행비 합계', formatWon(v.fuelCost + v.maintenance)]
+    ],
+    status: total > 1000000 ? '부담 큼' : '계산 완료',
+    note: '감가상각, 세금, 사고 수리비까지 넣으면 실제 보유 비용은 더 커질 수 있습니다.'
   };
 }
 
@@ -565,6 +601,57 @@ function depositInterest(v) {
   };
 }
 
+function compoundReturn(v) {
+  const years = Math.max(1, Math.round(v.years));
+  const months = years * 12;
+  const monthlyRate = v.annualReturn / 100 / 12;
+  let balance = Math.max(0, v.initialAmount);
+  for (let i = 0; i < months; i += 1) {
+    balance = balance * (1 + monthlyRate) + Math.max(0, v.monthlyDeposit);
+  }
+  const principal = Math.max(0, v.initialAmount) + Math.max(0, v.monthlyDeposit) * months;
+  const gain = balance - principal;
+  return {
+    primary: balance,
+    primaryLabel: '예상 최종 자산',
+    metrics: [
+      ['투입 원금', formatWon(principal)],
+      ['예상 수익', formatWon(gain)],
+      ['수익률', formatPercent(principal > 0 ? (gain / principal) * 100 : 0)],
+      ['투자 기간', `${years.toLocaleString('ko-KR')}년`]
+    ],
+    status: gain >= 0 ? '복리 계산' : '손실 가능',
+    note: '수익률은 매월 일정하게 발생한다고 가정한 단순 시뮬레이션입니다. 실제 투자는 변동성이 있습니다.'
+  };
+}
+
+function goalSavings(v) {
+  const goal = Math.max(0, v.goalAmount);
+  const monthlyDeposit = Math.max(0, v.monthlyDeposit);
+  const monthlyRate = v.annualReturn / 100 / 12;
+  let balance = Math.max(0, v.currentAmount);
+  let months = 0;
+  while (balance < goal && months < 1200) {
+    balance = balance * (1 + monthlyRate) + monthlyDeposit;
+    months += 1;
+    if (monthlyDeposit === 0 && monthlyRate <= 0) break;
+  }
+  const reachable = balance >= goal;
+  return {
+    primary: reachable ? months : 0,
+    primaryLabel: '목표 달성 기간',
+    primaryDisplay: reachable ? `${months.toLocaleString('ko-KR')}개월` : '달성 어려움',
+    metrics: [
+      ['예상 달성 시점', reachable ? `${Math.floor(months / 12)}년 ${months % 12}개월` : '입력 조정 필요'],
+      ['남은 목표금액', formatWon(Math.max(0, goal - v.currentAmount))],
+      ['월 저축액', formatWon(monthlyDeposit)],
+      ['도달 예상 잔액', formatWon(balance)]
+    ],
+    status: reachable ? (months <= 36 ? '빠른 달성' : '장기 목표') : '달성 어려움',
+    note: reachable ? '월 저축액이나 수익률을 바꿔 목표 기간을 줄일 수 있는지 비교해보세요.' : '월 저축액이 없거나 수익률이 낮아 목표에 도달하기 어렵습니다.'
+  };
+}
+
 function loanAffordability(v) {
   const months = Math.max(1, Math.round(v.years * 12));
   const monthlyRate = Math.max(0, v.annualRate) / 100 / 12;
@@ -620,6 +707,24 @@ function hourlyRate(v) {
     ],
     status: hourly > 20000 ? '유지 가능' : '개선 필요',
     note: '매출보다 시간당 실제 수익을 보면 상품 가격이나 업무 방식을 바꿔야 할지 보입니다.'
+  };
+}
+
+function percentageChange(v) {
+  const diff = v.afterValue - v.beforeValue;
+  const rate = v.beforeValue !== 0 ? (diff / Math.abs(v.beforeValue)) * 100 : 0;
+  return {
+    primary: rate,
+    primaryDisplay: formatPercent(rate),
+    primaryLabel: '증감률',
+    metrics: [
+      ['증감액', diff.toLocaleString('ko-KR')],
+      ['기준값', Number(v.beforeValue).toLocaleString('ko-KR')],
+      ['변경값', Number(v.afterValue).toLocaleString('ko-KR')],
+      ['방향', diff > 0 ? '증가' : diff < 0 ? '감소' : '변동 없음']
+    ],
+    status: diff > 0 ? '증가' : diff < 0 ? '감소' : '동일',
+    note: '기준값이 0이면 일반적인 증감률 해석이 어렵습니다. 이 경우 증감액을 중심으로 보세요.'
   };
 }
 
@@ -731,6 +836,23 @@ function annualLeavePay(v) {
   };
 }
 
+function severancePaySimple(v) {
+  const averageDailyWage = (v.threeMonthWage + v.extraPay) / Math.max(1, v.threeMonthDays);
+  const severance = averageDailyWage * 30 * Math.max(0, v.years);
+  return {
+    primary: severance,
+    primaryLabel: '세전 퇴직금 예상액',
+    metrics: [
+      ['평균임금 1일분', formatWon(averageDailyWage)],
+      ['근속 연수', `${Number(v.years).toLocaleString('ko-KR')}년`],
+      ['상여·연차 가산액', formatWon(v.extraPay)],
+      ['월 환산 평균', formatWon(averageDailyWage * 30)]
+    ],
+    status: v.years >= 1 ? '예상액' : '1년 미만',
+    note: '퇴직금 세금, 평균임금 산정 범위, 계속근로기간 판단은 실제 근로계약과 법정 기준에 따라 달라질 수 있습니다.'
+  };
+}
+
 function bmiCalculator(v) {
   const heightM = Math.max(0.1, v.height / 100);
   const bmi = v.weight / heightM ** 2;
@@ -799,24 +921,30 @@ const calculators = {
   'coupon-burden': couponBurden,
   'bundle-shipping-profit': bundleShippingProfit,
   'subscription-cut': subscriptionCut,
+  'unit-price-compare': unitPriceCompare,
   'internet-switch': internetSwitch,
   'rental-total-cost': rentalTotalCost,
   'electricity-cost': electricityCost,
   'moving-cost': movingCost,
   'card-installment': cardInstallment,
   'commute-fuel-cost': commuteFuelCost,
+  'car-total-cost': carTotalCost,
   'savings-maturity': savingsMaturity,
   'loan-interest': loanInterest,
   'deposit-interest': depositInterest,
+  'compound-return': compoundReturn,
+  'goal-savings': goalSavings,
   'loan-affordability': loanAffordability,
   'payback-period': paybackPeriod,
   'hourly-rate': hourlyRate,
+  'percentage-change': percentageChange,
   'monthly-rent-total': monthlyRentTotal,
   'real-estate-fee': realEstateFee,
   'maintenance-fee-split': maintenanceFeeSplit,
   'salary-net-pay': salaryNetPay,
   'freelance-withholding': freelanceWithholding,
   'annual-leave-pay': annualLeavePay,
+  'severance-pay-simple': severancePaySimple,
   bmi: bmiCalculator,
   'calorie-target': calorieTarget,
   'water-intake': waterIntake
