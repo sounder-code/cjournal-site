@@ -96,6 +96,42 @@ const presetsBySlug: Record<string, Array<{ label: string; values: Record<string
   'hourly-rate': [
     { label: '부업 월수익 점검', values: { revenue: 3000000, expense: 1200000, hours: 120, taxRate: 10 } },
     { label: '프리랜서 단가 점검', values: { revenue: 6500000, expense: 1800000, hours: 150, taxRate: 18 } }
+  ],
+  'monthly-rent-total': [
+    { label: '오피스텔 2년 거주', values: { deposit: 10000000, monthlyRent: 650000, maintenance: 90000, months: 24, depositRate: 3.5 } },
+    { label: '보증금 높은 월세', values: { deposit: 50000000, monthlyRent: 420000, maintenance: 120000, months: 36, depositRate: 3.8 } }
+  ],
+  'real-estate-fee': [
+    { label: '매매 계약', values: { dealAmount: 300000000, feeRate: 0.4, vatRate: 10 } },
+    { label: '전월세 계약', values: { dealAmount: 120000000, feeRate: 0.3, vatRate: 10 } }
+  ],
+  'maintenance-fee-split': [
+    { label: '3인 균등 분담', values: { totalFee: 280000, people: 3, myShareRate: 33.3, extraCost: 0 } },
+    { label: '큰 방 추가 부담', values: { totalFee: 360000, people: 3, myShareRate: 40, extraCost: 30000 } }
+  ],
+  'salary-net-pay': [
+    { label: '월급 350만원', values: { grossPay: 3500000, insuranceRate: 9.4, incomeTax: 95000, otherDeduction: 0 } },
+    { label: '공제 많은 달', values: { grossPay: 4200000, insuranceRate: 9.8, incomeTax: 160000, otherDeduction: 120000 } }
+  ],
+  'freelance-withholding': [
+    { label: '원천징수 3.3%', values: { contractAmount: 1000000, withholdingRate: 3.3, platformFeeRate: 0, expense: 80000 } },
+    { label: '플랫폼 수수료 포함', values: { contractAmount: 2500000, withholdingRate: 3.3, platformFeeRate: 10, expense: 250000 } }
+  ],
+  'annual-leave-pay': [
+    { label: '연차 5일', values: { monthlyPay: 3200000, monthlyHours: 209, days: 5, hoursPerDay: 8 } },
+    { label: '연차 12.5일', values: { monthlyPay: 4500000, monthlyHours: 209, days: 12.5, hoursPerDay: 8 } }
+  ],
+  bmi: [
+    { label: '성인 예시', values: { height: 170, weight: 68 } },
+    { label: '감량 전후 비교', values: { height: 170, weight: 76 } }
+  ],
+  'calorie-target': [
+    { label: '천천히 감량', values: { bmr: 1500, activityFactor: 1.35, adjustment: -300, proteinPerKg: 1.4, weight: 68 } },
+    { label: '유지 목표', values: { bmr: 1650, activityFactor: 1.55, adjustment: 0, proteinPerKg: 1.6, weight: 72 } }
+  ],
+  'water-intake': [
+    { label: '일상 기준', values: { weight: 68, mlPerKg: 30, exerciseMinutes: 30, exerciseMlPer30Min: 350 } },
+    { label: '운동 많은 날', values: { weight: 72, mlPerKg: 32, exerciseMinutes: 90, exerciseMlPer30Min: 400 } }
   ]
 };
 const presets = presetsBySlug[calculator.slug] ?? [];

@@ -1,4 +1,4 @@
-export type CalculatorGroup = 'seller' | 'living' | 'utility';
+export type CalculatorGroup = 'seller' | 'living' | 'utility' | 'housing' | 'health' | 'work';
 
 export type Calculator = {
   slug: string;
@@ -23,7 +23,10 @@ export type Calculator = {
 export const groupLabels: Record<CalculatorGroup, string> = {
   seller: '판매자 계산기',
   living: '생활비 계산기',
-  utility: '금융·운영 계산기'
+  utility: '금융·운영 계산기',
+  housing: '주거 계산기',
+  health: '건강 계산기',
+  work: '급여·세금 계산기'
 };
 
 export const calculators: Calculator[] = [
@@ -356,6 +359,131 @@ export const calculators: Calculator[] = [
       { key: 'expense', label: '월 비용', suffix: '원', value: 1200000, min: 0, step: 10000 },
       { key: 'hours', label: '월 투입 시간', suffix: '시간', value: 120, min: 1, step: 1 },
       { key: 'taxRate', label: '세금/보험 여유율', suffix: '%', value: 10, min: 0, max: 60, step: 1 }
+    ]
+  },
+  {
+    slug: 'monthly-rent-total',
+    group: 'housing',
+    title: '월세 총부담 계산기',
+    shortTitle: '월세 총부담',
+    description: '보증금, 월세, 관리비, 거주 기간을 합쳐 실제 월평균 주거비를 계산합니다.',
+    intent: '월세 계약 총액 보기',
+    inputs: [
+      { key: 'deposit', label: '보증금', suffix: '원', value: 10000000, min: 0, step: 100000 },
+      { key: 'monthlyRent', label: '월세', suffix: '원', value: 650000, min: 0, step: 10000 },
+      { key: 'maintenance', label: '월 관리비', suffix: '원', value: 90000, min: 0, step: 1000 },
+      { key: 'months', label: '거주 기간', suffix: '개월', value: 24, min: 1, max: 120, step: 1 },
+      { key: 'depositRate', label: '보증금 기회비용', suffix: '%', value: 3.5, min: 0, max: 20, step: 0.1 }
+    ]
+  },
+  {
+    slug: 'real-estate-fee',
+    group: 'housing',
+    title: '부동산 중개보수 예상 계산기',
+    shortTitle: '중개보수 예상',
+    description: '거래금액과 적용 요율을 입력해 중개보수와 부가세 포함 금액을 계산합니다.',
+    intent: '계약 전 중개비 감 잡기',
+    inputs: [
+      { key: 'dealAmount', label: '거래금액', suffix: '원', value: 300000000, min: 0, step: 1000000 },
+      { key: 'feeRate', label: '적용 요율', suffix: '%', value: 0.4, min: 0, max: 3, step: 0.01 },
+      { key: 'vatRate', label: '부가세율', suffix: '%', value: 10, min: 0, max: 20, step: 0.1 }
+    ]
+  },
+  {
+    slug: 'maintenance-fee-split',
+    group: 'housing',
+    title: '관리비 분담 계산기',
+    shortTitle: '관리비 분담',
+    description: '총 관리비를 인원수나 면적 비율로 나눠 1인 부담액을 계산합니다.',
+    intent: '룸메이트 비용 나누기',
+    inputs: [
+      { key: 'totalFee', label: '월 관리비 총액', suffix: '원', value: 280000, min: 0, step: 1000 },
+      { key: 'people', label: '분담 인원', suffix: '명', value: 3, min: 1, max: 20, step: 1 },
+      { key: 'myShareRate', label: '내 부담 비율', suffix: '%', value: 33.3, min: 0, max: 100, step: 0.1 },
+      { key: 'extraCost', label: '내 추가 부담', suffix: '원', value: 0, min: 0, step: 1000 }
+    ]
+  },
+  {
+    slug: 'salary-net-pay',
+    group: 'work',
+    title: '급여 실수령액 간편 계산기',
+    shortTitle: '급여 실수령액',
+    description: '월 급여에서 4대보험, 소득세, 기타 공제를 직접 입력해 예상 실수령액을 계산합니다.',
+    intent: '월급에서 실제 남는 돈',
+    inputs: [
+      { key: 'grossPay', label: '세전 월급', suffix: '원', value: 3500000, min: 0, step: 10000 },
+      { key: 'insuranceRate', label: '보험·연금 공제율', suffix: '%', value: 9.4, min: 0, max: 30, step: 0.1 },
+      { key: 'incomeTax', label: '소득세·지방세', suffix: '원', value: 95000, min: 0, step: 1000 },
+      { key: 'otherDeduction', label: '기타 공제', suffix: '원', value: 0, min: 0, step: 1000 }
+    ]
+  },
+  {
+    slug: 'freelance-withholding',
+    group: 'work',
+    title: '프리랜서 원천징수 실수령 계산기',
+    shortTitle: '프리랜서 실수령',
+    description: '계약금액에서 원천징수율과 플랫폼 수수료를 빼고 실제 입금액을 계산합니다.',
+    intent: '외주 계약 입금액 확인',
+    inputs: [
+      { key: 'contractAmount', label: '계약금액', suffix: '원', value: 1000000, min: 0, step: 10000 },
+      { key: 'withholdingRate', label: '원천징수율', suffix: '%', value: 3.3, min: 0, max: 20, step: 0.1 },
+      { key: 'platformFeeRate', label: '플랫폼 수수료율', suffix: '%', value: 0, min: 0, max: 30, step: 0.1 },
+      { key: 'expense', label: '작업 관련 비용', suffix: '원', value: 80000, min: 0, step: 1000 }
+    ]
+  },
+  {
+    slug: 'annual-leave-pay',
+    group: 'work',
+    title: '연차수당 예상 계산기',
+    shortTitle: '연차수당',
+    description: '월급과 월 소정근로시간, 남은 연차일수로 연차수당을 간편 계산합니다.',
+    intent: '남은 연차 금액 환산',
+    inputs: [
+      { key: 'monthlyPay', label: '월 통상임금', suffix: '원', value: 3200000, min: 0, step: 10000 },
+      { key: 'monthlyHours', label: '월 소정근로시간', suffix: '시간', value: 209, min: 1, max: 300, step: 1 },
+      { key: 'days', label: '남은 연차', suffix: '일', value: 5, min: 0, max: 40, step: 0.5 },
+      { key: 'hoursPerDay', label: '1일 근로시간', suffix: '시간', value: 8, min: 1, max: 12, step: 0.5 }
+    ]
+  },
+  {
+    slug: 'bmi',
+    group: 'health',
+    title: 'BMI 계산기',
+    shortTitle: 'BMI',
+    description: '키와 몸무게로 BMI를 계산하고 현재 구간을 간단히 확인합니다.',
+    intent: '체중 상태 빠르게 보기',
+    inputs: [
+      { key: 'height', label: '키', suffix: 'cm', value: 170, min: 80, max: 230, step: 0.1 },
+      { key: 'weight', label: '몸무게', suffix: 'kg', value: 68, min: 20, max: 250, step: 0.1 }
+    ]
+  },
+  {
+    slug: 'calorie-target',
+    group: 'health',
+    title: '하루 칼로리 목표 계산기',
+    shortTitle: '칼로리 목표',
+    description: '기초대사량, 활동계수, 목표 조절량으로 하루 섭취 목표를 계산합니다.',
+    intent: '하루 섭취량 기준 잡기',
+    inputs: [
+      { key: 'bmr', label: '기초대사량', suffix: 'kcal', value: 1500, min: 0, step: 10 },
+      { key: 'activityFactor', label: '활동계수', value: 1.35, min: 1, max: 2.2, step: 0.01 },
+      { key: 'adjustment', label: '목표 조절량', suffix: 'kcal', value: -300, min: -1000, max: 1000, step: 10 },
+      { key: 'proteinPerKg', label: '단백질 기준', suffix: 'g/kg', value: 1.4, min: 0, max: 3, step: 0.1 },
+      { key: 'weight', label: '몸무게', suffix: 'kg', value: 68, min: 20, max: 250, step: 0.1 }
+    ]
+  },
+  {
+    slug: 'water-intake',
+    group: 'health',
+    title: '하루 물 섭취량 계산기',
+    shortTitle: '물 섭취량',
+    description: '몸무게와 운동 시간을 기준으로 하루 물 섭취 목표를 간단히 계산합니다.',
+    intent: '하루 물 목표 잡기',
+    inputs: [
+      { key: 'weight', label: '몸무게', suffix: 'kg', value: 68, min: 20, max: 250, step: 0.1 },
+      { key: 'mlPerKg', label: 'kg당 기준량', suffix: 'ml', value: 30, min: 15, max: 60, step: 1 },
+      { key: 'exerciseMinutes', label: '운동 시간', suffix: '분', value: 30, min: 0, max: 300, step: 5 },
+      { key: 'exerciseMlPer30Min', label: '운동 30분당 추가', suffix: 'ml', value: 350, min: 0, max: 1000, step: 10 }
     ]
   }
 ];

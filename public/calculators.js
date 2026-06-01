@@ -623,6 +623,171 @@ function hourlyRate(v) {
   };
 }
 
+function monthlyRentTotal(v) {
+  const months = Math.max(1, Math.round(v.months));
+  const rentTotal = (v.monthlyRent + v.maintenance) * months;
+  const depositOpportunity = v.deposit * (Math.max(0, v.depositRate) / 100) * (months / 12);
+  const total = rentTotal + depositOpportunity;
+  return {
+    primary: total / months,
+    primaryLabel: '월평균 주거비',
+    metrics: [
+      ['계약 기간 총부담', formatWon(total)],
+      ['월세·관리비 합계', formatWon(rentTotal)],
+      ['보증금 기회비용', formatWon(depositOpportunity)],
+      ['거주 기간', `${months.toLocaleString('ko-KR')}개월`]
+    ],
+    status: total / months > 1000000 ? '부담 큼' : '계산 완료',
+    note: '보증금은 사라지는 돈은 아니지만 묶이는 기간의 기회비용을 넣으면 월세 조건 비교가 쉬워집니다.'
+  };
+}
+
+function realEstateFee(v) {
+  const fee = v.dealAmount * (Math.max(0, v.feeRate) / 100);
+  const vat = fee * (Math.max(0, v.vatRate) / 100);
+  return {
+    primary: fee + vat,
+    primaryLabel: '부가세 포함 예상 중개보수',
+    metrics: [
+      ['중개보수', formatWon(fee)],
+      ['부가세', formatWon(vat)],
+      ['거래금액', formatWon(v.dealAmount)],
+      ['적용 요율', formatPercent(v.feeRate)]
+    ],
+    status: '예상액',
+    note: '중개보수 한도와 적용 요율은 거래 유형과 지역, 금액 구간에 따라 달라질 수 있으니 계약 전 실제 안내와 대조하세요.'
+  };
+}
+
+function maintenanceFeeSplit(v) {
+  const equalShare = v.totalFee / Math.max(1, Math.round(v.people));
+  const myShare = v.totalFee * (Math.max(0, v.myShareRate) / 100) + v.extraCost;
+  return {
+    primary: myShare,
+    primaryLabel: '내 월 부담액',
+    metrics: [
+      ['균등 분담 기준', formatWon(equalShare)],
+      ['내 부담 비율', formatPercent(v.myShareRate)],
+      ['내 추가 부담', formatWon(v.extraCost)],
+      ['분담 인원', `${Math.max(1, Math.round(v.people)).toLocaleString('ko-KR')}명`]
+    ],
+    status: myShare > equalShare ? '추가 부담' : '분담 완료',
+    note: '면적, 방 크기, 재택 시간, 주차 사용 여부를 따로 정하면 관리비 갈등을 줄일 수 있습니다.'
+  };
+}
+
+function salaryNetPay(v) {
+  const insurance = v.grossPay * (Math.max(0, v.insuranceRate) / 100);
+  const totalDeduction = insurance + v.incomeTax + v.otherDeduction;
+  const net = v.grossPay - totalDeduction;
+  return {
+    primary: net,
+    primaryLabel: '예상 월 실수령액',
+    metrics: [
+      ['보험·연금 공제', formatWon(insurance)],
+      ['세금·기타 공제', formatWon(v.incomeTax + v.otherDeduction)],
+      ['총 공제액', formatWon(totalDeduction)],
+      ['공제율', formatPercent(v.grossPay > 0 ? (totalDeduction / v.grossPay) * 100 : 0)]
+    ],
+    status: net > 0 ? '실수령' : '입력 확인',
+    note: '공제율과 소득세는 개인 상황에 따라 달라집니다. 급여명세서의 실제 항목으로 바꿔 계산하세요.'
+  };
+}
+
+function freelanceWithholding(v) {
+  const withholding = v.contractAmount * (Math.max(0, v.withholdingRate) / 100);
+  const platformFee = v.contractAmount * (Math.max(0, v.platformFeeRate) / 100);
+  const deposit = v.contractAmount - withholding - platformFee;
+  const net = deposit - v.expense;
+  return {
+    primary: net,
+    primaryLabel: '비용 차감 후 남는 돈',
+    metrics: [
+      ['예상 입금액', formatWon(deposit)],
+      ['원천징수', formatWon(withholding)],
+      ['플랫폼 수수료', formatWon(platformFee)],
+      ['작업 관련 비용', formatWon(v.expense)]
+    ],
+    status: net > 0 ? '수익' : '손실',
+    note: '실제 세금 정산은 종합소득세 신고와 필요경비 처리에 따라 달라질 수 있습니다.'
+  };
+}
+
+function annualLeavePay(v) {
+  const hourly = v.monthlyPay / Math.max(1, v.monthlyHours);
+  const daily = hourly * Math.max(1, v.hoursPerDay);
+  const total = daily * Math.max(0, v.days);
+  return {
+    primary: total,
+    primaryLabel: '예상 연차수당',
+    metrics: [
+      ['시간급', formatWon(hourly)],
+      ['1일 기준액', formatWon(daily)],
+      ['남은 연차', `${Number(v.days).toLocaleString('ko-KR')}일`],
+      ['1일 근로시간', `${Number(v.hoursPerDay).toLocaleString('ko-KR')}시간`]
+    ],
+    status: '예상액',
+    note: '통상임금 산정 방식과 연차 처리 기준은 회사 규정과 근로계약에 따라 달라질 수 있습니다.'
+  };
+}
+
+function bmiCalculator(v) {
+  const heightM = Math.max(0.1, v.height / 100);
+  const bmi = v.weight / heightM ** 2;
+  const status = bmi < 18.5 ? '저체중' : bmi < 23 ? '보통' : bmi < 25 ? '과체중' : '비만';
+  return {
+    primary: bmi,
+    primaryDisplay: bmi.toFixed(1),
+    primaryLabel: 'BMI',
+    metrics: [
+      ['현재 구간', status],
+      ['키', `${Number(v.height).toLocaleString('ko-KR')}cm`],
+      ['몸무게', `${Number(v.weight).toLocaleString('ko-KR')}kg`],
+      ['보통 범위 체중', `${(18.5 * heightM ** 2).toFixed(1)}~${(22.9 * heightM ** 2).toFixed(1)}kg`]
+    ],
+    status,
+    note: 'BMI는 체성분, 근육량, 질환 상태를 반영하지 못하는 참고 지표입니다.'
+  };
+}
+
+function calorieTarget(v) {
+  const maintenance = v.bmr * Math.max(1, v.activityFactor);
+  const target = maintenance + v.adjustment;
+  const protein = Math.max(0, v.weight * v.proteinPerKg);
+  return {
+    primary: target,
+    primaryDisplay: `${Math.round(target).toLocaleString('ko-KR')}kcal`,
+    primaryLabel: '하루 섭취 목표',
+    metrics: [
+      ['유지 칼로리', `${Math.round(maintenance).toLocaleString('ko-KR')}kcal`],
+      ['목표 조절량', `${Math.round(v.adjustment).toLocaleString('ko-KR')}kcal`],
+      ['단백질 기준', `${protein.toFixed(0)}g`],
+      ['활동계수', Number(v.activityFactor).toLocaleString('ko-KR')]
+    ],
+    status: target < v.bmr * 0.8 ? '무리 가능' : '계산 완료',
+    note: '칼로리 목표는 생활 기준입니다. 건강 상태나 운동 강도에 따라 전문가 조언이 우선될 수 있습니다.'
+  };
+}
+
+function waterIntake(v) {
+  const base = v.weight * v.mlPerKg;
+  const exercise = (Math.max(0, v.exerciseMinutes) / 30) * v.exerciseMlPer30Min;
+  const total = base + exercise;
+  return {
+    primary: total,
+    primaryDisplay: `${Math.round(total).toLocaleString('ko-KR')}ml`,
+    primaryLabel: '하루 물 섭취 목표',
+    metrics: [
+      ['기본 섭취량', `${Math.round(base).toLocaleString('ko-KR')}ml`],
+      ['운동 추가량', `${Math.round(exercise).toLocaleString('ko-KR')}ml`],
+      ['컵 기준', `${(total / 250).toFixed(1)}컵`],
+      ['리터 환산', `${(total / 1000).toFixed(2)}L`]
+    ],
+    status: '목표량',
+    note: '수분 제한이 필요한 질환이 있거나 땀 배출이 큰 환경에서는 개인 기준을 따로 확인하세요.'
+  };
+}
+
 const calculators = {
   'seller-margin': sellerMargin,
   'break-even-price': breakEvenPrice,
@@ -645,7 +810,16 @@ const calculators = {
   'deposit-interest': depositInterest,
   'loan-affordability': loanAffordability,
   'payback-period': paybackPeriod,
-  'hourly-rate': hourlyRate
+  'hourly-rate': hourlyRate,
+  'monthly-rent-total': monthlyRentTotal,
+  'real-estate-fee': realEstateFee,
+  'maintenance-fee-split': maintenanceFeeSplit,
+  'salary-net-pay': salaryNetPay,
+  'freelance-withholding': freelanceWithholding,
+  'annual-leave-pay': annualLeavePay,
+  bmi: bmiCalculator,
+  'calorie-target': calorieTarget,
+  'water-intake': waterIntake
 };
 
 function render(root, result) {
@@ -656,7 +830,8 @@ function render(root, result) {
   const note = root.querySelector('[data-result-note]');
   const schedule = root.querySelector('[data-result-schedule]');
   const panel = root.querySelector('.result-panel');
-  const displayPrimary = result.primaryLabel.includes('회수기간') ? `${result.primary.toFixed(1)}개월` : formatWon(result.primary);
+  const displayPrimary =
+    result.primaryDisplay || (result.primaryLabel.includes('회수기간') ? `${result.primary.toFixed(1)}개월` : formatWon(result.primary));
   const tone = /손실|위험|주의|부담 큼|개선 필요|효과 낮음|유지 유리/.test(result.status)
     ? /손실|위험|개선 필요/.test(result.status)
       ? 'bad'
@@ -822,7 +997,8 @@ function setupCalculator(root) {
   root.querySelector('[data-scenario-save]')?.addEventListener('click', () => {
     const values = readInputs(root);
     const result = calculate(values);
-    const primary = result.primaryLabel.includes('회수기간') ? `${result.primary.toFixed(1)}개월` : formatWon(result.primary);
+    const primary =
+      result.primaryDisplay || (result.primaryLabel.includes('회수기간') ? `${result.primary.toFixed(1)}개월` : formatWon(result.primary));
     const item = {
       id: `${Date.now()}`,
       title: `${result.primaryLabel} ${primary}`,

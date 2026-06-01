@@ -15,14 +15,12 @@ const quickLinks = [
   ['마진 계산', '/calculators/seller-margin/'],
   ['손익분기', '/calculators/break-even-price/'],
   ['대출 이자', '/calculators/loan-interest/'],
-  ['렌탈 총비용', '/calculators/rental-total-cost/']
+  ['월세 총부담', '/calculators/monthly-rent-total/']
 ];
 
 const finderGroups: Array<['all' | CalculatorGroup, string]> = [
   ['all', '전체'],
-  ['seller', groupLabels.seller],
-  ['living', groupLabels.living],
-  ['utility', groupLabels.utility]
+  ...Object.entries(groupLabels).map(([group, label]) => [group as CalculatorGroup, label] as [CalculatorGroup, string])
 ];
 
 const groupSummaries: Record<CalculatorGroup, { body: string; examples: string[] }> = {
@@ -37,10 +35,22 @@ const groupSummaries: Record<CalculatorGroup, { body: string; examples: string[]
   utility: {
     body: '대출, 예금, 회수기간처럼 기간이 길수록 차이가 커지는 숫자를 계산합니다.',
     examples: ['대출', '예금', '회수기간']
+  },
+  housing: {
+    body: '월세, 관리비, 중개보수처럼 계약 전에 총부담을 알아야 하는 주거비를 봅니다.',
+    examples: ['월세', '중개보수', '관리비']
+  },
+  health: {
+    body: 'BMI, 칼로리, 물 섭취량처럼 매일 확인하기 쉬운 생활 건강 숫자를 계산합니다.',
+    examples: ['BMI', '칼로리', '물']
+  },
+  work: {
+    body: '급여, 프리랜서 정산, 연차수당처럼 일한 뒤 실제 남는 금액을 계산합니다.',
+    examples: ['급여', '외주', '연차']
   }
 };
 
-const searchHints = ['대출', '할부', '쿠폰', '렌탈', '적금', '배송비'];
+const searchHints = ['대출', '월세', '급여', 'BMI', '쿠폰', '렌탈', '프리랜서', '관리비'];
 const startRoutes = [
   {
     title: '스마트스토어 상품을 올리기 전',
@@ -67,6 +77,18 @@ const startRoutes = [
     label: '대출 가능액 보기'
   },
   {
+    title: '월세 계약을 총액으로 볼 때',
+    body: '보증금 기회비용, 월세, 관리비를 합쳐 실제 월평균 부담을 계산합니다.',
+    href: '/calculators/monthly-rent-total/?deposit=10000000&monthlyRent=650000&maintenance=90000&months=24&depositRate=3.5',
+    label: '월세 총부담 계산'
+  },
+  {
+    title: '세전 월급과 실수령 차이를 볼 때',
+    body: '보험·연금 공제율, 세금, 기타 공제를 넣고 실제 입금액을 확인합니다.',
+    href: '/calculators/salary-net-pay/?grossPay=3500000&insuranceRate=9.4&incomeTax=95000&otherDeduction=0',
+    label: '급여 실수령 계산'
+  },
+  {
     title: '렌탈·통신비 계약을 비교할 때',
     body: '월요금보다 약정 총액과 사은품, 위약금을 같이 놓고 봅니다.',
     href: '/calculators/rental-total-cost/?monthly=29900&months=36&install=0&reward=150000',
@@ -81,8 +103,8 @@ const startRoutes = [
 ];
 ---
 <BaseLayout
-  title="마진계산소 | 판매자 마진·생활비 계산기"
-  description="판매가, 원가, 수수료, 광고비, 반품률, 렌탈 총액, 인터넷 갈아타기 손익을 빠르게 계산하는 계산기 모음입니다."
+  title="마진계산소 | 마진·생활비·주거·급여 계산기"
+  description="판매가, 수수료, 대출 이자, 월세 총부담, 급여 실수령액, BMI, 칼로리 목표를 빠르게 계산하는 계산기 모음입니다."
   canonical="/"
 >
   <section class="hero-tool">
@@ -90,7 +112,7 @@ const startRoutes = [
       <div>
         <h1>마진, 이자, 생활비를 바로 계산하세요.</h1>
         <p>
-          판매자 비용과 월 고정비, 대출 이자처럼 놓치기 쉬운 숫자를 한 화면에서 봅니다.
+          판매자 비용과 월 고정비, 대출 이자, 월세, 급여, 건강 기준처럼 놓치기 쉬운 숫자를 한 화면에서 봅니다.
           기본값을 바꿔 실제 조건에 맞게 다시 계산해보세요.
         </p>
         <div class="proof-row" aria-label="사이트 핵심 기능">
@@ -221,6 +243,7 @@ const startRoutes = [
       <p>주문 1건 기준으로 볼 때는 판매자 계산기</p>
       <p>약정 기간 전체 비용을 볼 때는 생활비 계산기</p>
       <p>대출 이자와 시간 가치를 볼 때는 금융·운영 계산기</p>
+      <p>월세, 급여, 건강 목표처럼 일상에서 반복되는 숫자는 새 분야 계산기</p>
     </div>
   </section>
 
