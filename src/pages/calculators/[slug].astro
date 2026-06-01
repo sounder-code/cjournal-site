@@ -13,6 +13,7 @@ export function getStaticPaths() {
 }
 
 const { calculator } = Astro.props;
+const calculatorScriptVersion = calculators.length;
 const related = calculators
   .filter((item) => item.slug !== calculator.slug && item.group === calculator.group)
   .slice(0, 5);
@@ -284,7 +285,7 @@ const appJsonLd = {
     </div>
   </section>
 
-  <script is:inline src="/calculators.js" defer></script>
+  <script is:inline src={`/calculators.js?v=${calculatorScriptVersion}`} defer></script>
   <script
     is:inline
     define:vars={{

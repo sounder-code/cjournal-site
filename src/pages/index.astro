@@ -51,6 +51,7 @@ const groupSummaries: Record<CalculatorGroup, { body: string; examples: string[]
 };
 
 const searchHints = ['대출', '월세', '급여', 'BMI', '쿠폰', '렌탈', '프리랜서', '관리비'];
+const calculatorScriptVersion = calculators.length;
 const startRoutes = [
   {
     title: '스마트스토어 상품을 올리기 전',
@@ -247,7 +248,7 @@ const startRoutes = [
     </div>
   </section>
 
-  <script is:inline src="/calculators.js" defer></script>
+  <script is:inline src={`/calculators.js?v=${calculatorScriptVersion}`} defer></script>
   <script is:inline>
     {
     const searchInput = document.querySelector('[data-tool-search]');
