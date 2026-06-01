@@ -8,6 +8,7 @@ const formatPercent = (value) =>
 
 const clampRate = (value) => Math.max(0, Math.min(95, value));
 const savedInputKey = (slug) => `margin-calculator-inputs:${slug}`;
+const scenarioKey = (slug) => `margin-calculator-scenarios:${slug}`;
 const favoriteKey = 'margin-calculator-favorites';
 
 function readJson(key, fallback) {
@@ -82,6 +83,15 @@ function setFeedback(root, message) {
   window.setTimeout(() => {
     feedback.textContent = '';
   }, 1800);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 async function copyText(text) {
@@ -713,6 +723,34 @@ function setupCalculator(root) {
   const slug = root.dataset.calculator;
   const calculate = calculators[slug] || sellerMargin;
   const saveInputs = () => writeJson(savedInputKey(slug), readInputs(root));
+  const scenarioList = root.querySelector('[data-scenario-list]');
+  const readScenarios = () => readJson(scenarioKey(slug), []);
+  const writeScenarios = (items) => writeJson(scenarioKey(slug), items);
+  const renderScenarioList = () => {
+    if (!scenarioList) return;
+    const items = readScenarios();
+    if (items.length === 0) {
+      scenarioList.innerHTML = '<p>저장한 시나리오가 없습니다.</p>';
+      return;
+    }
+
+    scenarioList.innerHTML = items
+      .map(
+        (item) => `
+          <div class="scenario-item" data-scenario-id="${escapeHtml(item.id)}">
+            <div>
+              <strong>${escapeHtml(item.title)}</strong>
+              <span>${escapeHtml(item.savedAt)} · ${escapeHtml(item.status)}</span>
+            </div>
+            <div class="scenario-actions">
+              <button type="button" data-scenario-apply="${escapeHtml(item.id)}">불러오기</button>
+              <button type="button" data-scenario-delete="${escapeHtml(item.id)}">삭제</button>
+            </div>
+          </div>
+        `
+      )
+      .join('');
+  };
   const updateFavoriteButton = () => {
     const button = root.querySelector('[data-favorite-toggle]');
     if (!button) return;
@@ -781,7 +819,49 @@ function setupCalculator(root) {
     updateFavoriteButton();
     setFeedback(root, isFavorite ? '즐겨찾기에서 뺐습니다' : '즐겨찾기에 담았습니다');
   });
+  root.querySelector('[data-scenario-save]')?.addEventListener('click', () => {
+    const values = readInputs(root);
+    const result = calculate(values);
+    const primary = result.primaryLabel.includes('회수기간') ? `${result.primary.toFixed(1)}개월` : formatWon(result.primary);
+    const item = {
+      id: `${Date.now()}`,
+      title: `${result.primaryLabel} ${primary}`,
+      status: result.status,
+      savedAt: new Intl.DateTimeFormat('ko-KR', {
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(new Date()),
+      values
+    };
+    writeScenarios([item, ...readScenarios().filter((scenario) => scenario.title !== item.title)].slice(0, 4));
+    renderScenarioList();
+    setFeedback(root, '시나리오를 저장했습니다');
+  });
+  scenarioList?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+    const applyId = target.dataset.scenarioApply;
+    const deleteId = target.dataset.scenarioDelete;
+
+    if (applyId) {
+      const item = readScenarios().find((scenario) => scenario.id === applyId);
+      if (!item) return;
+      applyInputs(root, item.values);
+      update();
+      setFeedback(root, '저장값을 불러왔습니다');
+      return;
+    }
+
+    if (deleteId) {
+      writeScenarios(readScenarios().filter((scenario) => scenario.id !== deleteId));
+      renderScenarioList();
+      setFeedback(root, '시나리오를 삭제했습니다');
+    }
+  });
   updateFavoriteButton();
+  renderScenarioList();
   update();
 }
 
