@@ -339,12 +339,15 @@ const appJsonLd = {
     color: var(--ink);
     font: 950 clamp(1.9rem, 3.8vw, 3.4rem)/1.08 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     letter-spacing: 0;
+    word-break: keep-all;
   }
   .page-head p {
     margin: 12px 0 0;
     max-width: 760px;
     color: var(--muted);
     font: 700 1rem/1.65 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
   }
   .back-link {
     border: 1px solid var(--line-strong);
@@ -626,6 +629,38 @@ const appJsonLd = {
     }
     .pager {
       justify-content: flex-start;
+    }
+  }
+  @media (max-width: 620px) {
+    .crumb {
+      margin-bottom: 10px;
+      font-size: 0.8rem;
+    }
+    .page-head {
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: clamp(1.72rem, 8.6vw, 2.35rem);
+      line-height: 1.12;
+    }
+    .page-head p {
+      margin-top: 8px;
+      font-size: 0.94rem;
+      line-height: 1.58;
+    }
+    .back-link {
+      display: none;
+    }
+    .switcher {
+      gap: 10px;
+      margin-bottom: 14px;
+      padding: 12px;
+    }
+    .pager a {
+      min-height: 34px;
+      padding: 0 9px;
+      font-size: 0.78rem;
     }
   }
 </style>

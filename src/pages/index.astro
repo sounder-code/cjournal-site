@@ -193,7 +193,7 @@ const startRoutes = [
       </div>
       <label class="search-box">
         <span>검색</span>
-        <input type="search" placeholder="예: 대출, 광고비, 수수료" data-tool-search />
+        <input type="search" placeholder="예: 월세, 급여, 대출, BMI" data-tool-search />
       </label>
     </div>
     <div class="finder-actions">
@@ -387,6 +387,8 @@ const startRoutes = [
     max-width: 680px;
     color: #4f5a55;
     font: 700 1rem/1.7 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
   }
   .proof-row {
     display: flex;
@@ -405,6 +407,7 @@ const startRoutes = [
     padding: 0 11px;
     box-shadow: var(--shadow-sm);
     font: 900 0.8rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    white-space: nowrap;
   }
   .quick-box {
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -621,6 +624,7 @@ const startRoutes = [
     margin: 7px 0 0;
     color: var(--muted);
     font: 700 0.94rem/1.55 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    word-break: keep-all;
   }
   .search-box {
     display: grid;
@@ -804,8 +808,42 @@ const startRoutes = [
     .starter-grid {
       grid-template-columns: 1fr;
     }
+    .hero-copy {
+      gap: 16px;
+      padding-top: 12px;
+    }
+    h1 {
+      font-size: clamp(1.92rem, 9vw, 3rem);
+      line-height: 1.1;
+    }
   }
   @media (max-width: 620px) {
+    .hero-tool {
+      gap: 16px;
+    }
+    .hero-copy p {
+      font-size: 0.95rem;
+      line-height: 1.62;
+    }
+    .proof-row {
+      gap: 6px;
+      margin-top: 14px;
+    }
+    .proof-row span {
+      min-height: 30px;
+      padding: 0 9px;
+      font-size: 0.76rem;
+    }
+    .quick-box {
+      padding: 14px;
+    }
+    .quick-box strong {
+      margin-bottom: 10px;
+    }
+    .quick-row a {
+      min-height: 34px;
+      font-size: 0.8rem;
+    }
     .finder-actions {
       display: grid;
     }
@@ -813,7 +851,7 @@ const startRoutes = [
       width: fit-content;
     }
     .quick-row {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .tool-list {
       grid-template-columns: 1fr;

@@ -32,7 +32,8 @@ const today = new Intl.DateTimeFormat('ko-KR', {
 <style>
   .header-inner {
     min-height: 64px;
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     justify-content: space-between;
     align-items: center;
     gap: 18px;
@@ -50,11 +51,14 @@ const today = new Intl.DateTimeFormat('ko-KR', {
     align-items: center;
     gap: 4px;
     flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
   }
   nav a {
     border-radius: 8px;
     padding: 7px 9px;
-    font-size: 0.88rem;
+    font-size: 0.84rem;
+    white-space: nowrap;
   }
   nav a:hover {
     background: var(--blue-soft);
@@ -65,11 +69,35 @@ const today = new Intl.DateTimeFormat('ko-KR', {
     font: 800 0.76rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     white-space: nowrap;
   }
+  @media (max-width: 1120px) {
+    .today { display: none; }
+    .header-inner {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+  }
   @media (max-width: 768px) {
     .header-inner {
       display: grid;
-      gap: 10px;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding-bottom: 10px;
     }
-    .today { display: none; }
+    nav {
+      justify-content: flex-start;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    nav::-webkit-scrollbar {
+      display: none;
+    }
+    nav a {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 8px 10px;
+    }
   }
 </style>
