@@ -21,9 +21,9 @@ export type Calculator = {
 };
 
 export const groupLabels: Record<CalculatorGroup, string> = {
-  seller: '판매자 계산기',
+  seller: '마진·판매 계산기',
   living: '생활비 계산기',
-  utility: '금융·운영 계산기',
+  utility: '금융·시간 계산기',
   housing: '주거 계산기',
   health: '건강 계산기',
   work: '급여·세금 계산기'

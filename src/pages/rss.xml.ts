@@ -4,8 +4,8 @@ import { guides } from '@/data/guides';
 
 export async function GET(context: { site: URL }) {
   return rss({
-    title: '마진계산소 계산기 피드',
-    description: '판매자 마진, 생활비, 운영 비용 계산기 업데이트',
+    title: '모든계산소 계산기 피드',
+    description: '돈, 생활, 계약, 건강 계산기와 계산 가이드 업데이트',
     site: context.site,
     items: [
       ...guides.map((guide) => ({
