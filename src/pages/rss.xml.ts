@@ -4,7 +4,7 @@ import { guides } from '@/data/guides';
 
 export async function GET(context: { site: URL }) {
   return rss({
-    title: '모든계산소 계산기 피드',
+    title: '바로계산 계산기 피드',
     description: '돈, 생활, 계약, 건강 계산기와 계산 가이드 업데이트',
     site: context.site,
     items: [
