@@ -61,9 +61,9 @@ bash scripts/setup-gh-runner-macos.sh sounder-code/cjournal-site <RUNNER_TOKEN>
 - `GENERATION_ENABLED` (`true`/`false`)
 
 ## 분석/광고 태그 정책
-- 사이트 코드에는 GTM 컨테이너(`PUBLIC_GTM_ID`)만 삽입합니다.
-- GA4 측정 태그(`G-...`)는 GTM 컨테이너 내부에서만 관리합니다.
-- 중복 계측(사이트 코드 + GTM 동시 주입)을 금지합니다.
+- 사이트 코드에는 GTM 컨테이너(`PUBLIC_GTM_ID`)와 GA4 측정 태그(`PUBLIC_GA_ID`)를 삽입합니다.
+- 기본 GA4 측정 ID는 `G-SE44ENS3KV`입니다.
+- GTM은 제휴 클릭 등 이벤트 확장용으로 유지하고, 기본 페이지뷰는 GA4 직접 태그로 보냅니다.
 
 ## 배포
 - Cloudflare Pages: `cjournal-site` 저장소의 `main` 브랜치 연결
