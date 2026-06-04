@@ -321,11 +321,11 @@ const appJsonLd = {
     gap: 8px;
     align-items: center;
     margin-bottom: 16px;
-    color: #74817b;
+    color: var(--subtle);
     font: 800 0.86rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .crumb a {
-    color: var(--blue);
+    color: var(--green-strong);
     text-decoration: none;
   }
   .page-head {
@@ -334,6 +334,7 @@ const appJsonLd = {
     gap: 18px;
     align-items: end;
     margin-bottom: 20px;
+    padding-top: 6px;
   }
   h1 {
     margin: 0;
@@ -351,7 +352,7 @@ const appJsonLd = {
     overflow-wrap: anywhere;
   }
   .back-link {
-    border: 1px solid var(--line-strong);
+    border: 1px solid #d7e1dc;
     border-radius: 8px;
     background: #fff;
     color: var(--ink);
@@ -366,11 +367,13 @@ const appJsonLd = {
     gap: 12px;
     align-items: end;
     margin-bottom: 18px;
-    border: 1px solid var(--line);
+    border: 1px solid #dce6e1;
     border-radius: 8px;
-    background: #fff;
+    background:
+      linear-gradient(90deg, rgba(20, 164, 108, 0.045), transparent 48%),
+      rgba(255, 255, 255, 0.96);
     padding: 16px;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 1px 2px rgba(16, 22, 20, 0.04);
   }
   .switcher label {
     display: grid;
@@ -390,8 +393,8 @@ const appJsonLd = {
     outline: none;
   }
   .switcher select:focus {
-    border-color: var(--blue);
-    box-shadow: 0 0 0 3px rgba(37, 99, 167, 0.12);
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(20, 164, 108, 0.13);
   }
   .pager {
     display: flex;
@@ -405,16 +408,16 @@ const appJsonLd = {
     min-height: 38px;
     border: 1px solid var(--line);
     border-radius: 8px;
-    background: var(--surface-soft);
+    background: #fff;
     color: var(--ink);
     padding: 0 11px;
     text-decoration: none;
     font: 900 0.84rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .pager a:hover {
-    border-color: #9bb7d8;
-    background: var(--blue-soft);
-    color: var(--blue);
+    border-color: #99c7b2;
+    background: var(--green-soft);
+    color: var(--green-strong);
   }
   .guide,
   .interpretation,
@@ -449,20 +452,20 @@ const appJsonLd = {
   .guide-link-list a {
     display: grid;
     gap: 8px;
-    border: 1px solid var(--line);
+    border: 1px solid #dfe8e4;
     border-radius: 8px;
     background: #fff;
     color: inherit;
     padding: 16px;
     text-decoration: none;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 1px 2px rgba(16, 22, 20, 0.04);
   }
   .guide-link-list a:hover {
-    border-color: #9bb7d8;
+    border-color: #99c7b2;
     box-shadow: var(--shadow-md);
   }
   .guide-link-list span {
-    color: var(--blue);
+    color: var(--green-strong);
     font: 900 0.76rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .guide-link-list strong {
@@ -480,11 +483,11 @@ const appJsonLd = {
   .quality-guide article,
   .faq details,
   .related-list a {
-    border: 1px solid var(--line);
+    border: 1px solid #dfe8e4;
     border-radius: 8px;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.96);
     padding: 16px;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 1px 2px rgba(16, 22, 20, 0.04);
   }
   .guide h3 {
     margin: 0 0 8px;
@@ -511,7 +514,7 @@ const appJsonLd = {
   }
   .section-eyebrow {
     margin: 0 0 6px;
-    color: var(--blue);
+    color: var(--green-strong);
     font: 950 0.76rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .detail-guide {
@@ -524,7 +527,7 @@ const appJsonLd = {
     display: grid;
     gap: 4px;
     margin-top: 14px;
-    border-left: 4px solid var(--blue);
+    border-left: 4px solid var(--green);
     padding-left: 12px;
   }
   .detail-note strong {
@@ -580,7 +583,7 @@ const appJsonLd = {
     font: 950 0.98rem/1.35 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .faq summary::marker {
-    color: var(--blue);
+    color: var(--green);
   }
   .faq details p {
     border-top: 1px solid #e7ece9;
@@ -605,7 +608,7 @@ const appJsonLd = {
     text-decoration: none;
   }
   .related-list span {
-    color: var(--blue);
+    color: var(--green-strong);
     font: 900 0.76rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .related-list strong {

@@ -84,26 +84,26 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
 <style is:global>
   :root {
     color-scheme: light;
-    --ink: #101614;
-    --muted: #59635e;
-    --subtle: #78827d;
-    --line: #dde4e0;
-    --line-strong: #c9d3ce;
+    --ink: #101513;
+    --muted: #53615a;
+    --subtle: #7a8781;
+    --line: #dfe7e3;
+    --line-strong: #c7d4ce;
     --surface: #ffffff;
-    --surface-soft: #f6f8f7;
-    --canvas: #f7f9f8;
-    --green: #16824f;
-    --green-strong: #0f6c43;
-    --green-soft: #edf7f1;
-    --navy: #111c18;
-    --blue: #2563a7;
-    --blue-soft: #eef5ff;
+    --surface-soft: #f7faf8;
+    --canvas: #f8faf9;
+    --green: #14a46c;
+    --green-strong: #0c754c;
+    --green-soft: #eaf8f1;
+    --navy: #101916;
+    --blue: #2667b4;
+    --blue-soft: #edf5ff;
     --amber: #b7791f;
     --amber-soft: #fff7e8;
     --red: #b84a42;
     --shadow-sm: 0 1px 2px rgba(16, 22, 20, 0.05);
-    --shadow-md: 0 12px 30px rgba(16, 22, 20, 0.08);
-    --shadow-lg: 0 24px 54px rgba(16, 22, 20, 0.14);
+    --shadow-md: 0 14px 34px rgba(16, 22, 20, 0.08);
+    --shadow-lg: 0 28px 64px rgba(16, 22, 20, 0.15);
   }
   *,
   *::before,
@@ -115,9 +115,9 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
     font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--ink);
     background:
-      linear-gradient(90deg, rgba(16, 22, 20, 0.035) 1px, transparent 1px),
-      linear-gradient(180deg, #ffffff 0, var(--canvas) 420px, var(--canvas) 100%);
-    background-size: 44px 44px, auto;
+      linear-gradient(90deg, rgba(16, 22, 20, 0.026) 1px, transparent 1px),
+      linear-gradient(180deg, #ffffff 0, #fbfdfc 360px, var(--canvas) 980px, var(--canvas) 100%);
+    background-size: 40px 40px, auto;
     line-height: 1.55;
     text-rendering: optimizeLegibility;
   }
@@ -128,19 +128,19 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
     outline: 3px solid rgba(47, 102, 134, 0.32);
     outline-offset: 3px;
   }
-  .container { width: min(1180px, calc(100vw - 32px)); margin: 0 auto; }
-  .main-content { min-height: 68vh; padding: 28px 0 58px; }
+  .container { width: min(1220px, calc(100vw - 32px)); margin: 0 auto; }
+  .main-content { min-height: 68vh; padding: 26px 0 64px; }
   .site-header {
-    background: rgba(255, 255, 255, 0.94);
+    background: rgba(255, 255, 255, 0.92);
     border-top: 0;
-    border-bottom: 1px solid rgba(216, 223, 219, 0.9);
+    border-bottom: 1px solid rgba(214, 224, 219, 0.92);
     position: sticky;
     top: 0;
     z-index: 20;
     backdrop-filter: blur(14px) saturate(130%);
   }
   .site-footer {
-    background: var(--surface);
+    background: rgba(255, 255, 255, 0.96);
     border-top: 1px solid var(--line);
     border-bottom: 0;
   }
@@ -148,7 +148,7 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
   .logo {
     color: var(--ink);
     text-decoration: none;
-    font: 950 1.25rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    font: 950 1.18rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     letter-spacing: 0;
   }
   nav { display: flex; gap: 14px; }

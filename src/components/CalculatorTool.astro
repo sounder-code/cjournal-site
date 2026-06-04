@@ -249,8 +249,8 @@ const presets = presetsBySlug[calculator.slug] ?? [];
 <style>
   .calculator-tool {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(360px, 0.82fr);
-    gap: 20px;
+    grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.78fr);
+    gap: 18px;
     align-items: start;
   }
   .tool-form,
@@ -258,19 +258,19 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     border: 1px solid var(--line);
     border-radius: 8px;
     background: #fff;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 1px 2px rgba(16, 22, 20, 0.04), 0 18px 48px rgba(16, 22, 20, 0.055);
   }
   .tool-form {
-    padding: 24px;
+    padding: clamp(18px, 2.5vw, 26px);
   }
   .tool-heading {
     display: flex;
     justify-content: space-between;
     gap: 16px;
     align-items: flex-start;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
     padding-bottom: 18px;
-    border-bottom: 1px solid #edf1ef;
+    border-bottom: 1px solid #edf2ef;
   }
   .tool-heading h2 {
     margin: 0 0 6px;
@@ -283,7 +283,7 @@ const presets = presetsBySlug[calculator.slug] ?? [];
   .tool-kicker {
     display: block;
     margin-bottom: 7px;
-    color: var(--blue);
+    color: var(--green-strong);
     font: 900 0.78rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   .tool-heading p {
@@ -296,9 +296,9 @@ const presets = presetsBySlug[calculator.slug] ?? [];
   }
   .tool-heading button {
     min-width: 72px;
-    border: 1px solid #cfd8d3;
+    border: 1px solid #d6e0dc;
     border-radius: 8px;
-    background: #fff;
+    background: #f9fbfa;
     color: #2e4239;
     font-weight: 800;
     font-size: 0.82rem;
@@ -313,9 +313,11 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     display: grid;
     gap: 10px;
     margin-bottom: 18px;
-    border: 1px solid #dce5e0;
+    border: 1px solid #dbe6e1;
     border-radius: 8px;
-    background: linear-gradient(180deg, #ffffff, #f7f9fb);
+    background:
+      linear-gradient(90deg, rgba(20, 164, 108, 0.05), transparent 52%),
+      #fbfdfc;
     padding: 14px;
   }
   .preset-panel strong {
@@ -329,7 +331,7 @@ const presets = presetsBySlug[calculator.slug] ?? [];
   }
   .preset-panel button {
     min-height: 34px;
-    border: 1px solid #cfd8d3;
+    border: 1px solid #d7e1dc;
     border-radius: 8px;
     background: #fff;
     color: #1c2a23;
@@ -345,7 +347,7 @@ const presets = presetsBySlug[calculator.slug] ?? [];
   .input-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px 12px;
+    gap: 13px 12px;
   }
   label {
     display: grid;
@@ -360,10 +362,10 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    min-height: 48px;
+    min-height: 50px;
     border: 1px solid var(--line-strong);
     border-radius: 8px;
-    background: #fff;
+    background: #fbfcfc;
     overflow: hidden;
   }
   input,
@@ -382,8 +384,9 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     cursor: pointer;
   }
   .input-wrap:focus-within {
-    border-color: var(--blue);
-    box-shadow: 0 0 0 3px rgba(37, 99, 167, 0.12);
+    border-color: var(--green);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(20, 164, 108, 0.13);
   }
   em {
     padding-right: 12px;
@@ -393,7 +396,7 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     white-space: nowrap;
   }
   .result-panel {
-    padding: 24px;
+    padding: clamp(20px, 2.5vw, 26px);
     color: #f6fbf8;
     display: flex;
     flex-direction: column;
@@ -401,18 +404,19 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     position: sticky;
     top: 96px;
     overflow: hidden;
-    border-color: rgba(16, 35, 27, 0.22);
+    border-color: rgba(16, 25, 22, 0.24);
     background:
-      linear-gradient(135deg, rgba(37, 99, 167, 0.18), transparent 34%),
-      linear-gradient(180deg, #17211e, #101614);
+      linear-gradient(135deg, rgba(38, 103, 180, 0.20), transparent 34%),
+      radial-gradient(circle at 88% 8%, rgba(20, 164, 108, 0.20), transparent 34%),
+      linear-gradient(180deg, #15211d, #101513);
     box-shadow: var(--shadow-lg);
   }
   .result-panel::before {
     content: "";
     display: block;
     height: 4px;
-    margin: -24px -24px 20px;
-    background: linear-gradient(90deg, var(--green), var(--blue), var(--amber));
+    margin: calc(clamp(20px, 2.5vw, 26px) * -1) calc(clamp(20px, 2.5vw, 26px) * -1) 20px;
+    background: linear-gradient(90deg, var(--green), var(--blue), #8fd5ff);
   }
   .result-panel[data-tone="warn"]::before { background: var(--amber); }
   .result-panel[data-tone="bad"]::before { background: var(--red); }
@@ -426,7 +430,7 @@ const presets = presetsBySlug[calculator.slug] ?? [];
   .result-head span {
     border-radius: 999px;
     background: rgba(151, 194, 255, 0.14);
-    color: #cfe2ff;
+    color: #dff0ff;
     border: 1px solid rgba(151, 194, 255, 0.28);
     padding: 6px 10px;
     font: 800 0.78rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
@@ -452,7 +456,7 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     font: 950 clamp(1.8rem, 3.3vw, 3rem)/1.08 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     letter-spacing: 0;
     margin-bottom: 20px;
-    color: #9ed8ff;
+    color: #a8ddff;
     word-break: keep-all;
   }
   .result-panel[data-tone="warn"] [data-result-primary] { color: #ffd89a; }
@@ -466,9 +470,9 @@ const presets = presetsBySlug[calculator.slug] ?? [];
     display: grid;
     gap: 5px;
     padding: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.065);
+    background: rgba(255, 255, 255, 0.075);
     font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
   :global(.calculator-tool .metric-row span) {
