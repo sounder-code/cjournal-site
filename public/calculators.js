@@ -601,6 +601,45 @@ function depositInterest(v) {
   };
 }
 
+function stockCashoutTax(v) {
+  const isOverseas = v.marketType === 'overseas';
+  const quantity = Math.max(0, v.quantity);
+  const buyFx = isOverseas ? Math.max(0, v.buyFx || 0) : 1;
+  const sellFx = isOverseas ? Math.max(0, v.sellFx || 0) : 1;
+  const buyGross = quantity * Math.max(0, v.buyPrice) * buyFx;
+  const sellGross = quantity * Math.max(0, v.sellPrice) * sellFx;
+  const buyFee = buyGross * (Math.max(0, v.brokerFeeRate) / 100);
+  const sellFee = sellGross * (Math.max(0, v.brokerFeeRate) / 100);
+  const transactionTax = isOverseas ? 0 : sellGross * (Math.max(0, v.sellTaxRate) / 100);
+  const acquisitionCost = buyGross + buyFee;
+  const sellProceedsBeforeIncomeTax = sellGross - sellFee - transactionTax;
+  const realizedGain = sellProceedsBeforeIncomeTax - acquisitionCost;
+  const remainingDeduction = isOverseas ? Math.max(0, 2500000 - Math.max(0, v.deductionUsed)) : 0;
+  const taxableGain = isOverseas ? Math.max(0, realizedGain - remainingDeduction) : 0;
+  const capitalGainsTax = taxableGain * 0.22;
+  const finalCash = sellProceedsBeforeIncomeTax - capitalGainsTax;
+  const netProfit = finalCash - acquisitionCost;
+  const totalTaxAndFee = buyFee + sellFee + transactionTax + capitalGainsTax;
+  const returnRate = acquisitionCost > 0 ? (netProfit / acquisitionCost) * 100 : 0;
+
+  return {
+    primary: finalCash,
+    primaryLabel: '최종 현금화 금액',
+    metrics: [
+      ['최종 손익', formatWon(netProfit)],
+      ['손익률', formatPercent(returnRate)],
+      ['수수료·세금 합계', formatWon(totalTaxAndFee)],
+      [isOverseas ? '예상 양도세' : '증권거래세', formatWon(isOverseas ? capitalGainsTax : transactionTax)],
+      ['매수 투입액', formatWon(acquisitionCost)],
+      ['매도 후 입금액', formatWon(sellProceedsBeforeIncomeTax)]
+    ],
+    status: netProfit > 0 ? '수익 실현' : netProfit < 0 ? '손실 확정' : '손익 없음',
+    note: isOverseas
+      ? `해외주식은 연간 손익통산 뒤 기본공제 250만원을 차감하고 22%를 적용한 참고 계산입니다. 남은 기본공제는 ${formatWon(remainingDeduction)}으로 반영했습니다.`
+      : '국내 상장주식 일반 거래는 입력한 증권거래세율과 수수료 중심으로 계산합니다. 대주주, 비상장, 장외거래는 별도 과세 기준을 확인하세요.'
+  };
+}
+
 function compoundReturn(v) {
   const years = Math.max(1, Math.round(v.years));
   const months = years * 12;
@@ -932,6 +971,7 @@ const calculators = {
   'savings-maturity': savingsMaturity,
   'loan-interest': loanInterest,
   'deposit-interest': depositInterest,
+  'stock-cashout-tax': stockCashoutTax,
   'compound-return': compoundReturn,
   'goal-savings': goalSavings,
   'loan-affordability': loanAffordability,

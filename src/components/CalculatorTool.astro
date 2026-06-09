@@ -93,6 +93,16 @@ const presetsBySlug: Record<string, Array<{ label: string; values: Record<string
     { label: '1천만원 1년 예금', values: { principal: 10000000, months: 12, annualRate: 3.6, taxRate: 15.4 } },
     { label: '5천만원 6개월 예금', values: { principal: 50000000, months: 6, annualRate: 3.4, taxRate: 15.4 } }
   ],
+  'stock-cashout-tax': [
+    {
+      label: '미국주식 익절',
+      values: { marketType: 'overseas', quantity: 10, buyPrice: 100, sellPrice: 135, buyFx: 1350, sellFx: 1380, brokerFeeRate: 0.07, sellTaxRate: 0, deductionUsed: 0 }
+    },
+    {
+      label: '국내주식 매도',
+      values: { marketType: 'domestic-listed', quantity: 50, buyPrice: 70000, sellPrice: 82000, buyFx: 1, sellFx: 1, brokerFeeRate: 0.015, sellTaxRate: 0.23, deductionUsed: 0 }
+    }
+  ],
   'compound-return': [
     { label: '월 30만원 10년', values: { initialAmount: 3000000, monthlyDeposit: 300000, annualReturn: 5, years: 10 } },
     { label: '공격적 장기 적립', values: { initialAmount: 10000000, monthlyDeposit: 800000, annualReturn: 7, years: 20 } }

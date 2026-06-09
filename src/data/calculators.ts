@@ -349,6 +349,34 @@ export const calculators: Calculator[] = [
     ]
   },
   {
+    slug: 'stock-cashout-tax',
+    group: 'utility',
+    title: '주식 매매·현금화 세금 계산기',
+    shortTitle: '주식 현금화',
+    description: '매수가, 매도가, 수수료, 거래세, 해외주식 양도세를 반영해 실제 현금화 금액을 계산합니다.',
+    intent: '팔고 나면 실제 남는 돈',
+    inputs: [
+      {
+        key: 'marketType',
+        label: '주식 구분',
+        type: 'select',
+        value: 'overseas',
+        options: [
+          { label: '해외주식', value: 'overseas' },
+          { label: '국내 상장주식', value: 'domestic-listed' }
+        ]
+      },
+      { key: 'quantity', label: '수량', suffix: '주', value: 10, min: 0, step: 1 },
+      { key: 'buyPrice', label: '1주 매수가', suffix: '원/달러', value: 100, min: 0, step: 0.01 },
+      { key: 'sellPrice', label: '1주 매도가', suffix: '원/달러', value: 135, min: 0, step: 0.01 },
+      { key: 'buyFx', label: '매수 환율', suffix: '원', value: 1350, min: 0, step: 0.1 },
+      { key: 'sellFx', label: '매도 환율', suffix: '원', value: 1380, min: 0, step: 0.1 },
+      { key: 'brokerFeeRate', label: '매매 수수료율', suffix: '%', value: 0.07, min: 0, max: 5, step: 0.001 },
+      { key: 'sellTaxRate', label: '증권거래세율', suffix: '%', value: 0, min: 0, max: 1, step: 0.001 },
+      { key: 'deductionUsed', label: '이미 쓴 기본공제', suffix: '원', value: 0, min: 0, step: 10000 }
+    ]
+  },
+  {
     slug: 'compound-return',
     group: 'utility',
     title: '복리 수익 계산기',

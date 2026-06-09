@@ -14,7 +14,7 @@ for (const calculator of calculators) {
 const quickLinks = [
   ['마진 계산', '/calculators/seller-margin/'],
   ['단가 비교', '/calculators/unit-price-compare/'],
-  ['대출 이자', '/calculators/loan-interest/'],
+  ['주식 현금화', '/calculators/stock-cashout-tax/'],
   ['월세 총부담', '/calculators/monthly-rent-total/']
 ];
 
@@ -33,8 +33,8 @@ const groupSummaries: Record<CalculatorGroup, { body: string; examples: string[]
     examples: ['렌탈', '단가', '자동차']
   },
   utility: {
-    body: '대출, 예금, 회수기간처럼 기간이 길수록 차이가 커지는 숫자를 계산합니다.',
-    examples: ['대출', '복리', '퍼센트']
+    body: '대출, 예금, 주식 현금화, 회수기간처럼 기간과 세금이 결과를 바꾸는 숫자를 계산합니다.',
+    examples: ['대출', '주식', '복리']
   },
   housing: {
     body: '월세, 관리비, 중개보수처럼 계약 전에 총부담을 알아야 하는 주거비를 봅니다.',
@@ -50,7 +50,7 @@ const groupSummaries: Record<CalculatorGroup, { body: string; examples: string[]
   }
 };
 
-const searchHints = ['대출', '월세', '급여', '퇴직금', '복리', '단가', '자동차', 'BMI'];
+const searchHints = ['주식', '대출', '월세', '급여', '퇴직금', '복리', '단가', 'BMI'];
 const calculatorScriptVersion = calculators.length;
 const startRoutes = [
   {
@@ -70,6 +70,12 @@ const startRoutes = [
     body: '원리금균등, 원금균등, 만기일시 방식별 월 납입액과 총이자를 비교합니다.',
     href: '/calculators/loan-interest/?principal=300000000&annualRate=4.2&years=30&repaymentType=equal-payment',
     label: '대출 이자 계산'
+  },
+  {
+    title: '주식을 팔고 실제 현금이 궁금할 때',
+    body: '매수가, 매도가, 환율, 수수료, 거래세와 해외주식 양도세를 반영해 남는 돈을 계산합니다.',
+    href: '/calculators/stock-cashout-tax/?marketType=overseas&quantity=10&buyPrice=100&sellPrice=135&buyFx=1350&sellFx=1380&brokerFeeRate=0.07&sellTaxRate=0&deductionUsed=0',
+    label: '주식 현금화 계산'
   },
   {
     title: '월 부담에서 대출 규모를 역산',
