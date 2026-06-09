@@ -351,8 +351,8 @@ export const calculators: Calculator[] = [
   {
     slug: 'stock-cashout-tax',
     group: 'utility',
-    title: '주식 매매·현금화 세금 계산기',
-    shortTitle: '주식 현금화',
+    title: '주식 세금 계산기',
+    shortTitle: '주식 세금',
     description: '매수가, 매도가, 수수료, 거래세, 해외주식 양도세를 반영해 실제 현금화 금액을 계산합니다.',
     intent: '팔고 나면 실제 남는 돈',
     inputs: [
