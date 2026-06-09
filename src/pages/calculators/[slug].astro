@@ -14,6 +14,12 @@ export function getStaticPaths() {
 
 const { calculator } = Astro.props;
 const calculatorScriptVersion = calculators.length;
+const seoTitle = `${calculator.title} - 무료 계산 | 바로계산`;
+const inputKeywords = calculator.inputs
+  .map((input) => input.label.replace(/[·/]/g, ' '))
+  .slice(0, 6)
+  .join(', ');
+const seoDescription = `${calculator.description} ${inputKeywords}을 입력해 바로 계산하고 결과를 복사·공유할 수 있습니다.`;
 const related = calculators
   .filter((item) => item.slug !== calculator.slug && item.group === calculator.group)
   .slice(0, 5);
@@ -140,10 +146,34 @@ const appJsonLd = {
     name: '바로계산'
   }
 };
+const breadcrumbJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: '바로계산',
+      item: `${Astro.site}`
+    },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: groupLabels[calculator.group],
+      item: `${Astro.site}calculators/`
+    },
+    {
+      '@type': 'ListItem',
+      position: 3,
+      name: calculator.title,
+      item: `${Astro.site}calculators/${calculator.slug}/`
+    }
+  ]
+};
 ---
 <BaseLayout
-  title={`${calculator.title} | 바로계산`}
-  description={calculator.description}
+  title={seoTitle}
+  description={seoDescription}
   canonical={`/calculators/${calculator.slug}/`}
 >
   <nav class="crumb" aria-label="현재 위치">
@@ -182,6 +212,31 @@ const appJsonLd = {
   </section>
 
   <CalculatorTool calculator={calculator} />
+
+  <section class="seo-summary" aria-labelledby="seo-summary-title">
+    <div>
+      <p class="section-eyebrow">무료 계산기</p>
+      <h2 id="seo-summary-title">{calculator.title}로 확인할 수 있는 것</h2>
+      <p>
+        {calculator.shortTitle}는 {calculator.inputs.map((input) => input.label).join(', ')} 값을 바꿔가며
+        {calculator.intent} 상황을 빠르게 비교하도록 만든 계산기입니다.
+      </p>
+    </div>
+    <div class="seo-summary-grid">
+      <article>
+        <strong>입력값</strong>
+        <p>{inputKeywords}처럼 결과를 크게 바꾸는 조건을 직접 조정합니다.</p>
+      </article>
+      <article>
+        <strong>결과 해석</strong>
+        <p>{detail.review}</p>
+      </article>
+      <article>
+        <strong>주의사항</strong>
+        <p>{detail.caution}</p>
+      </article>
+    </div>
+  </section>
 
   <section class="guide">
       <h2>입력 순서</h2>
@@ -313,6 +368,7 @@ const appJsonLd = {
   </script>
   <script is:inline type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
   <script is:inline type="application/ld+json" set:html={JSON.stringify(appJsonLd)} />
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
 </BaseLayout>
 
 <style>
@@ -418,6 +474,59 @@ const appJsonLd = {
     border-color: #99c7b2;
     background: var(--green-soft);
     color: var(--green-strong);
+  }
+  .seo-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1fr);
+    gap: 16px;
+    margin-top: 18px;
+    border: 1px solid #dce6e1;
+    border-radius: 8px;
+    background:
+      linear-gradient(90deg, rgba(20, 164, 108, 0.045), transparent 52%),
+      rgba(255, 255, 255, 0.96);
+    padding: 20px;
+    box-shadow: 0 1px 2px rgba(16, 22, 20, 0.04);
+  }
+  .section-eyebrow {
+    margin: 0 0 8px;
+    color: var(--green-strong);
+    font: 900 0.78rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .seo-summary h2 {
+    margin: 0;
+    color: var(--ink);
+    font: 950 clamp(1.35rem, 2.2vw, 1.9rem)/1.18 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    letter-spacing: 0;
+    word-break: keep-all;
+  }
+  .seo-summary p {
+    margin: 10px 0 0;
+    color: var(--muted);
+    font: 700 0.95rem/1.7 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .seo-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .seo-summary-grid article {
+    border: 1px solid #dfe8e4;
+    border-radius: 8px;
+    background: #fff;
+    padding: 14px;
+  }
+  .seo-summary-grid strong {
+    display: block;
+    color: var(--ink);
+    font: 900 0.92rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .seo-summary-grid p {
+    margin-top: 7px;
+    font-size: 0.88rem;
+    line-height: 1.62;
   }
   .guide,
   .interpretation,
@@ -617,7 +726,11 @@ const appJsonLd = {
   }
   @media (max-width: 820px) {
     .page-head,
-    .switcher {
+    .switcher,
+    .seo-summary {
+      grid-template-columns: 1fr;
+    }
+    .seo-summary-grid {
       grid-template-columns: 1fr;
     }
     .back-link {

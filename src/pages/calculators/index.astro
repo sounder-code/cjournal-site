@@ -1,0 +1,223 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { calculators, groupLabels, type CalculatorGroup } from '@/data/calculators';
+
+const groups = Object.entries(groupLabels).map(([group, label]) => ({
+  group: group as CalculatorGroup,
+  label,
+  items: calculators.filter((calculator) => calculator.group === group)
+}));
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: '무료 계산기 모음',
+  description: '마진, 대출, 주식 세금, 월세, 급여, 건강 계산기를 한 곳에서 찾을 수 있는 무료 계산기 모음입니다.',
+  url: `${Astro.site}calculators/`,
+  mainEntity: {
+    '@type': 'ItemList',
+    numberOfItems: calculators.length,
+    itemListElement: calculators.map((calculator, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: calculator.title,
+      url: `${Astro.site}calculators/${calculator.slug}/`
+    }))
+  }
+};
+---
+<BaseLayout
+  title={`무료 계산기 모음 ${calculators.length}종 - 주식 세금·대출·마진·급여 | 바로계산`}
+  description="주식 세금 계산기, 대출 이자 계산기, 마진 계산기, 월세 총부담, 급여 실수령액 등 생활에 자주 필요한 무료 계산기를 모았습니다."
+  canonical="/calculators/"
+>
+  <section class="hub-hero">
+    <div>
+      <p class="eyebrow">무료 계산기 색인</p>
+      <h1>필요한 계산기를 바로 찾으세요</h1>
+      <p>
+        돈, 계약, 세금, 쇼핑, 건강처럼 자주 마주치는 숫자를 분야별로 정리했습니다.
+        각 계산기는 예시값, 결과 복사, 공유 링크를 제공합니다.
+      </p>
+    </div>
+    <div class="hub-stat" aria-label="계산기 수">
+      <strong>{calculators.length}</strong>
+      <span>개 계산기</span>
+    </div>
+  </section>
+
+  <section class="popular" aria-labelledby="popular-title">
+    <div class="section-title">
+      <h2 id="popular-title">자주 찾는 계산기</h2>
+      <p>검색 유입이 많은 주제부터 바로 이동</p>
+    </div>
+    <div class="popular-grid">
+      {[
+        'stock-cashout-tax',
+        'loan-interest',
+        'seller-margin',
+        'salary-net-pay',
+        'monthly-rent-total',
+        'deposit-interest'
+      ].map((slug) => {
+        const calculator = calculators.find((item) => item.slug === slug);
+        if (!calculator) return null;
+        return (
+          <a href={`/calculators/${calculator.slug}/`}>
+            <span>{groupLabels[calculator.group]}</span>
+            <strong>{calculator.title}</strong>
+            <p>{calculator.description}</p>
+          </a>
+        );
+      })}
+    </div>
+  </section>
+
+  {groups.map(({ group, label, items }) => (
+    <section class="group-section" id={group}>
+      <div class="section-title">
+        <h2>{label}</h2>
+        <p>{items.length}개</p>
+      </div>
+      <div class="tool-grid">
+        {items.map((calculator) => (
+          <a href={`/calculators/${calculator.slug}/`}>
+            <span>{calculator.intent}</span>
+            <strong>{calculator.title}</strong>
+            <p>{calculator.description}</p>
+            <small>{calculator.shortTitle} 열기</small>
+          </a>
+        ))}
+      </div>
+    </section>
+  ))}
+
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+</BaseLayout>
+
+<style>
+  .hub-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 180px;
+    gap: 22px;
+    align-items: end;
+    padding: 24px 0 8px;
+  }
+  .eyebrow {
+    margin: 0 0 10px;
+    color: var(--green-strong);
+    font: 900 0.82rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  h1 {
+    margin: 0;
+    max-width: 760px;
+    color: var(--ink);
+    font: 950 clamp(2.1rem, 4.2vw, 4rem)/1.05 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    letter-spacing: 0;
+    word-break: keep-all;
+  }
+  .hub-hero p:not(.eyebrow) {
+    margin: 14px 0 0;
+    max-width: 760px;
+    color: var(--muted);
+    font: 750 1rem/1.7 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    word-break: keep-all;
+  }
+  .hub-stat {
+    border: 1px solid #dce6e1;
+    border-radius: 8px;
+    background: #fff;
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  .hub-stat strong {
+    display: block;
+    color: var(--green-strong);
+    font: 950 2.4rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .hub-stat span {
+    display: block;
+    margin-top: 6px;
+    color: var(--muted);
+    font: 900 0.9rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .popular,
+  .group-section {
+    margin-top: 30px;
+  }
+  .section-title {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 12px;
+  }
+  .section-title h2 {
+    margin: 0;
+    color: var(--ink);
+    font: 950 1.24rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .section-title p {
+    margin: 0;
+    color: var(--subtle);
+    font: 800 0.86rem/1.3 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .popular-grid,
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .popular-grid a,
+  .tool-grid a {
+    display: grid;
+    gap: 8px;
+    min-height: 154px;
+    border: 1px solid #dfe8e4;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.96);
+    padding: 16px;
+    color: inherit;
+    text-decoration: none;
+    box-shadow: var(--shadow-sm);
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  }
+  .popular-grid a:hover,
+  .tool-grid a:hover {
+    transform: translateY(-2px);
+    border-color: #99c7b2;
+    box-shadow: var(--shadow-md);
+  }
+  .popular-grid span,
+  .tool-grid span,
+  .tool-grid small {
+    color: var(--green-strong);
+    font: 900 0.76rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .popular-grid strong,
+  .tool-grid strong {
+    color: var(--ink);
+    font: 950 1.04rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    word-break: keep-all;
+  }
+  .popular-grid p,
+  .tool-grid p {
+    margin: 0;
+    color: var(--muted);
+    font: 700 0.9rem/1.58 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    word-break: keep-all;
+  }
+  .tool-grid small {
+    align-self: end;
+  }
+  @media (max-width: 880px) {
+    .hub-hero,
+    .popular-grid,
+    .tool-grid {
+      grid-template-columns: 1fr;
+    }
+    .hub-stat {
+      width: fit-content;
+    }
+  }
+</style>
