@@ -269,6 +269,7 @@ const breadcrumbJsonLd = {
         <strong>예시</strong>
         <span>{detail.example}</span>
       </div>
+      <a class="audit-link" href="/calculator-audit/">전체 계산기 검산 기록 보기</a>
     </div>
     <div class="input-reference">
       <h3>처음 들어가는 값</h3>
@@ -638,6 +639,22 @@ const breadcrumbJsonLd = {
     margin-top: 14px;
     border-left: 4px solid var(--green);
     padding-left: 12px;
+  }
+  .audit-link {
+    display: inline-flex;
+    justify-self: start;
+    margin-top: 14px;
+    border: 1px solid #cfe0d8;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--green-strong);
+    padding: 10px 12px;
+    text-decoration: none;
+    font: 900 0.86rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .audit-link:hover {
+    border-color: #99c7b2;
+    background: var(--green-soft);
   }
   .detail-note strong {
     color: var(--ink);

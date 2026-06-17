@@ -4,7 +4,7 @@ import { guides } from '@/data/guides';
 
 export const GET: APIRoute = async ({ site }) => {
   const base = site?.toString().replace(/\/$/, '') ?? '';
-  const lastmod = '2026-06-09';
+  const lastmod = '2026-06-17';
 
   const urls = [
     { loc: '/', priority: '1.0', changefreq: 'daily' },
@@ -13,6 +13,7 @@ export const GET: APIRoute = async ({ site }) => {
     { loc: '/about', priority: '0.5', changefreq: 'monthly' },
     { loc: '/contact', priority: '0.4', changefreq: 'monthly' },
     { loc: '/methodology', priority: '0.6', changefreq: 'monthly' },
+    { loc: '/calculator-audit/', priority: '0.8', changefreq: 'monthly' },
     { loc: '/editorial-policy', priority: '0.5', changefreq: 'monthly' },
     { loc: '/privacy', priority: '0.3', changefreq: 'yearly' },
     { loc: '/terms', priority: '0.3', changefreq: 'yearly' },

@@ -1,0 +1,265 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { calculators, groupLabels, type CalculatorGroup } from '@/data/calculators';
+import { calculatorDetails } from '@/data/calculatorDetails';
+
+const groupedCalculators = Object.entries(groupLabels).map(([group, label]) => ({
+  group: group as CalculatorGroup,
+  label,
+  items: calculators.filter((calculator) => calculator.group === group)
+}));
+
+const auditJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: '계산기 검산 기록',
+  description: '바로계산에서 제공하는 계산기의 산식, 예시 입력값, 주의사항, 검토 기준을 모은 페이지입니다.',
+  url: `${Astro.site}calculator-audit/`,
+  mainEntity: {
+    '@type': 'ItemList',
+    numberOfItems: calculators.length,
+    itemListElement: calculators.map((calculator, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: calculator.title,
+      url: `${Astro.site}calculators/${calculator.slug}/`
+    }))
+  }
+};
+---
+<BaseLayout
+  title="계산기 검산 기록 | 바로계산"
+  description="바로계산의 무료 계산기 38종에 적용한 계산식, 예시 입력값, 주의사항, 검토 기준을 한곳에서 확인합니다."
+  canonical="/calculator-audit/"
+>
+  <section class="audit-hero">
+    <p class="kicker">Calculation Audit</p>
+    <h1>계산식과 검토 기준을 한곳에 모았습니다.</h1>
+    <p>
+      바로계산은 결과만 보여주는 페이지가 아니라, 어떤 입력값을 어떤 산식에 넣어 계산하는지 함께 공개합니다.
+      아래 기록은 계산기별 공식, 예시 상황, 주의해야 할 조건, 결과를 해석하는 기준을 정리한 문서입니다.
+    </p>
+  </section>
+
+  <section class="audit-principles" aria-labelledby="principles-title">
+    <div>
+      <h2 id="principles-title">검산할 때 보는 기준</h2>
+      <p>
+        계산기는 빠른 판단을 돕기 위한 참고 도구입니다. 실제 계약, 신고, 결제, 건강 판단 전에는
+        기관·사업자·전문가가 제공하는 최신 기준과 함께 확인해야 합니다.
+      </p>
+    </div>
+    <ol>
+      <li>입력값과 단위를 화면에 노출합니다.</li>
+      <li>기본값은 예시로만 쓰고, 사용자가 직접 조건을 바꿀 수 있게 둡니다.</li>
+      <li>세금, 수수료, 금리, 약정 조건처럼 바뀔 수 있는 항목은 주의사항을 함께 표시합니다.</li>
+      <li>대출처럼 방식별 결과가 달라지는 계산은 상환 방식을 분리해 보여줍니다.</li>
+    </ol>
+  </section>
+
+  {groupedCalculators.map(({ group, label, items }) => (
+    <section class="audit-group" id={group}>
+      <div class="section-title">
+        <h2>{label}</h2>
+        <p>{items.length}개 계산기</p>
+      </div>
+      <div class="audit-list">
+        {items.map((calculator) => {
+          const detail = calculatorDetails[calculator.slug];
+          return (
+            <article>
+              <header>
+                <span>{calculator.intent}</span>
+                <h3><a href={`/calculators/${calculator.slug}/`}>{calculator.title}</a></h3>
+                <p>{calculator.description}</p>
+              </header>
+              <dl>
+                <div>
+                  <dt>계산식</dt>
+                  <dd>{detail.formula}</dd>
+                </div>
+                <div>
+                  <dt>예시</dt>
+                  <dd>{detail.example}</dd>
+                </div>
+                <div>
+                  <dt>주의사항</dt>
+                  <dd>{detail.caution}</dd>
+                </div>
+                <div>
+                  <dt>결과 해석</dt>
+                  <dd>{detail.review}</dd>
+                </div>
+              </dl>
+              <a class="tool-link" href={`/calculators/${calculator.slug}/`}>{calculator.shortTitle} 열기</a>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  ))}
+
+  <section class="audit-contact">
+    <h2>오류 제보 방식</h2>
+    <p>
+      계산 결과가 이상하다면 계산기 이름, 입력값, 기대한 결과, 참고한 공식 자료를 함께 보내주세요.
+      재현 가능한 오류와 오래된 조건부터 우선 수정합니다. 문의: jonghosf1@gmail.com
+    </p>
+  </section>
+
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(auditJsonLd)} />
+</BaseLayout>
+
+<style>
+  .audit-hero,
+  .audit-principles,
+  .audit-contact {
+    display: grid;
+    gap: 12px;
+    max-width: 980px;
+  }
+  .kicker {
+    margin: 0;
+    color: var(--green-strong);
+    font: 950 0.82rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    text-transform: uppercase;
+  }
+  h1 {
+    margin: 0;
+    color: var(--ink);
+    font: 950 clamp(2rem, 5vw, 4rem)/1.08 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    letter-spacing: 0;
+    word-break: keep-all;
+  }
+  .audit-hero p,
+  .audit-principles p,
+  .audit-contact p,
+  dd {
+    margin: 0;
+    color: var(--muted);
+    font: 700 1rem/1.72 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .audit-principles,
+  .audit-contact {
+    margin-top: 24px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .audit-principles {
+    grid-template-columns: minmax(0, 0.9fr) minmax(280px, 1fr);
+    align-items: start;
+  }
+  h2 {
+    margin: 0;
+    color: var(--ink);
+    font: 950 1.32rem/1.22 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .audit-principles ol {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: var(--ink);
+    font: 850 0.96rem/1.65 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .audit-principles li + li {
+    margin-top: 6px;
+  }
+  .audit-group {
+    margin-top: 36px;
+  }
+  .section-title {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: end;
+    margin-bottom: 14px;
+  }
+  .section-title p {
+    margin: 0;
+    color: var(--subtle);
+    font: 850 0.88rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .audit-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  article {
+    display: grid;
+    gap: 16px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.96);
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  article header {
+    display: grid;
+    gap: 8px;
+  }
+  article span {
+    color: var(--green-strong);
+    font: 900 0.78rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  h3 {
+    margin: 0;
+    color: var(--ink);
+    font: 950 1.2rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  h3 a {
+    color: inherit;
+    text-decoration: none;
+  }
+  h3 a:hover {
+    color: var(--green-strong);
+    text-decoration: underline;
+  }
+  article header p {
+    margin: 0;
+    color: var(--muted);
+    font: 700 0.94rem/1.6 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  dl {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+  }
+  dl > div {
+    display: grid;
+    gap: 4px;
+    border-top: 1px solid #edf2ef;
+    padding-top: 10px;
+  }
+  dt {
+    color: var(--ink);
+    font: 950 0.86rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  dd {
+    font-size: 0.92rem;
+    line-height: 1.62;
+  }
+  .tool-link {
+    justify-self: start;
+    border: 1px solid #cfe0d8;
+    border-radius: 8px;
+    background: var(--green-soft);
+    color: var(--green-strong);
+    padding: 10px 12px;
+    text-decoration: none;
+    font: 900 0.86rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  .tool-link:hover {
+    border-color: #99c7b2;
+    background: #fff;
+  }
+  @media (max-width: 900px) {
+    .audit-principles,
+    .audit-list {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
