@@ -1,0 +1,22 @@
+name: cjournal-dev
+
+services:
+  site:
+    build:
+      context: .
+      target: development
+    image: cjournal-site:dev
+    command: npm run dev -- --host 0.0.0.0
+    ports:
+      - "${CJOURNAL_DEV_PORT:-4321}:4321"
+    volumes:
+      - .:/app
+      - cjournal_node_modules:/app/node_modules
+    init: true
+    tty: true
+    environment:
+      ASTRO_TELEMETRY_DISABLED: "1"
+
+volumes:
+  cjournal_node_modules:
+

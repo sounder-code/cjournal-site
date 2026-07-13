@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-13T09:54:48.865Z",
+  "sourceDate": "20260710",
+  "source": "K-apt 주간 일괄 공개자료",
+  "units": {
+    "fee": "원/m2",
+    "area": "m2"
+  },
+  "feeColumns": [
+    "month",
+    "totalFeePerM2",
+    "commonFeePerM2",
+    "individualFeePerM2",
+    "reserveFeePerM2",
+    "generalFeePerM2",
+    "securityFeePerM2",
+    "cleaningFeePerM2",
+    "maintenanceFeePerM2",
+    "elevatorFeePerM2",
+    "electricityFeePerM2",
+    "waterFeePerM2",
+    "heatingFeePerM2",
+    "hotWaterFeePerM2"
+  ],
+  "months": [
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-06"
+  ],
+  "latestMonth": "2026-06",
+  "stats": {
+    "basicRows": 21651,
+    "areaRows": 92377,
+    "feeRows": 104209,
+    "complexes": 21651,
+    "complexesWithArea": 21337,
+    "complexesWithFees": 21279,
+    "duplicateComplexes": 0,
+    "duplicateFeeRows": 0,
+    "areaConflicts": 0,
+    "feeRowsWithoutArea": 1118,
+    "feeRowsWithoutComplex": 2,
+    "publishedFeeRows": 103089,
+    "publishableComplexes": 20952,
+    "negativeAdjustmentValues": 1005
+  },
+  "index": "/data/apartments/index.json",
+  "regions": [
+    {
+      "key": "강원",
+      "name": "강원특별자치도",
+      "count": 830,
+      "withFees": 819,
+      "file": "/data/apartments/regions/강원.json"
+    },
+    {
+      "key": "경기",
+      "name": "경기도",
+      "count": 5553,
+      "withFees": 5465,
+      "file": "/data/apartments/regions/경기.json"
+    },
+    {
+      "key": "경상남",
+      "name": "경상남도",
+      "count": 1440,
+      "withFees": 1429,
+      "file": "/data/apartments/regions/경상남.json"
+    },
+    {
+      "key": "경상북",
+      "name": "경상북도",
+      "count": 1045,
+      "withFees": 1036,
+      "file": "/data/apartments/regions/경상북.json"
+    },
+    {
+      "key": "대구",
+      "name": "대구광역시",
+      "count": 1175,
+      "withFees": 1146,
+      "file": "/data/apartments/regions/대구.json"
+    },
+    {
+      "key": "대전",
+      "name": "대전광역시",
+      "count": 588,
+      "withFees": 574,
+      "file": "/data/apartments/regions/대전.json"
+    },
+    {
+      "key": "부산",
+      "name": "부산광역시",
+      "count": 1440,
+      "withFees": 1410,
+      "file": "/data/apartments/regions/부산.json"
+    },
+    {
+      "key": "서울",
+      "name": "서울특별시",
+      "count": 3174,
+      "withFees": 3097,
+      "file": "/data/apartments/regions/서울.json"
+    },
+    {
+      "key": "세종",
+      "name": "세종특별자치시",
+      "count": 216,
+      "withFees": 213,
+      "file": "/data/apartments/regions/세종.json"
+    },
+    {
+      "key": "울산",
+      "name": "울산광역시",
+      "count": 542,
+      "withFees": 535,
+      "file": "/data/apartments/regions/울산.json"
+    },
+    {
+      "key": "인천",
+      "name": "인천광역시",
+      "count": 1115,
+      "withFees": 1089,
+      "file": "/data/apartments/regions/인천.json"
+    },
+    {
+      "key": "전남광주통합",
+      "name": "전남광주통합특별시",
+      "count": 1707,
+      "withFees": 1684,
+      "file": "/data/apartments/regions/전남광주통합.json"
+    },
+    {
+      "key": "전북",
+      "name": "전북특별자치도",
+      "count": 870,
+      "withFees": 863,
+      "file": "/data/apartments/regions/전북.json"
+    },
+    {
+      "key": "제주",
+      "name": "제주특별자치도",
+      "count": 177,
+      "withFees": 172,
+      "file": "/data/apartments/regions/제주.json"
+    },
+    {
+      "key": "충청남",
+      "name": "충청남도",
+      "count": 991,
+      "withFees": 978,
+      "file": "/data/apartments/regions/충청남.json"
+    },
+    {
+      "key": "충청북",
+      "name": "충청북도",
+      "count": 788,
+      "withFees": 769,
+      "file": "/data/apartments/regions/충청북.json"
+    }
+  ]
+}

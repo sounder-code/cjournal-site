@@ -1,0 +1,23 @@
+name: cjournal
+
+services:
+  site:
+    image: ${CJOURNAL_IMAGE:-ghcr.io/sounder-code/cjournal-site:main}
+    ports:
+      - "${CJOURNAL_PORT:-80}:80"
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+

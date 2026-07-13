@@ -7,12 +7,14 @@ import { LOG_DIR, POSTS_DIR, ensureDir, loadPostsFrontmatter, readRunGeneratedPo
 const OUT_DIR = path.join(process.cwd(), 'public/assets/posts');
 const PROMPT_PATH = path.join(LOG_DIR, 'post-image-prompts.json');
 const IMAGES_PER_POST = Number(process.env.IMAGES_PER_POST ?? '2');
-const SIMPLE_PROMPTS = [
-  'daily life at home, warm natural daylight, photorealistic editorial photo',
-  'happy everyday moment in a tidy room, soft light, photorealistic',
-  'organized home storage and clean interior corner, calm mood, photorealistic',
-  'minimal home desk and interior scene, balanced composition, photorealistic'
-];
+const GEMINI_API_KEY = String(process.env.GEMINI_API_KEY ?? '').trim();
+const GEMINI_PROMPT_MODEL = String(process.env.GEMINI_PROMPT_MODEL ?? 'gemini-2.5-flash').trim();
+const TARGET_POST_SLUGS = new Set(
+  String(process.env.TARGET_POST_SLUGS ?? '')
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean)
+);
 
 type PromptItem = {
   id: string;
@@ -28,26 +30,67 @@ function hasPostImage(content: string, slug: string, index: number) {
   return content.includes(`/assets/posts/${slug}-${index}.png`);
 }
 
-type TopicKind = 'productivity' | 'home' | 'travel' | 'health' | 'finance' | 'generic';
-
-function detectTopic(title: string, description: string): TopicKind {
-  const text = `${title} ${description}`.toLowerCase();
-  if (/(메모|기록|목표|계획|집중|시간\s*관리|업무|회의|루틴|생산성)/.test(text)) return 'productivity';
-  if (/(실내|환기|청소|수납|집|가정|주방|생활)/.test(text)) return 'home';
-  if (/(여행|공항|숙소|짐|체크리스트)/.test(text)) return 'travel';
-  if (/(수면|건강|운동|식단|위생)/.test(text)) return 'health';
-  if (/(예산|가계부|비용|절약|구독|지출|가격|요금)/.test(text)) return 'finance';
-  return 'generic';
+function parseJsonObject(text: string): Record<string, unknown> | null {
+  const direct = text.trim();
+  const candidates = [
+    direct,
+    direct.replace(/^```json\s*/i, '').replace(/```$/i, '').trim(),
+    direct.match(/\{[\s\S]*\}/)?.[0] ?? ''
+  ].filter(Boolean);
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as Record<string, unknown>;
+    } catch {
+      // ignore
+    }
+  }
+  return null;
 }
 
-function buildPrompt(title: string, description: string, index: number) {
-  const topic = detectTopic(title, description);
-  const base = SIMPLE_PROMPTS[(Math.max(1, index) - 1) % SIMPLE_PROMPTS.length];
-  if (topic === 'travel') return `${base}, travel context`;
-  if (topic === 'health') return `${base}, wellness context`;
-  if (topic === 'finance') return `${base}, home budgeting context`;
-  if (topic === 'productivity') return `${base}, daily productivity context`;
-  return base;
+async function generatePromptsWithGemini(title: string, description: string, excerpt: string) {
+  if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY is required for image prompt generation');
+  const prompt = [
+    'Generate image prompts for a Korean news-style article.',
+    'Return JSON only with this exact shape:',
+    '{"prompts":["...", "..."]}',
+    `Article title: ${title}`,
+    `Article description: ${description || '(none)'}`,
+    `Article excerpt: ${excerpt.slice(0, 800)}`,
+    `Need exactly ${IMAGES_PER_POST} prompts.`,
+    'Rules:',
+    '- Write prompts in English only.',
+    '- Each prompt must be specific to the article topic.',
+    '- Photorealistic editorial style.',
+    '- No text overlays, no logos, no watermark, no UI, no typography.',
+    '- Avoid generic scene repetition.'
+  ].join('\n');
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_PROMPT_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7 }
+      })
+    }
+  );
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Gemini prompt generation failed (${res.status}): ${body.slice(0, 240)}`);
+  }
+  const json = (await res.json()) as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+  };
+  const text = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('').trim() ?? '';
+  const parsed = parseJsonObject(text);
+  const prompts = Array.isArray(parsed?.prompts) ? parsed.prompts.map((v) => String(v).trim()).filter(Boolean) : [];
+  if (prompts.length < IMAGES_PER_POST) {
+    throw new Error(`Gemini returned insufficient prompts (${prompts.length}/${IMAGES_PER_POST})`);
+  }
+  return prompts.slice(0, IMAGES_PER_POST);
 }
 
 function insertImages(content: string, slug: string, title: string) {
@@ -141,10 +184,13 @@ async function main() {
 
   const posts = await loadPostsFrontmatter();
   const runFiles = new Set(await readRunGeneratedPosts());
-  const targets = posts.filter((row) => runFiles.has(row.file));
+  let targets = posts.filter((row) => runFiles.has(row.file));
+  if (TARGET_POST_SLUGS.size > 0) {
+    targets = targets.filter((row) => TARGET_POST_SLUGS.has(String(row.data.slug ?? '').trim()));
+  }
 
   if (targets.length === 0) {
-    throw new Error('No newly created articles in this run');
+    throw new Error('No target articles for image generation');
   }
 
   const prompts: PromptItem[] = [];
@@ -153,11 +199,12 @@ async function main() {
     const title = String(row.data.title ?? '').trim();
     const description = String(row.data.description ?? '').trim();
     if (!slug || !title) continue;
+    console.log(`[image-prompt] generating via gemini: ${slug}`);
+    const geminiPrompts = await generatePromptsWithGemini(title, description, row.content);
     for (let i = 1; i <= IMAGES_PER_POST; i += 1) {
-      const prompt = buildPrompt(title, description, i);
       prompts.push({
         id: `${slug}-${i}`,
-        prompt,
+        prompt: geminiPrompts[i - 1] ?? geminiPrompts[0],
         size: '1024x768'
       });
     }

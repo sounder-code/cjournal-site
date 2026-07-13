@@ -13,6 +13,32 @@ npm run dev
 npm run build
 ```
 
+## Docker 로컬 환경
+
+운영 배포와 동일한 정적 빌드/Nginx 조합은 아래 명령으로 실행합니다.
+
+```bash
+npm run docker:up
+npm run docker:test
+```
+
+- 접속: `http://127.0.0.1:8080`
+- 로그: `npm run docker:logs`
+- 종료: `npm run docker:down`
+- 포트 변경: `CJOURNAL_PORT=8081 npm run docker:up`
+
+소스 수정 즉시 반영되는 Astro 개발 컨테이너는 별도 Compose 파일을 사용합니다.
+
+```bash
+npm run docker:dev
+```
+
+- 접속: `http://127.0.0.1:4321`
+- 종료: `npm run docker:dev:down`
+- 포트 변경: `CJOURNAL_DEV_PORT=4336 npm run docker:dev`
+
+`.env`, `.env.local`, `tmp/`, `logs/`는 Docker 이미지에 포함되지 않습니다. K-apt 수집은 호스트에서 실행해 `src/data/apartments.generated.ts`를 만든 뒤 이미지를 빌드합니다.
+
 ## 자동 발행 워크플로우
 - 파일: `.github/workflows/daily-generate.yml`
 - 실행: 매일 06:00 (Asia/Seoul), 수동 실행 지원
@@ -66,6 +92,14 @@ bash scripts/setup-gh-runner-macos.sh sounder-code/cjournal-site <RUNNER_TOKEN>
 - GTM은 제휴 클릭 등 이벤트 확장용으로 유지하고, 기본 페이지뷰는 GA4 직접 태그로 보냅니다.
 
 ## 배포
-- Cloudflare Pages: `cjournal-site` 저장소의 `main` 브랜치 연결
-- 빌드 명령: `npm run build`
-- 빌드 출력: `dist`
+- `main` 브랜치가 CI를 통과하면 GitHub Actions가 `ghcr.io/sounder-code/cjournal-site:main` 이미지를 발행합니다.
+- Docker 서버에서는 `compose.prod.yaml`로 이미지 전체를 교체합니다.
+
+```bash
+docker compose -f compose.prod.yaml pull
+docker compose -f compose.prod.yaml up -d
+```
+
+- 기존 Cloudflare Pages 연결은 전환이 끝날 때까지 유지합니다.
+- 실제 도메인 전환 전에는 Docker 서버의 헬스체크와 `npm run docker:test -- http://서버주소`를 먼저 통과시킵니다.
+- 전체 개발·발행·롤백 절차는 [`docs/docker-deployment.md`](docs/docker-deployment.md)를 참고합니다.

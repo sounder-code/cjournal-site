@@ -1,18 +1,68 @@
 <footer class="site-footer">
-  <div class="container">
-    <div class="footer-row">
-      <p>© {new Date().getFullYear()} 바로계산</p>
-      <nav aria-label="정책 및 사이트 정보">
-        <a href="/about">소개</a>
-        <a href="/methodology">계산 기준</a>
-        <a href="/calculator-audit/">검산 기록</a>
-        <a href="/editorial-policy">운영 원칙</a>
-        <a href="/news">계산 가이드</a>
-        <a href="/contact">문의</a>
-        <a href="/privacy">개인정보처리방침</a>
-        <a href="/terms">이용약관</a>
-      </nav>
+  <div class="footer-inner">
+    <div>
+      <strong>바로계산</strong>
+      <span>공동주택 관리비 비교</span>
     </div>
-    <p class="muted">계산 결과는 참고용입니다. 실제 수수료, 세금, 약관, 요금, 건강 기준은 각 사업자와 기관의 기준을 함께 봐야 합니다.</p>
+    <nav aria-label="정책 및 사이트 정보">
+      <a href="/methodology">산정 기준</a>
+      <a href="/editorial-policy">운영 원칙</a>
+      <a href="/privacy">개인정보처리방침</a>
+      <a href="/terms">이용약관</a>
+      <a href="/contact">문의</a>
+    </nav>
+    <p><a href="https://www.k-apt.go.kr/" rel="nofollow external">K-apt</a> 공개자료를 재가공한 참고 정보 · 문의 jonghosf1@gmail.com</p>
   </div>
 </footer>
+
+<style>
+  :global(.site-footer) {
+    border-top: 1px solid #e0e4e1;
+    background: #fff;
+  }
+  .footer-inner {
+    width: min(1400px, calc(100vw - 40px));
+    min-height: 90px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 30px;
+  }
+  .footer-inner > div {
+    display: grid;
+    gap: 3px;
+  }
+  .footer-inner strong {
+    font-size: 0.82rem;
+  }
+  .footer-inner span,
+  .footer-inner p,
+  nav a {
+    color: #777f7b;
+    font-size: 0.68rem;
+  }
+  nav {
+    display: flex;
+    gap: 16px;
+  }
+  nav a {
+    text-decoration: none;
+    font-weight: 750;
+  }
+  .footer-inner p {
+    margin: 0;
+    text-align: right;
+  }
+  .footer-inner p a { color: inherit; text-underline-offset: 2px; }
+  @media (max-width: 760px) {
+    .footer-inner {
+      width: calc(100vw - 24px);
+      grid-template-columns: 1fr;
+      gap: 12px;
+      padding: 20px 0;
+    }
+    nav { flex-wrap: wrap; }
+    .footer-inner p { text-align: left; }
+  }
+</style>

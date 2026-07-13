@@ -19,3 +19,6 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
+
+      - name: Build production Docker image
+        run: docker build --target production -t cjournal-site:ci .

@@ -1,0 +1,29 @@
+name: cjournal
+
+services:
+  site:
+    build:
+      context: .
+      target: production
+      args:
+        PUBLIC_GA_ID: ${PUBLIC_GA_ID:-G-SE44ENS3KV}
+        PUBLIC_GTM_ID: ${PUBLIC_GTM_ID:-}
+    image: cjournal-site:local
+    ports:
+      - "${CJOURNAL_PORT:-8080}:80"
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+

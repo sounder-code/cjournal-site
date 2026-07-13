@@ -1,0 +1,13 @@
+.astro
+.env
+.env.*
+.git
+.github
+.wrangler
+dist
+logs
+node_modules
+tmp
+*.log
+.DS_Store
+

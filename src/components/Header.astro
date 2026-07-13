@@ -1,131 +1,145 @@
 ---
-const today = new Intl.DateTimeFormat('ko-KR', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-  weekday: 'short'
-}).format(new Date());
+const pathname = Astro.url.pathname;
+const navItems = [
+  ['관리비 지도', '/map/'],
+  ['단지 찾기', '/apartments/'],
+  ['생활 계산기', '/calculators/'],
+  ['가이드', '/news']
+];
+
+const isActive = (href: string) =>
+  href === '/map/' ? pathname === '/' || pathname.startsWith('/map') : pathname.startsWith(href);
 ---
 <header class="site-header">
-  <div class="container header-inner">
-    <div class="masthead">
-      <a href="/" class="logo"><span aria-hidden="true"></span>바로계산</a>
-      <p class="edition">생활 계산기 모음</p>
-    </div>
-    <nav aria-label="주요 계산기">
-      <a href="/calculators/">계산기 찾기</a>
-      <a href="/#seller">마진·판매</a>
-      <a href="/#living">생활비</a>
-      <a href="/#utility">금융·시간</a>
-      <a href="/#housing">주거</a>
-      <a href="/#work">급여·세금</a>
-      <a href="/#health">건강</a>
-      <a href="/news">계산 가이드</a>
-      <a href="/calculator-audit/">검산 기록</a>
-      <a href="/editorial-policy">운영 원칙</a>
-      <a href="/contact">문의</a>
-      <a href="/about">소개</a>
+  <div class="app-header">
+    <a href="/map/" class="brand" aria-label="바로계산 관리비 지도">
+      <span class="brand-mark" aria-hidden="true"><i></i></span>
+      <span class="brand-name">바로계산</span>
+      <span class="brand-product">관리비</span>
+    </a>
+
+    <nav class="primary-nav" aria-label="주요 메뉴">
+      {navItems.map(([label, href]) => (
+        <a href={href} class={isActive(href) ? 'active' : ''}>{label}</a>
+      ))}
     </nav>
-    <div class="today">{today}</div>
+
+    <div class="header-actions">
+      <a href="/methodology">산정 기준</a>
+      <a href="/contact">문의</a>
     </div>
+  </div>
 </header>
 
 <style>
-  .header-inner {
-    min-height: 68px;
+  :global(.site-header) {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid #e4e7e5;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
+  }
+  .app-header {
+    width: min(1480px, calc(100vw - 40px));
+    min-height: 60px;
+    margin: 0 auto;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    justify-content: space-between;
     align-items: center;
-    gap: 18px;
+    gap: 38px;
   }
-  .masthead { display: grid; gap: 3px; }
-  .logo {
+  .brand {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    width: fit-content;
+    gap: 9px;
+    color: #151917;
+    text-decoration: none;
+    white-space: nowrap;
   }
-  .logo span {
-    display: inline-grid;
+  .brand-mark {
+    display: grid;
     place-items: center;
-    width: 27px;
-    height: 27px;
-    border-radius: 8px;
-    background: var(--green-strong);
-    color: #ffffff;
-    box-shadow: 0 10px 22px rgba(16, 21, 19, 0.14);
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: #13795b;
   }
-  .logo span::before,
-  .logo span::after {
-    content: "";
+  .brand-mark i {
     width: 12px;
-    height: 2px;
-    border-radius: 999px;
-    background: #ffffff;
-    grid-area: 1 / 1;
+    height: 12px;
+    border: 3px solid #fff;
+    border-radius: 50%;
   }
-  .logo span::before { transform: translateY(-4px); }
-  .logo span::after { transform: translateY(4px); }
-  .edition {
-    margin: 0;
-    color: #75837d;
-    font-size: 0.75rem;
-    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-    font-weight: 700;
+  .brand-name {
+    font-size: 1.08rem;
+    font-weight: 800;
   }
-  nav {
+  .brand-product {
+    color: #6a726e;
+    font-size: 0.78rem;
+    font-weight: 650;
+  }
+  .primary-nav {
     display: flex;
     align-items: center;
-    gap: 4px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    min-width: 0;
+    gap: 30px;
+    height: 60px;
   }
-  nav a {
-    border-radius: 8px;
-    padding: 8px 10px;
-    font-size: 0.82rem;
-    white-space: nowrap;
+  .primary-nav a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 60px;
+    color: #59615d;
+    text-decoration: none;
+    font-size: 0.86rem;
+    font-weight: 650;
   }
-  nav a:hover {
-    background: var(--blue-soft);
-    color: var(--blue);
+  .primary-nav a:hover,
+  .primary-nav a.active {
+    color: #111513;
   }
-  .today {
-    color: #7c8882;
-    font: 800 0.76rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-    white-space: nowrap;
+  .primary-nav a.active::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 2px;
+    background: #13795b;
   }
-  @media (max-width: 1120px) {
-    .today { display: none; }
-    .header-inner {
-      grid-template-columns: auto minmax(0, 1fr);
+  .header-actions {
+    display: flex;
+    gap: 18px;
+  }
+  .header-actions a {
+    color: #707873;
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  @media (max-width: 760px) {
+    .app-header {
+      width: calc(100vw - 24px);
+      grid-template-columns: 1fr auto;
+      gap: 10px;
     }
-  }
-  @media (max-width: 768px) {
-    .header-inner {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 8px;
-      padding-bottom: 10px;
-    }
-    nav {
-      justify-content: flex-start;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      padding-bottom: 2px;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-    nav::-webkit-scrollbar {
+    .brand-product,
+    .header-actions {
       display: none;
     }
-    nav a {
-      flex: 0 0 auto;
-      border: 1px solid var(--line);
-      background: #fff;
-      padding: 8px 10px;
+    .primary-nav {
+      justify-content: flex-end;
+      gap: 16px;
+      overflow-x: auto;
+    }
+    .primary-nav a {
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+    .primary-nav a:nth-child(n + 3) {
+      display: none;
     }
   }
 </style>

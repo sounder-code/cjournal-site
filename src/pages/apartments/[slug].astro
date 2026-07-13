@@ -1,0 +1,284 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import {
+  loadApartmentManifest,
+  loadApartmentPageData,
+  type ApartmentPageData,
+  type FeeTuple
+} from '@/lib/apartmentBulk';
+
+export const getStaticPaths = async () =>
+  (await loadApartmentPageData()).map((data) => ({ params: { slug: data.apartment.s }, props: { data } }));
+
+const { data } = Astro.props as { data: ApartmentPageData };
+const manifest = await loadApartmentManifest();
+const { apartment, percentiles, nearby, peerLabel, peerCount, titleSuffix } = data;
+const latest = apartment.f.at(-1)!;
+const previous = apartment.f.at(-2) ?? latest;
+const averageTotal = Math.round(apartment.f.reduce((sum, fee) => sum + fee[1], 0) / apartment.f.length);
+const latestDelta = latest[1] - previous[1];
+const averageDelta = latest[1] - averageTotal;
+const peak = apartment.f.reduce((highest, fee) => fee[1] > highest[1] ? fee : highest, apartment.f[0]);
+const low = apartment.f.reduce((lowest, fee) => fee[1] < lowest[1] ? fee : lowest, apartment.f[0]);
+const sourceDate = `${manifest.sourceDate.slice(0, 4)}-${manifest.sourceDate.slice(4, 6)}-${manifest.sourceDate.slice(6, 8)}`;
+const monthLabel = (month: string) => `${month.slice(0, 4)}년 ${Number(month.slice(5))}월`;
+const won = (value: number) => `${value.toLocaleString('ko-KR')}원`;
+const levelLabel = (value: number) => value >= 85 ? '매우 높은 편' : value >= 65 ? '높은 편' : value >= 36 ? '중간 수준' : value >= 16 ? '낮은 편' : '매우 낮은 편';
+const trendLabel = Math.abs(latestDelta) <= 30 ? '큰 변동 없이 유지' : latestDelta > 0 ? '전월보다 상승' : '전월보다 하락';
+const metricNames = ['일반관리', '경비', '청소', '수선·시설', '승강기', '전기', '수도', '난방', '급탕'];
+const metricIndexes = [5, 6, 7, 8, 9, 10, 11, 12, 13];
+const detailMetrics = metricIndexes
+  .map((index, position) => ({ name: metricNames[position], value: Number(latest[index]) }))
+  .filter((item) => item.value > 0)
+  .sort((a, b) => b.value - a.value);
+const topDriver = detailMetrics[0] ?? { name: '공용관리비', value: latest[2] };
+const secondDriver = detailMetrics[1];
+const totalLevel = levelLabel(percentiles.total);
+const headline = `${monthLabel(latest[0])} 총 관리비는 ㎡당 ${won(latest[1])}, 비교군에서 ${totalLevel}입니다.`;
+const averageCopy = averageDelta === 0
+  ? `최근 ${apartment.f.length}개월 평균 ${won(averageTotal)}/㎡와 같습니다.`
+  : `최근 ${apartment.f.length}개월 평균 ${won(averageTotal)}/㎡보다 ${Math.abs(averageDelta).toLocaleString('ko-KR')}원 ${averageDelta > 0 ? '높습니다' : '낮습니다'}.`;
+const previousCopy = latestDelta === 0
+  ? '전월과 비교해 변동이 없습니다.'
+  : `전월과 비교하면 ${Math.abs(latestDelta).toLocaleString('ko-KR')}원 ${latestDelta > 0 ? '올랐습니다' : '내렸습니다'}.`;
+const overview = `${apartment.n}의 총 관리비는 ${averageCopy} ${previousCopy}`;
+const driverCopy = secondDriver
+  ? `세부 항목 중 ${topDriver.name} ${won(topDriver.value)}/㎡와 ${secondDriver.name} ${won(secondDriver.value)}/㎡의 비중이 큽니다.`
+  : `현재 공개된 세부 항목에서는 ${topDriver.name}이 ㎡당 ${won(topDriver.value)}으로 가장 큽니다.`;
+const trendCopy = `공개 기간 중 가장 높았던 달은 ${monthLabel(peak[0])} ${won(peak[1])}/㎡, 가장 낮았던 달은 ${monthLabel(low[0])} ${won(low[1])}/㎡입니다.`;
+const description = `${apartment.n} ${latest[0]} 관리비는 ㎡당 ${won(latest[1])}입니다. 최근 ${apartment.f.length}개월 추이와 ${peerLabel} 비교, 공용관리비·장기수선충당금을 확인하세요.`;
+const trendValues = apartment.f.map((fee) => fee[1]);
+const minTrend = Math.min(...trendValues);
+const maxTrend = Math.max(...trendValues);
+const trendPoints = apartment.f.map((fee, index) => {
+  const x = 24 + (index / Math.max(apartment.f.length - 1, 1)) * 552;
+  const y = 142 - ((fee[1] - minTrend) / Math.max(maxTrend - minTrend, 1)) * 104;
+  return `${x.toFixed(1)},${y.toFixed(1)}`;
+}).join(' ');
+const kpis = [
+  ['총 관리비', latest[1], previous[1]],
+  ['공용관리비', latest[2], previous[2]],
+  ['개별사용료', latest[3], previous[3]],
+  ['장기수선충당금', latest[4], previous[4]]
+] as const;
+const comparisons = [
+  ['총 관리비', latest[1], percentiles.total],
+  ['공용관리비', latest[2], percentiles.common],
+  ['경비비', latest[6], percentiles.security],
+  ['청소비', latest[7], percentiles.cleaning],
+  ['수선·시설', latest[8], percentiles.maintenance],
+  ['난방비', latest[12], percentiles.heating],
+  ['장기수선충당금', latest[4], percentiles.reserve]
+].filter((item) => Number(item[1]) > 0) as Array<[string, number, number]>;
+const structuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '단지 찾기', item: 'https://cjournal.kr/apartments/' },
+      { '@type': 'ListItem', position: 2, name: apartment.sg, item: `https://cjournal.kr/apartments/?region=${encodeURIComponent(apartment.sd)}` },
+      { '@type': 'ListItem', position: 3, name: apartment.n }
+    ]
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Dataset',
+    name: `${apartment.n} 월별 관리비 데이터`,
+    description,
+    url: `https://cjournal.kr/apartments/${apartment.s}/`,
+    creator: { '@type': 'Organization', name: '국토교통부 공동주택관리정보시스템(K-apt)', url: 'https://www.k-apt.go.kr/' },
+    publisher: { '@type': 'Organization', name: '바로계산', url: 'https://cjournal.kr/' },
+    dateModified: sourceDate,
+    temporalCoverage: `${apartment.f[0][0]}/${latest[0]}`,
+    spatialCoverage: apartment.a,
+    variableMeasured: ['총 관리비', '공용관리비', '개별사용료', '장기수선충당금', '경비비', '청소비', '수선유지비', '난방비'],
+    isBasedOn: 'https://www.k-apt.go.kr/'
+  }
+];
+---
+<BaseLayout
+  title={`${apartment.n} 관리비 ${latest[0]} · ${titleSuffix} | 바로계산`}
+  description={description}
+  canonical={`/apartments/${apartment.s}/`}
+  robots="index, follow"
+  updatedTime={`${sourceDate}T00:00:00+09:00`}
+  structuredData={structuredData}
+>
+  <article class="report">
+    <header class="report-head">
+      <div>
+        <nav aria-label="경로"><a href="/apartments/">단지 찾기</a><span>/</span><span>{apartment.sd}</span><span>/</span><span>{apartment.sg}</span></nav>
+        <h1>{apartment.n} 관리비</h1>
+        <p>{apartment.a}</p>
+      </div>
+      <div class="report-meta"><strong>{latest[0]}</strong><span>최근 공개월</span></div>
+    </header>
+
+    <section class="fact-strip" aria-label="단지 기본 정보">
+      <div><span>세대수</span><strong>{apartment.h.toLocaleString('ko-KR')}세대</strong></div>
+      <div><span>동수</span><strong>{apartment.b.toLocaleString('ko-KR')}동</strong></div>
+      <div><span>사용승인</span><strong>{apartment.y ? `${apartment.y}년` : '미확인'}</strong></div>
+      <div><span>난방방식</span><strong>{apartment.ht || '미확인'}</strong></div>
+      <div><span>관리방식</span><strong>{apartment.mt || '미확인'}</strong></div>
+      <div><span>관리비부과면적</span><strong>{apartment.ma.toLocaleString('ko-KR')}㎡</strong></div>
+    </section>
+
+    <section class="summary-panel">
+      <div><span>{trendLabel}</span><h2>{headline}</h2><p>{overview} {driverCopy}</p></div>
+      <dl><div><dt>비교 기준</dt><dd>{peerLabel}</dd></div><div><dt>비교 단지</dt><dd>{peerCount.toLocaleString('ko-KR')}개</dd></div><div><dt>총액 백분위</dt><dd>{percentiles.total}</dd></div></dl>
+    </section>
+
+    <section class="kpi-grid" aria-label="최근 관리비 요약">
+      {kpis.map(([label, value, prior]) => {
+        const delta = value - prior;
+        return <div><span>{label}</span><strong>{won(value)}<small>/㎡</small></strong><em class:list={[delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat']}>{delta === 0 ? '전월과 동일' : `전월 대비 ${delta > 0 ? '+' : ''}${delta.toLocaleString('ko-KR')}원`}</em></div>;
+      })}
+    </section>
+
+    <div class="content-grid">
+      <main>
+        <section class="panel trend-panel">
+          <header><div><h2>최근 관리비 추이</h2><p>{trendCopy}</p></div><strong>평균 {won(averageTotal)}/㎡</strong></header>
+          <div class="chart">
+            <svg viewBox="0 0 600 170" role="img" aria-label={`${apartment.n} 최근 ${apartment.f.length}개월 총 관리비 추이`}>
+              <line x1="24" y1="38" x2="576" y2="38"/><line x1="24" y1="90" x2="576" y2="90"/><line x1="24" y1="142" x2="576" y2="142"/>
+              <polyline points={trendPoints}/>
+              {apartment.f.map((_, index) => { const [x, y] = trendPoints.split(' ')[index].split(','); return <circle cx={x} cy={y} r={index === apartment.f.length - 1 ? 5 : 3}/>; })}
+            </svg>
+            <div>{apartment.f.map((fee) => <span>{Number(fee[0].slice(5))}월</span>)}</div>
+          </div>
+        </section>
+
+        <section class="panel table-panel">
+          <header><div><h2>월별 관리비 내역</h2><p>단지 전체 금액을 관리비부과면적으로 나눈 ㎡당 금액입니다.</p></div></header>
+          <div class="table-wrap"><table><thead><tr><th>발생월</th><th>총액</th><th>공용</th><th>개별</th><th>경비</th><th>청소</th><th>수선·시설</th><th>난방</th><th>충당금</th></tr></thead><tbody>
+            {[...apartment.f].reverse().map((fee: FeeTuple) => <tr><td><strong>{fee[0]}</strong></td><td><strong>{fee[1].toLocaleString('ko-KR')}</strong></td><td>{fee[2].toLocaleString('ko-KR')}</td><td>{fee[3].toLocaleString('ko-KR')}</td><td>{fee[6].toLocaleString('ko-KR')}</td><td>{fee[7].toLocaleString('ko-KR')}</td><td>{fee[8].toLocaleString('ko-KR')}</td><td>{fee[12].toLocaleString('ko-KR')}</td><td>{fee[4].toLocaleString('ko-KR')}</td></tr>)}
+          </tbody></table></div>
+        </section>
+
+        <section class="panel reading-panel">
+          <header><div><h2>이 단지 관리비 읽는 법</h2><p>공개 수치에서 확인되는 특징만 정리했습니다.</p></div></header>
+          <div><article><strong>최근 흐름</strong><p>{overview}</p></article><article><strong>비용 구성</strong><p>{driverCopy}</p></article><article><strong>기간 내 범위</strong><p>{trendCopy}</p></article></div>
+        </section>
+      </main>
+
+      <aside>
+        <section class="panel comparison-panel">
+          <header><div><h2>비슷한 규모 단지 대비</h2><p>{peerLabel} · {peerCount.toLocaleString('ko-KR')}개 단지</p></div></header>
+          <ul>{comparisons.map(([label, value, rank]) => <li><div><span>{label}</span><strong>{won(value)}/㎡</strong></div><i><b style={`width:${rank}%`}></b></i><em>{rank}</em></li>)}</ul>
+          <p>백분위가 높을수록 비교군에서 ㎡당 금액이 높은 편입니다. 품질이나 서비스 수준을 뜻하지는 않습니다.</p>
+        </section>
+
+        <section class="panel related-panel">
+          <header><div><h2>함께 비교할 단지</h2><p>같은 지역에서 세대수가 가까운 순</p></div></header>
+          <div>{nearby.map((item) => <a href={`/apartments/${item.s}/`}><span><strong>{item.n}</strong><small>{item.d} · {item.h.toLocaleString('ko-KR')}세대 · {item.ht}</small></span><b>{item.tf.toLocaleString('ko-KR')}원</b></a>)}</div>
+        </section>
+      </aside>
+    </div>
+
+    <section class="method-note">
+      <div><h2>데이터와 산정 기준</h2><p>국토교통부 공동주택관리정보시스템(K-apt)이 공개한 단지 기본정보, 면적정보, 관리비정보를 단지코드로 결합했습니다. 금액은 단지 전체 공개액을 관리비부과면적으로 나누고 원 단위로 반올림했습니다.</p></div>
+      <dl><div><dt>원본 추출일</dt><dd>{sourceDate}</dd></div><div><dt>최근 공개월</dt><dd>{latest[0]}</dd></div><div><dt>단지코드</dt><dd>{apartment.c}</dd></div><div><dt>출처</dt><dd><a href="https://www.k-apt.go.kr/" rel="nofollow external">K-apt</a></dd></div></dl>
+    </section>
+
+    <section class="faq-panel">
+      <h2>확인할 점</h2>
+      <details open><summary>세대별 고지서 금액과 왜 다른가요?</summary><p>이 페이지는 단지 전체 관리비를 관리비부과면적으로 나눈 비교 단가입니다. 세대별 고지서는 전용면적, 난방·전기·수도 사용량, 할인과 정산에 따라 달라집니다.</p></details>
+      <details><summary>음수 금액이 표시될 수 있나요?</summary><p>관리주체의 환급이나 이전 달 정산이 반영되면 일부 사용료 항목이 음수로 공개될 수 있습니다. 원본 값을 임의로 0원 처리하지 않습니다.</p></details>
+      <details><summary>비교 순위는 어떻게 계산하나요?</summary><p>{apartment.sg}에서 세대수 구간이 같은 단지를 우선 비교합니다. 표본이 10개 미만이면 {apartment.sg} 전체 단지로 범위를 넓힙니다.</p></details>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  :global(.main-content:has(.report)) { width: min(1320px, calc(100vw - 40px)); }
+  .report { min-width: 0; display: grid; gap: 14px; }
+  .report-head { min-height: 78px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+  .report-head nav { display: flex; gap: 6px; margin-bottom: 7px; color: #79817d; font-size: .7rem; font-weight: 700; }
+  .report-head nav a { color: inherit; text-decoration: none; }
+  .report-head h1 { margin: 0; font-size: 1.75rem; line-height: 1.2; font-weight: 800; }
+  .report-head p { margin: 5px 0 0; color: #6f7873; font-size: .76rem; }
+  .report-meta { display: grid; justify-items: end; gap: 2px; }
+  .report-meta strong { font-size: 1rem; }
+  .report-meta span { color: #7c8580; font-size: .68rem; }
+  .fact-strip { display: grid; grid-template-columns: repeat(6, 1fr); border: 1px solid #dfe4e1; border-radius: 7px; background: #fff; }
+  .fact-strip div { min-height: 62px; display: grid; align-content: center; gap: 4px; padding: 10px 14px; border-right: 1px solid #e8ebe9; }
+  .fact-strip div:last-child { border: 0; }
+  .fact-strip span, .method-note dt { color: #7b847f; font-size: .66rem; font-weight: 700; }
+  .fact-strip strong { font-size: .78rem; }
+  .summary-panel { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 24px; align-items: center; border: 1px solid #d7e1dc; border-left: 4px solid #13795b; border-radius: 7px; background: #fff; padding: 20px 22px; }
+  .summary-panel > div > span { color: #13795b; font-size: .7rem; font-weight: 800; }
+  .summary-panel h2 { margin: 5px 0 8px; font-size: 1.18rem; line-height: 1.35; }
+  .summary-panel p { margin: 0; color: #58625d; font-size: .8rem; line-height: 1.7; }
+  .summary-panel dl { margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); }
+  .summary-panel dl div { display: grid; gap: 5px; border-left: 1px solid #e5e9e7; padding-left: 14px; }
+  .summary-panel dt { color: #7c8580; font-size: .64rem; }
+  .summary-panel dd { margin: 0; font-size: .75rem; font-weight: 800; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .kpi-grid > div { min-height: 112px; display: grid; align-content: space-between; border: 1px solid #dfe4e1; border-radius: 7px; background: #fff; padding: 15px; }
+  .kpi-grid span { color: #68726d; font-size: .72rem; font-weight: 700; }
+  .kpi-grid strong { margin: 9px 0; font-size: 1.24rem; font-variant-numeric: tabular-nums; }
+  .kpi-grid small { margin-left: 3px; color: #79827d; font-size: .65rem; }
+  .kpi-grid em { color: #747d78; font-size: .66rem; font-style: normal; font-weight: 700; }
+  .kpi-grid em.up { color: #ad433c; } .kpi-grid em.down { color: #17745a; }
+  .content-grid { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 10px; align-items: start; }
+  main, aside { min-width: 0; display: grid; gap: 10px; }
+  .panel { min-width: 0; border: 1px solid #dfe4e1; border-radius: 7px; background: #fff; }
+  .panel > header { min-height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 14px; border-bottom: 1px solid #e8ebe9; padding: 10px 16px; }
+  .panel h2 { margin: 0; font-size: .92rem; }
+  .panel header p { margin: 4px 0 0; color: #77807b; font-size: .67rem; }
+  .panel header > strong { font-size: .72rem; white-space: nowrap; }
+  .chart { padding: 16px 20px 12px; }
+  .chart svg { width: 100%; height: 210px; }
+  .chart line { stroke: #e8ecea; stroke-width: 1; }
+  .chart polyline { fill: none; stroke: #13795b; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+  .chart circle { fill: #fff; stroke: #13795b; stroke-width: 3; }
+  .chart > div { display: flex; justify-content: space-between; color: #7c8580; font-size: .65rem; padding: 0 8px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; min-width: 820px; border-collapse: collapse; }
+  th { height: 36px; background: #f7f9f8; color: #707a75; font-size: .65rem; text-align: right; padding: 0 12px; }
+  td { height: 44px; border-top: 1px solid #e9edeb; color: #424b46; font-size: .72rem; text-align: right; padding: 0 12px; font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; }
+  .reading-panel > div { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .reading-panel article { padding: 16px; border-right: 1px solid #e8ebe9; }
+  .reading-panel article:last-child { border: 0; }
+  .reading-panel article strong { font-size: .75rem; }
+  .reading-panel article p { margin: 8px 0 0; color: #59635e; font-size: .73rem; line-height: 1.65; }
+  .comparison-panel ul { list-style: none; margin: 0; padding: 8px 16px 4px; }
+  .comparison-panel li { display: grid; grid-template-columns: 1fr 28px; gap: 5px 8px; padding: 9px 0; border-bottom: 1px solid #edf0ee; }
+  .comparison-panel li div { display: flex; justify-content: space-between; gap: 8px; }
+  .comparison-panel li span, .comparison-panel li strong { font-size: .69rem; }
+  .comparison-panel li i { height: 4px; border-radius: 3px; background: #e8ecea; overflow: hidden; }
+  .comparison-panel li i b { display: block; height: 100%; background: #13795b; }
+  .comparison-panel li em { grid-row: 1 / 3; grid-column: 2; align-self: center; color: #13795b; font-size: .78rem; font-style: normal; font-weight: 800; text-align: right; }
+  .comparison-panel > p { margin: 8px 16px 15px; color: #747d78; font-size: .66rem; line-height: 1.55; }
+  .related-panel > div { padding: 4px 15px 10px; }
+  .related-panel a { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #222925; text-decoration: none; border-bottom: 1px solid #e9edeb; }
+  .related-panel a:last-child { border: 0; }
+  .related-panel a span { display: grid; gap: 3px; min-width: 0; }
+  .related-panel a strong { overflow: hidden; font-size: .73rem; text-overflow: ellipsis; white-space: nowrap; }
+  .related-panel a small { color: #77807b; font-size: .62rem; }
+  .related-panel a > b { font-size: .68rem; white-space: nowrap; }
+  .method-note { display: grid; grid-template-columns: minmax(0, 1fr) 430px; gap: 28px; border: 1px solid #dfe4e1; border-radius: 7px; background: #f9fbfa; padding: 18px; }
+  .method-note h2, .faq-panel h2 { margin: 0 0 7px; font-size: .9rem; }
+  .method-note p { margin: 0; color: #59635e; font-size: .72rem; line-height: 1.65; }
+  .method-note dl { margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px 16px; }
+  .method-note dl div { display: grid; grid-template-columns: 80px 1fr; gap: 8px; }
+  .method-note dd { margin: 0; font-size: .68rem; font-weight: 700; }
+  .method-note a { color: #13795b; }
+  .faq-panel { border-top: 1px solid #dfe4e1; padding-top: 16px; }
+  .faq-panel details { border-bottom: 1px solid #e0e5e2; padding: 10px 0; }
+  .faq-panel summary { cursor: pointer; font-size: .76rem; font-weight: 800; }
+  .faq-panel p { margin: 8px 0 2px; color: #59635e; font-size: .72rem; line-height: 1.65; }
+  @media (max-width: 980px) { .content-grid { grid-template-columns: 1fr; } aside { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 760px) {
+    :global(.main-content:has(.report)) { width: calc(100vw - 24px); }
+    .report-head { align-items: flex-start; } .report-head h1 { font-size: 1.4rem; } .report-meta { display: none; }
+    .fact-strip { grid-template-columns: repeat(2, 1fr); } .fact-strip div { border-bottom: 1px solid #e8ebe9; }
+    .summary-panel { grid-template-columns: 1fr; padding: 17px; } .summary-panel dl { border-top: 1px solid #e8ebe9; padding-top: 12px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); } .kpi-grid > div { min-height: 105px; }
+    aside { grid-template-columns: 1fr; } .chart svg { height: 165px; }
+    .reading-panel > div { grid-template-columns: 1fr; } .reading-panel article { border-right: 0; border-bottom: 1px solid #e8ebe9; }
+    .method-note { grid-template-columns: 1fr; gap: 16px; } .method-note dl { grid-template-columns: 1fr; }
+  }
+</style>

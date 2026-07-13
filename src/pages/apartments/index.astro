@@ -1,0 +1,292 @@
+---
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+interface BulkManifest {
+  sourceDate: string;
+  latestMonth: string;
+  months: string[];
+  stats: {
+    complexes: number;
+    complexesWithFees: number;
+    publishedFeeRows: number;
+  };
+  regions: Array<{ key: string; name: string; count: number }>;
+}
+
+const manifestPath = resolve('public/data/apartments/manifest.json');
+const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as BulkManifest;
+const sourceDate = `${manifest.sourceDate.slice(0, 4)}.${manifest.sourceDate.slice(4, 6)}.${manifest.sourceDate.slice(6, 8)}`;
+const latestMonth = manifest.latestMonth.replace('-', '.');
+---
+<BaseLayout
+  title="전국 아파트 관리비 단지 찾기 | 바로계산"
+  description="전국 공동주택을 검색하고 공용관리비, 개별사용료, 장기수선충당금을 관리면적 기준으로 비교합니다."
+  canonical="/apartments/"
+  robots={manifest.stats.complexes > 0 ? 'index, follow' : 'noindex, nofollow'}
+>
+  <div class="directory" data-directory data-index-url="/data/apartments/index.json">
+    <header class="page-titlebar">
+      <div>
+        <p>K-apt 전국 공개자료</p>
+        <h1>아파트 관리비 찾기</h1>
+      </div>
+      <div class="title-meta">
+        <span>기준월 {latestMonth}</span>
+        <span>원본 {sourceDate}</span>
+        <a href="/map/">지도에서 보기</a>
+      </div>
+    </header>
+
+    <section class="summary-strip" aria-label="데이터 요약">
+      <div><span>전국 단지</span><strong>{manifest.stats.complexes.toLocaleString('ko-KR')}</strong><small>개</small></div>
+      <div><span>관리비 공개</span><strong>{manifest.stats.complexesWithFees.toLocaleString('ko-KR')}</strong><small>개</small></div>
+      <div><span>관리비 내역</span><strong>{manifest.stats.publishedFeeRows.toLocaleString('ko-KR')}</strong><small>건</small></div>
+      <div><span>데이터 범위</span><strong>{manifest.months.length}</strong><small>개월</small></div>
+    </section>
+
+    <section class="directory-panel">
+      <div class="toolbar">
+        <label class="search-field">
+          <span>검색</span>
+          <input type="search" placeholder="단지명, 주소, 동 검색" data-search autocomplete="off" />
+        </label>
+        <label>
+          <span>지역</span>
+          <select data-region>
+            <option value="all">전국</option>
+            {manifest.regions.map((region) => <option value={region.name}>{region.name} ({region.count.toLocaleString('ko-KR')})</option>)}
+          </select>
+        </label>
+        <label>
+          <span>정렬</span>
+          <select data-sort>
+            <option value="name-asc">단지명 순</option>
+            <option value="fee-desc">관리비 높은 순</option>
+            <option value="fee-asc">관리비 낮은 순</option>
+            <option value="households-desc">세대수 많은 순</option>
+          </select>
+        </label>
+        <button type="button" data-reset>초기화</button>
+      </div>
+
+      <div class="table-status">
+        <strong data-count>전국 데이터를 불러오는 중입니다</strong>
+        <span>금액은 관리비부과면적 ㎡당 공개 금액</span>
+        <em data-page-status></em>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>단지</th>
+              <th>기본 정보</th>
+              <th>총 관리비</th>
+              <th>공용관리비</th>
+              <th>장기수선충당금</th>
+              <th>관리면적</th>
+            </tr>
+          </thead>
+          <tbody data-table-body></tbody>
+        </table>
+        <div class="empty-state" data-empty hidden>조건에 맞는 단지가 없습니다.</div>
+      </div>
+
+      <nav class="pagination" aria-label="검색 결과 페이지">
+        <button type="button" data-prev disabled aria-label="이전 페이지">‹</button>
+        <strong data-page>1 / 1</strong>
+        <button type="button" data-next disabled aria-label="다음 페이지">›</button>
+      </nav>
+    </section>
+
+    <p class="source-line">출처: 국토교통부 공동주택관리정보시스템(K-apt) 주간 일괄 공개자료 · 세대별 실제 청구액은 전용면적과 사용량에 따라 다릅니다.</p>
+  </div>
+
+  <script is:inline>
+    {
+      const root = document.querySelector('[data-directory]');
+      const search = root?.querySelector('[data-search]');
+      const region = root?.querySelector('[data-region]');
+      const sort = root?.querySelector('[data-sort]');
+      const reset = root?.querySelector('[data-reset]');
+      const body = root?.querySelector('[data-table-body]');
+      const count = root?.querySelector('[data-count]');
+      const empty = root?.querySelector('[data-empty]');
+      const pageStatus = root?.querySelector('[data-page-status]');
+      const pageNode = root?.querySelector('[data-page]');
+      const prev = root?.querySelector('[data-prev]');
+      const next = root?.querySelector('[data-next]');
+      const pageSize = 50;
+      let apartments = [];
+      let filtered = [];
+      let currentPage = 1;
+      let inputTimer;
+
+      const formatNumber = (value) => Number(value || 0).toLocaleString('ko-KR');
+      const escapeHtml = (value) => String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+      const feeCell = (value) => Number(value) > 0
+        ? `<strong>${formatNumber(value)}원</strong><span>/㎡</span>`
+        : '<span class="unavailable">미공개</span>';
+
+      const renderPage = () => {
+        if (!body) return;
+        const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+        currentPage = Math.min(currentPage, totalPages);
+        const start = (currentPage - 1) * pageSize;
+        const pageRows = filtered.slice(start, start + pageSize);
+        body.innerHTML = pageRows.map((item) => `
+          <tr>
+            <td>
+              ${item.q === 1
+                ? `<a class="complex-name" href="/apartments/${escapeHtml(item.s)}/">${escapeHtml(item.n)}</a>`
+                : `<strong class="complex-name">${escapeHtml(item.n)}</strong>`}
+              <span>${escapeHtml(item.a || `${item.sd} ${item.sg} ${item.d}`)}</span>
+            </td>
+            <td>
+              <strong>${formatNumber(item.h)}세대 · ${formatNumber(item.b)}동</strong>
+              <span>${item.y ? `${item.y}년` : '승인일 미확인'} · ${escapeHtml(item.ht || '난방방식 미확인')}</span>
+            </td>
+            <td class="money">${feeCell(item.tf)}</td>
+            <td class="money">${feeCell(item.cf)}</td>
+            <td class="money">${feeCell(item.rf)}</td>
+            <td class="money">${item.ma > 0 ? `<strong>${formatNumber(item.ma)}</strong><span>㎡</span>` : '<span class="unavailable">미확인</span>'}</td>
+          </tr>
+        `).join('');
+        if (count) count.textContent = `${filtered.length.toLocaleString('ko-KR')}개 단지`;
+        if (empty) empty.hidden = filtered.length > 0;
+        if (pageStatus) pageStatus.textContent = filtered.length ? `${start + 1}-${Math.min(start + pageSize, filtered.length)} 표시` : '';
+        if (pageNode) pageNode.textContent = `${currentPage.toLocaleString('ko-KR')} / ${totalPages.toLocaleString('ko-KR')}`;
+        if (prev) prev.disabled = currentPage <= 1;
+        if (next) next.disabled = currentPage >= totalPages;
+      };
+
+      const applyFilters = () => {
+        const query = (search?.value || '').trim().toLowerCase();
+        const selectedRegion = region?.value || 'all';
+        filtered = apartments.filter((item) => {
+          const searchable = `${item.n} ${item.a} ${item.sd} ${item.sg} ${item.d}`.toLowerCase();
+          return (!query || searchable.includes(query)) && (selectedRegion === 'all' || item.sd === selectedRegion);
+        });
+        filtered.sort((a, b) => {
+          if (sort?.value === 'fee-desc') return Number(b.tf) - Number(a.tf) || a.n.localeCompare(b.n, 'ko');
+          if (sort?.value === 'fee-asc') return (Number(a.tf) || Number.MAX_SAFE_INTEGER) - (Number(b.tf) || Number.MAX_SAFE_INTEGER) || a.n.localeCompare(b.n, 'ko');
+          if (sort?.value === 'households-desc') return Number(b.h) - Number(a.h) || a.n.localeCompare(b.n, 'ko');
+          return a.n.localeCompare(b.n, 'ko');
+        });
+        currentPage = 1;
+        renderPage();
+      };
+
+      search?.addEventListener('input', () => {
+        window.clearTimeout(inputTimer);
+        inputTimer = window.setTimeout(applyFilters, 120);
+      });
+      region?.addEventListener('change', applyFilters);
+      sort?.addEventListener('change', applyFilters);
+      reset?.addEventListener('click', () => {
+        search.value = '';
+        region.value = 'all';
+        sort.value = 'name-asc';
+        applyFilters();
+      });
+      prev?.addEventListener('click', () => {
+        if (currentPage > 1) currentPage -= 1;
+        renderPage();
+      });
+      next?.addEventListener('click', () => {
+        if (currentPage * pageSize < filtered.length) currentPage += 1;
+        renderPage();
+      });
+
+      fetch(root.dataset.indexUrl)
+        .then((response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then((data) => {
+          apartments = Array.isArray(data) ? data : [];
+          applyFilters();
+        })
+        .catch(() => {
+          if (count) count.textContent = '전국 데이터를 불러오지 못했습니다';
+          if (empty) {
+            empty.textContent = '잠시 후 다시 시도해 주세요.';
+            empty.hidden = false;
+          }
+        });
+    }
+  </script>
+</BaseLayout>
+
+<style>
+  :global(.main-content:has(.directory)) { width: min(1400px, calc(100vw - 40px)); }
+  .directory { display: grid; gap: 16px; }
+  .page-titlebar { min-height: 66px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+  .page-titlebar p { margin: 0 0 4px; color: #737b77; font-size: 0.74rem; font-weight: 800; }
+  .page-titlebar h1 { margin: 0; font-size: 1.75rem; line-height: 1.2; font-weight: 780; letter-spacing: 0; }
+  .title-meta { display: flex; align-items: center; gap: 14px; color: #727a76; font-size: 0.76rem; font-weight: 700; }
+  .title-meta a { min-height: 34px; display: inline-flex; align-items: center; border: 1px solid #d9deda; background: #fff; color: #1b211e; text-decoration: none; padding: 0 12px; border-radius: 6px; font-weight: 850; }
+  .summary-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid #e0e4e1; background: #fff; border-radius: 7px; }
+  .summary-strip div { min-height: 76px; display: flex; align-items: baseline; gap: 5px; padding: 15px 18px; border-right: 1px solid #e9ecea; }
+  .summary-strip div:last-child { border-right: 0; }
+  .summary-strip span { margin-right: auto; color: #737b77; font-size: 0.75rem; font-weight: 750; }
+  .summary-strip strong { color: #171b19; font-size: 1.42rem; font-weight: 760; font-variant-numeric: tabular-nums; }
+  .summary-strip small { color: #737b77; font-size: 0.7rem; font-weight: 750; }
+  .directory-panel { overflow: hidden; border: 1px solid #dde2df; border-radius: 7px; background: #fff; }
+  .toolbar { display: grid; grid-template-columns: minmax(260px, 1fr) 230px 190px auto; gap: 8px; padding: 12px; border-bottom: 1px solid #e5e9e6; background: #fafbfa; }
+  .toolbar label { min-height: 44px; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; border: 1px solid #dce1de; border-radius: 6px; background: #fff; padding: 0 12px; }
+  .toolbar label span { color: #858c88; font-size: 0.68rem; font-weight: 800; }
+  .toolbar input, .toolbar select { width: 100%; border: 0; outline: 0; background: transparent; color: #1d231f; font-size: 0.82rem; font-weight: 750; }
+  .toolbar button { border: 1px solid #dce1de; border-radius: 6px; background: #fff; color: #59615d; padding: 0 14px; font-size: 0.76rem; font-weight: 850; cursor: pointer; }
+  .table-status { min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid #e8ebe9; }
+  .table-status strong { font-size: 0.82rem; }
+  .table-status span { color: #7b837f; font-size: 0.72rem; }
+  .table-status em { margin-left: auto; color: #7b837f; font-size: 0.72rem; font-style: normal; }
+  .table-wrap { min-height: 420px; overflow-x: auto; }
+  table { width: 100%; min-width: 1040px; border-collapse: collapse; }
+  th { height: 38px; background: #f7f8f7; color: #737b77; text-align: left; font-size: 0.68rem; font-weight: 800; padding: 0 16px; }
+  td { height: 70px; border-top: 1px solid #ecefed; padding: 9px 16px; vertical-align: middle; color: #252b28; font-size: 0.78rem; }
+  tbody tr:first-child td { border-top: 0; }
+  tbody tr:hover { background: #fafcfb; }
+  td > span, td > strong { display: block; }
+  td > span { margin-top: 4px; color: #7a827e; font-size: 0.69rem; font-weight: 650; }
+  .complex-name { color: #151a17; font-size: 0.9rem; font-weight: 760; text-decoration: none; }
+  .complex-name:hover { color: #13795b; text-decoration: underline; }
+  .money { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .money strong { display: inline; font-size: 0.85rem; }
+  .money span { display: inline; margin-left: 2px; }
+  .money .unavailable { margin: 0; color: #a0a6a3; }
+  .empty-state { padding: 50px 16px; text-align: center; color: #777f7b; font-size: 0.84rem; }
+  .pagination { min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 14px; border-top: 1px solid #e8ebe9; }
+  .pagination button { width: 32px; height: 32px; border: 1px solid #dce1de; border-radius: 5px; background: #fff; color: #2f3934; font-size: 1.15rem; cursor: pointer; }
+  .pagination button:disabled { color: #b9bfbc; background: #f6f7f6; cursor: default; }
+  .pagination strong { min-width: 72px; text-align: center; font-size: 0.76rem; font-variant-numeric: tabular-nums; }
+  .source-line { margin: 0; color: #767e7a; font-size: 0.72rem; line-height: 1.6; }
+  @media (max-width: 760px) {
+    :global(.main-content:has(.directory)) { width: calc(100vw - 24px); }
+    .page-titlebar { align-items: flex-start; }
+    .title-meta span { display: none; }
+    .summary-strip { grid-template-columns: repeat(2, 1fr); }
+    .summary-strip div:nth-child(2) { border-right: 0; }
+    .summary-strip div:nth-child(-n + 2) { border-bottom: 1px solid #e9ecea; }
+    .toolbar { grid-template-columns: 1fr 1fr; }
+    .search-field { grid-column: 1 / -1; }
+    .toolbar button { min-height: 44px; }
+    .table-status span { display: none; }
+    .table-wrap { min-height: 360px; }
+    table { min-width: 0; table-layout: fixed; }
+    th, td { padding-right: 10px; padding-left: 10px; }
+    th:nth-child(2), td:nth-child(2), th:nth-child(n + 4), td:nth-child(n + 4) { display: none; }
+    th:first-child { width: 64%; }
+    th:nth-child(3) { width: 36%; text-align: right; }
+    td:nth-child(3) { text-align: right; }
+    .complex-name { font-size: 0.84rem; }
+  }
+</style>

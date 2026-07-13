@@ -4,6 +4,7 @@ interface Props {
   description: string;
   canonical?: string;
   image?: string;
+  robots?: string;
   type?: 'website' | 'article';
   publishedTime?: string;
   updatedTime?: string;
@@ -14,6 +15,7 @@ const {
   description,
   canonical,
   image = '/og-image.svg',
+  robots,
   type = 'website',
   publishedTime,
   updatedTime
@@ -25,6 +27,7 @@ const imageUrl = image.startsWith('http') ? image : `${site}${image}`;
 ---
 <title>{title}</title>
 <meta name="description" content={description} />
+{robots && <meta name="robots" content={robots} />}
 <link rel="canonical" href={url} />
 <meta property="og:type" content={type} />
 <meta property="og:title" content={title} />

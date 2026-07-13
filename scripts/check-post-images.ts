@@ -4,6 +4,12 @@ import { loadPostsFrontmatter, readRunGeneratedPosts } from './utils';
 
 const MIN_IMAGES = Number(process.env.MIN_IMAGES_PER_POST ?? '2');
 const MAX_IMAGES = Number(process.env.MAX_IMAGES_PER_POST ?? '2');
+const TARGET_POST_SLUGS = new Set(
+  String(process.env.TARGET_POST_SLUGS ?? '')
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean)
+);
 
 async function exists(filePath: string) {
   try {
@@ -17,10 +23,13 @@ async function exists(filePath: string) {
 async function main() {
   const posts = await loadPostsFrontmatter();
   const runFiles = new Set(await readRunGeneratedPosts());
-  const targets = posts.filter((row) => runFiles.has(row.file));
+  let targets = posts.filter((row) => runFiles.has(row.file));
+  if (TARGET_POST_SLUGS.size > 0) {
+    targets = targets.filter((row) => TARGET_POST_SLUGS.has(String(row.data.slug ?? '').trim()));
+  }
 
   if (targets.length === 0) {
-    throw new Error('No newly created articles in this run');
+    throw new Error('No target articles for image validation');
   }
 
   const failures: string[] = [];

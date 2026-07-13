@@ -7,12 +7,14 @@ interface Props {
   title: string;
   description: string;
   canonical?: string;
+  robots?: string;
   type?: 'website' | 'article';
   publishedTime?: string;
   updatedTime?: string;
+  structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
-const { title, description, canonical, type, publishedTime, updatedTime } = Astro.props;
+const { title, description, canonical, robots, type, publishedTime, updatedTime, structuredData } = Astro.props;
 const gtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-TXMPF75Z').trim();
 const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
 ---
@@ -39,7 +41,8 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
         />
       )
     }
-    <SeoHead title={title} description={description} canonical={canonical} type={type} publishedTime={publishedTime} updatedTime={updatedTime} />
+    <SeoHead title={title} description={description} canonical={canonical} robots={robots} type={type} publishedTime={publishedTime} updatedTime={updatedTime} />
+    {structuredData && <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData).replace(/</g, '\\u003c')} />}
   </head>
   <body>
     {
@@ -91,7 +94,7 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
     --line-strong: #c7d4ce;
     --surface: #ffffff;
     --surface-soft: #f7faf8;
-    --canvas: #f8faf9;
+    --canvas: #f5f6f5;
     --green: #14a46c;
     --green-strong: #0c754c;
     --green-soft: #eaf8f1;
@@ -112,14 +115,13 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
   }
   body {
     margin: 0;
-    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Segoe UI', sans-serif;
+    font-weight: 400;
     color: var(--ink);
-    background:
-      linear-gradient(90deg, rgba(16, 22, 20, 0.026) 1px, transparent 1px),
-      linear-gradient(180deg, #ffffff 0, #fbfdfc 360px, var(--canvas) 980px, var(--canvas) 100%);
-    background-size: 40px 40px, auto;
+    background: var(--canvas);
     line-height: 1.55;
     text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
   ::selection {
     background: rgba(22, 130, 79, 0.18);
@@ -128,21 +130,21 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
     outline: 3px solid rgba(47, 102, 134, 0.32);
     outline-offset: 3px;
   }
-  .container { width: min(1220px, calc(100vw - 32px)); margin: 0 auto; }
-  .main-content { min-height: 68vh; padding: 26px 0 64px; }
-  .site-header {
-    background: rgba(255, 255, 255, 0.92);
-    border-top: 0;
-    border-bottom: 1px solid rgba(214, 224, 219, 0.92);
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    backdrop-filter: blur(14px) saturate(130%);
-  }
+  .container { width: min(1400px, calc(100vw - 40px)); margin: 0 auto; }
+  .main-content { min-height: 72vh; padding: 24px 0 64px; }
   .site-footer {
     background: rgba(255, 255, 255, 0.96);
     border-top: 1px solid var(--line);
     border-bottom: 0;
+  }
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+  @media (max-width: 760px) {
+    .container { width: calc(100vw - 24px); }
+    .main-content { padding-top: 16px; }
   }
   .header-inner { padding: 12px 0; }
   .logo {
