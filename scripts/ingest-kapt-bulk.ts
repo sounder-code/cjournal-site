@@ -47,6 +47,11 @@ interface RawManifest {
   sources: Record<'basic' | 'area' | 'fee', { path: string; fileName: string }>;
 }
 
+interface Coordinate {
+  latitude: number;
+  longitude: number;
+}
+
 const text = (value: CellValue) => String(value ?? '').trim();
 const number = (value: CellValue) => {
   const parsed = Number(String(value ?? '').replace(/,/g, ''));
@@ -95,6 +100,9 @@ async function* rowsFromWorkbook(filePath: string) {
 }
 
 const rawManifest = JSON.parse(await readFile(manifestPath, 'utf8')) as RawManifest;
+const coordinates = JSON.parse(
+  await readFile(resolve(rootDir, 'src/data/apartment-coordinates.json'), 'utf8')
+) as Record<string, Coordinate>;
 const basicPath = resolve(rootDir, rawManifest.sources.basic.path);
 const areaPath = resolve(rootDir, rawManifest.sources.area.path);
 const feePath = resolve(rootDir, rawManifest.sources.fee.path);
@@ -232,6 +240,7 @@ for (const complex of complexes.values()) {
     complex.name.length >= 2;
   if (isPublishable) publishableComplexes += 1;
   const regionKey = keyForRegion(complex.sido) || 'unknown';
+  const coordinate = coordinates[complex.code];
   const summary = {
     c: complex.code,
     s: slugify(complex.name, complex.code),
@@ -252,7 +261,10 @@ for (const complex of complexes.values()) {
     cf: latest?.commonFeePerM2 ?? 0,
     rf: latest?.reserveFeePerM2 ?? 0
   };
-  index.push(summary);
+  index.push({
+    ...summary,
+    ...(coordinate ? { la: coordinate.latitude, lo: coordinate.longitude } : {})
+  });
   const details = byRegion.get(regionKey) ?? [];
   details.push({
     ...summary,

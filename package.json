@@ -19,8 +19,9 @@
     "quality": "tsx scripts/quality-gate.ts",
     "build:index": "tsx scripts/build-index.ts",
     "content:publish-approved": "tsx scripts/publish-approved-content.ts",
-    "data:kapt": "npm run data:kapt:download && npm run data:kapt:bulk",
+    "data:kapt": "npm run data:kapt:download && npm run data:kapt:coordinates && npm run data:kapt:bulk",
     "data:kapt:download": "tsx scripts/download-kapt-bulk.ts",
+    "data:kapt:coordinates": "tsx scripts/sync-kapt-coordinates.ts",
     "data:kapt:bulk": "tsx scripts/ingest-kapt-bulk.ts",
     "data:kapt:bulk:validate": "tsx scripts/validate-kapt-bulk.ts",
     "data:kapt:refresh:check": "tsx scripts/check-kapt-refresh.ts",
@@ -48,6 +49,8 @@
     "@astrojs/check": "^0.9.4",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^22.10.7",
+    "@types/proj4": "^2.5.6",
+    "proj4": "^2.20.9",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }

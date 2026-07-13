@@ -9,7 +9,7 @@ type Ring = Position[];
 type Polygon = Ring[];
 type Geometry = { type: 'Polygon' | 'MultiPolygon'; coordinates: Polygon | Polygon[] };
 type Feature = {
-  properties: { sidonm: string; sggnm: string; adm_nm: string };
+  properties: { sidonm: string; sggnm: string; adm_nm: string; sgg: string };
   geometry: Geometry;
 };
 
@@ -50,6 +50,7 @@ const geojson = await response.json() as { features: Feature[] };
 const districts = new Map<string, {
   province: string;
   district: string;
+  districtCode: string;
   latitudeTotal: number;
   longitudeTotal: number;
   area: number;
@@ -57,13 +58,14 @@ const districts = new Map<string, {
 }>();
 
 for (const feature of geojson.features) {
-  const { sidonm: province, sggnm: district } = feature.properties;
+  const { sidonm: province, sggnm: district, sgg: districtCode } = feature.properties;
   const name = feature.properties.adm_nm.split(' ').slice(2).join(' ');
   const center = geometryCentroid(feature.geometry);
   const key = `${province}|${district}`;
   const entry = districts.get(key) ?? {
     province,
     district,
+    districtCode,
     latitudeTotal: 0,
     longitudeTotal: 0,
     area: 0,
@@ -90,6 +92,7 @@ const output = {
     .map((entry) => ({
       province: entry.province,
       district: entry.district,
+      districtCode: entry.districtCode,
       latitude: Number((entry.latitudeTotal / entry.area).toFixed(6)),
       longitude: Number((entry.longitudeTotal / entry.area).toFixed(6)),
       dongs: entry.dongs.sort((a, b) => a.name.localeCompare(b.name, 'ko'))
