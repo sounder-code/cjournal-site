@@ -1,0 +1,60 @@
+name: Monthly K-apt Data Refresh
+
+on:
+  schedule:
+    # The 12th of every month at 05:20 Asia/Seoul (UTC+9).
+    - cron: "20 20 11 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: cjournal-kapt-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: [self-hosted, macOS, ARM64, cjournal]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Preserve current manifest
+        run: cp public/data/apartments/manifest.json "${RUNNER_TEMP}/kapt-manifest-before.json"
+
+      - name: Download and transform K-apt bulk files
+        run: npm run data:kapt
+
+      - name: Validate refreshed data
+        env:
+          KAPT_PREVIOUS_MANIFEST: ${{ runner.temp }}/kapt-manifest-before.json
+        run: |
+          npm run data:kapt:bulk:validate
+          npm run data:kapt:refresh:check
+          npm run quality:apartments
+
+      - name: Validate site
+        run: |
+          npm run typecheck
+          npm run build
+
+      - name: Commit and push when data changed
+        run: |
+          if git diff --quiet -- public/data/apartments; then
+            echo "K-apt data is already current"
+            exit 0
+          fi
+          git config user.name "data-bot"
+          git config user.email "data-bot@users.noreply.github.com"
+          git add public/data/apartments
+          git commit -m "chore(data): refresh monthly K-apt dataset"
+          git push origin main
