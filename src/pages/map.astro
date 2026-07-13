@@ -98,7 +98,7 @@ const metrics = [
     <footer class="source-note">
       <strong>데이터 기준</strong>
       <div>
-        <p>국토교통부 공동주택관리정보시스템(K-apt) 일괄 공개자료 · 원본 {manifest.sourceDate} · 최신 관리비 {manifest.latestMonth} · 행정경계 {adminCenters.sourceDate}</p>
+        <p>국토교통부 공동주택관리정보시스템(K-apt) 일괄 공개자료 · 원본 {manifest.sourceDate} · 최신 관리비 {manifest.latestMonth} · K-apt 지도 좌표 · 행정경계 {adminCenters.sourceDate}</p>
         <small>행정경계는 <a href="https://sgis.kostat.go.kr" target="_blank" rel="noopener noreferrer">통계청 SGIS</a> 공공누리 제1유형 자료를 <a href="https://github.com/vuski/admdongkor" target="_blank" rel="noopener noreferrer">vuski/admdongkor</a>가 가공한 CC BY 4.0 데이터입니다.</small>
       </div>
     </footer>
@@ -156,8 +156,40 @@ const metrics = [
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
     const markerLayer = L.layerGroup().addTo(map);
-    const updateMarkerDensity = () => map.getContainer().classList.toggle('show-complex-values', map.getZoom() >= 16);
-    updateMarkerDensity();
+    let complexMarkerEntries = [];
+
+    const updateComplexLabels = () => {
+      const zoom = map.getZoom();
+      const container = map.getContainer();
+      container.classList.toggle('show-complex-names', zoom >= 14);
+      container.classList.toggle('show-complex-values', zoom >= 16);
+      const labelWidth = zoom >= 16 ? 124 : 108;
+      const labelHeight = zoom >= 16 ? 44 : 34;
+      const occupied = [];
+      complexMarkerEntries
+        .slice()
+        .sort((a, b) => Number(b.apartment.h || 0) - Number(a.apartment.h || 0))
+        .forEach((entry) => {
+          const element = entry.marker.getElement();
+          if (!element) return;
+          const point = map.latLngToContainerPoint(entry.marker.getLatLng());
+          const rect = {
+            left: point.x - labelWidth / 2,
+            right: point.x + labelWidth / 2,
+            top: point.y - labelHeight / 2,
+            bottom: point.y + labelHeight / 2
+          };
+          const visible = zoom >= 14 && !occupied.some((placed) => !(
+            rect.right + 4 < placed.left
+            || rect.left - 4 > placed.right
+            || rect.bottom + 4 < placed.top
+            || rect.top - 4 > placed.bottom
+          ));
+          element.classList.toggle('label-visible', visible);
+          if (visible) occupied.push(rect);
+        });
+    };
+    updateComplexLabels();
 
     let apartments = [];
     let activeMetric = 'tf';
@@ -165,6 +197,7 @@ const metrics = [
     let activeProvince = '';
     let activeDistrict = '';
     let activeDong = '';
+    let mapCoordinateStatus = '';
     let inputTimer;
 
     const escapeHtml = (value) => String(value ?? '')
@@ -240,6 +273,8 @@ const metrics = [
 
     const renderProvinceMarkers = (items, fitMap = false) => {
       markerLayer.clearLayers();
+      complexMarkerEntries = [];
+      mapCoordinateStatus = '';
       const regionCounts = new Map();
       items.forEach((item) => {
         const group = regionCounts.get(item.sd) || [];
@@ -259,6 +294,8 @@ const metrics = [
 
     const renderDistrictMarkers = (items, fitMap = false) => {
       markerLayer.clearLayers();
+      complexMarkerEntries = [];
+      mapCoordinateStatus = '';
       const groups = new Map();
       items.forEach((item) => {
         const key = districtKey(item.sd, item.sg);
@@ -287,6 +324,8 @@ const metrics = [
 
     const renderDongMarkers = (items, fitMap = false) => {
       markerLayer.clearLayers();
+      complexMarkerEntries = [];
+      mapCoordinateStatus = '';
       const district = districtCenters.get(activeDistrict);
       if (!district) return;
       const dongCenters = new Map();
@@ -345,29 +384,22 @@ const metrics = [
 
     const renderApartmentMarkers = (items, fitMap = false) => {
       markerLayer.clearLayers();
-      const district = districtCenters.get(activeDistrict);
-      const dongCenter = district?.dongs.find((dong) => normalizeDong(dong.name) === normalizeDong(activeDong));
+      complexMarkerEntries = [];
       const bounds = [];
-      let fallbackIndex = 0;
+      let missingCoordinates = 0;
       items.forEach((apartment) => {
-        let latitude = Number(apartment.la);
-        let longitude = Number(apartment.lo);
-        let approximate = false;
+        const latitude = Number(apartment.la);
+        const longitude = Number(apartment.lo);
         if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-          if (!dongCenter) return;
-          const angle = (fallbackIndex * 137.5 * Math.PI) / 180;
-          const radius = 0.0012 + Math.floor(fallbackIndex / 8) * 0.0005;
-          latitude = dongCenter.latitude + Math.sin(angle) * radius;
-          longitude = dongCenter.longitude + Math.cos(angle) * radius;
-          approximate = true;
-          fallbackIndex += 1;
+          missingCoordinates += 1;
+          return;
         }
         const percentile = percentileFor(items, apartment);
         const band = bandFor(percentile);
         const value = Number(apartment[activeMetric] || 0);
         const icon = L.divIcon({
           className: 'complex-marker-wrap',
-          html: `<div class="complex-marker ${band}${approximate ? ' approximate' : ''}"><strong>${value ? `${formatNumber(value)}원` : '미공개'}</strong></div>`,
+          html: `<div class="complex-marker ${band}"><span>${escapeHtml(apartment.n)}</span><strong>${value ? `${formatNumber(value)}원/㎡` : '관리비 미공개'}</strong></div>`,
           iconSize: [20, 20],
           iconAnchor: [10, 10]
         });
@@ -376,48 +408,34 @@ const metrics = [
           title: `${apartment.n} · ${formatWon(value)}/㎡`,
           keyboard: true,
           riseOnHover: true
-        }).on('click', () => selectApartment(apartment.s)).addTo(markerLayer);
+        })
+          .on('click', () => selectApartment(apartment.s))
+          .on('mouseover', () => marker.getElement()?.classList.add('label-hover'))
+          .on('mouseout', () => marker.getElement()?.classList.remove('label-hover'))
+          .addTo(markerLayer);
+        complexMarkerEntries.push({ marker, apartment });
         marker.bindTooltip(
-          `<strong>${escapeHtml(apartment.n)}</strong><br>${escapeHtml(apartment.a)}${approximate ? '<br>주소 중심의 임시 위치' : ''}`,
+          `<strong>${escapeHtml(apartment.n)}</strong><br>${escapeHtml(apartment.a)}`,
           { direction: 'top', offset: [0, -13], className: 'complex-tooltip' }
         );
         bounds.push([latitude, longitude]);
       });
       if (fitMap && bounds.length > 1) map.fitBounds(bounds, { padding: [52, 52], maxZoom: 16, animate: true });
       else if (fitMap && bounds.length === 1) map.setView(bounds[0], 16, { animate: true });
-      updateMarkerDensity();
+      mapCoordinateStatus = missingCoordinates ? `지도 ${bounds.length}개 · 좌표 확인 ${missingCoordinates}개` : `지도 ${bounds.length}개`;
+      window.requestAnimationFrame(updateComplexLabels);
     };
 
     const locateApartment = async (apartment, comparison) => {
       markerLayer.clearLayers();
-      const cacheKey = `cjournal-coordinate:${apartment.c}`;
-      let coordinate = Number.isFinite(Number(apartment.la)) && Number.isFinite(Number(apartment.lo))
+      complexMarkerEntries = [];
+      const coordinate = Number.isFinite(Number(apartment.la)) && Number.isFinite(Number(apartment.lo))
         ? { latitude: Number(apartment.la), longitude: Number(apartment.lo) }
         : null;
-      if (!coordinate) {
-        try { coordinate = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch {}
-      }
-      if (!coordinate) {
-        const status = detail?.querySelector('[data-location-status]');
-        if (status) status.textContent = '공개 주소로 지도 위치 확인 중';
-        try {
-          const url = new URL('https://nominatim.openstreetmap.org/search');
-          url.searchParams.set('q', apartment.a);
-          url.searchParams.set('format', 'jsonv2');
-          url.searchParams.set('limit', '1');
-          url.searchParams.set('countrycodes', 'kr');
-          const response = await fetch(url);
-          const [found] = response.ok ? await response.json() : [];
-          if (found) {
-            coordinate = { latitude: Number(found.lat), longitude: Number(found.lon) };
-            localStorage.setItem(cacheKey, JSON.stringify(coordinate));
-          }
-        } catch {}
-      }
       if (selectedSlug !== apartment.s) return;
       const status = detail?.querySelector('[data-location-status]');
       if (!coordinate) {
-        if (status) status.textContent = '주소 좌표를 찾지 못했습니다';
+        if (status) status.textContent = 'K-apt 지도 좌표 확인 중';
         const center = provinceCenters[apartment.sd];
         if (center) map.setView(center, 10);
         return;
@@ -601,7 +619,7 @@ const metrics = [
         searchFeedback.hidden = !hasQuery;
         searchFeedback.textContent = hasQuery ? `${formatNumber(filtered.length)}개 찾음` : '';
       }
-      if (metricLabelNode) metricLabelNode.textContent = `${metricLabel()} 기준`;
+      if (metricLabelNode) metricLabelNode.textContent = `${metricLabel()} 기준${mapCoordinateStatus ? ` · ${mapCoordinateStatus}` : ''}`;
       app?.classList.toggle('empty', navigated.length === 0);
     };
 
@@ -673,7 +691,7 @@ const metrics = [
 
     map.on('zoomend', () => {
       const zoom = map.getZoom();
-      updateMarkerDensity();
+      updateComplexLabels();
       let changed = false;
       if (selectedSlug && zoom < 14) {
         selectedSlug = '';
@@ -719,6 +737,7 @@ const metrics = [
       }
       if (changed) render();
     });
+    map.on('moveend', updateComplexLabels);
 
     fetch(payload.indexUrl)
       .then((response) => {
@@ -791,13 +810,22 @@ const metrics = [
   .apartment-marker strong { font-size: .78rem; }
   .apartment-marker span { position: absolute; top: 46px; left: 50%; min-width: max-content; transform: translateX(-50%); border: 1px solid #d8e0dc; border-radius: 5px; background: #fff; color: #27332d; padding: 4px 7px; font-size: .68rem; font-weight: 800; }
   .complex-marker { position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; display: grid; place-items: center; border: 2px solid #fff; border-radius: 50%; background: var(--band); color: #fff; box-shadow: 0 4px 10px rgba(23, 33, 29, .28); transform: translate(-50%, -50%); transition: width .15s ease, height .15s ease, border-radius .15s ease, box-shadow .15s ease; }
-  .complex-marker::after { display: none; position: absolute; bottom: -5px; left: 50%; width: 7px; height: 7px; border-right: 2px solid #fff; border-bottom: 2px solid #fff; background: var(--band); content: ''; transform: translateX(-50%) rotate(45deg); }
-  .complex-marker strong { position: relative; z-index: 1; display: none; font-size: .65rem; line-height: 1; white-space: nowrap; }
-  .map-canvas.show-complex-values .complex-marker { width: 68px; height: 30px; border-radius: 6px; }
-  .map-canvas.show-complex-values .complex-marker::after,
-  .map-canvas.show-complex-values .complex-marker strong { display: block; }
+  .complex-marker::after { display: none; position: absolute; bottom: -5px; left: 50%; width: 7px; height: 7px; border-right: 1px solid #cfd9d3; border-bottom: 1px solid #cfd9d3; background: #fff; content: ''; transform: translateX(-50%) rotate(45deg); }
+  .complex-marker span, .complex-marker strong { position: relative; z-index: 1; display: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .complex-marker-wrap.label-visible .complex-marker,
+  .complex-marker-wrap.label-hover .complex-marker { width: 108px; height: 34px; align-content: center; justify-items: start; gap: 3px; border: 1px solid #cfd9d3; border-left: 4px solid var(--band); border-radius: 6px; background: #fff; color: var(--ink); padding: 0 8px; box-shadow: 0 6px 16px rgba(23, 33, 29, .22); }
+  .complex-marker-wrap.label-visible .complex-marker::after,
+  .complex-marker-wrap.label-hover .complex-marker::after,
+  .complex-marker-wrap.label-visible .complex-marker span,
+  .complex-marker-wrap.label-hover .complex-marker span { display: block; }
+  .complex-marker span { width: 100%; font-size: .66rem; font-weight: 850; line-height: 1.1; text-align: left; }
+  .complex-marker strong { width: 100%; color: var(--band); font-size: .61rem; line-height: 1; text-align: left; }
+  .map-canvas.show-complex-values .complex-marker-wrap.label-visible .complex-marker,
+  .map-canvas.show-complex-values .complex-marker-wrap.label-hover .complex-marker { width: 124px; height: 44px; }
+  .map-canvas.show-complex-values .complex-marker-wrap.label-visible .complex-marker strong,
+  .map-canvas.show-complex-values .complex-marker-wrap.label-hover .complex-marker strong { display: block; }
   .complex-marker.approximate { border-style: dashed; opacity: .82; }
-  .complex-marker-wrap:hover .complex-marker { z-index: 10; box-shadow: 0 8px 20px rgba(23, 33, 29, .36); }
+  .complex-marker-wrap.label-hover .complex-marker { z-index: 20; box-shadow: 0 9px 24px rgba(23, 33, 29, .32); }
   .complex-tooltip { border: 1px solid #d8e1dc; border-radius: 6px; color: #44514b; font-size: .68rem; line-height: 1.45; box-shadow: 0 7px 18px rgba(23, 33, 29, .14); }
   .complex-tooltip strong { color: var(--ink); font-size: .74rem; }
   .result-area { border-top: 1px solid #e4e9e6; }
