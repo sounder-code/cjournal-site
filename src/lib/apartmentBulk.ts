@@ -6,6 +6,7 @@ export interface ApartmentManifest {
   sourceDate: string;
   latestMonth: string;
   months: string[];
+  index: string;
   stats: Record<string, number>;
   regions: Array<{ key: string; name: string; count: number; withFees: number; file: string }>;
 }

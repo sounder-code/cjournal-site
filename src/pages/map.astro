@@ -1,1490 +1,478 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import 'leaflet/dist/leaflet.css';
-import {
-  apartmentComplexes,
-  apartmentMetrics,
-  apartmentRegions,
-  feeBandLabels,
-  getHouseholdBand,
-  getLatestFee,
-  getTopInsightMetrics
-} from '@/data/apartments';
-import { generatedApartmentComplexes } from '@/data/apartments.generated';
+import { loadApartmentManifest } from '@/lib/apartmentBulk';
+import apartmentCoordinates from '@/data/apartment-coordinates.json';
 
-const isRealData = generatedApartmentComplexes.length > 0;
-
-const mapApartments = apartmentComplexes.map((apartment) => ({
-  slug: apartment.slug,
-  name: apartment.name,
-  region: `${apartment.sido} ${apartment.sigungu}`,
-  sigungu: apartment.sigungu,
-  dong: apartment.dong,
-  address: apartment.address,
-  households: apartment.households,
-  householdBand: getHouseholdBand(apartment.households),
-  approvalYear: apartment.approvalYear,
-  heatingType: apartment.heatingType,
-  managementType: apartment.managementType,
-  latitude: apartment.latitude,
-  longitude: apartment.longitude,
-  peerGroup: apartment.peerGroup,
-  headline: apartment.headline,
-  summary: apartment.summary,
-  percentileByMetric: apartment.percentileByMetric,
-  latestFee: getLatestFee(apartment),
-  topDrivers: getTopInsightMetrics(apartment, 3),
-  monthlyFees: apartment.monthlyFees.map((fee) => ({
-    month: fee.month,
-    totalFeePerM2: fee.totalFeePerM2,
-    commonFeePerM2: fee.commonFeePerM2,
-    securityFee: fee.securityFee,
-    heatingFee: fee.heatingFee,
-    reserveFee: fee.reserveFee
-  })),
-  nearbySlugs: apartment.nearbySlugs
-}));
+const manifest = await loadApartmentManifest();
+const metrics = [
+  { key: 'tf', label: '총 관리비', shortLabel: '총액' },
+  { key: 'cf', label: '공용관리비', shortLabel: '공용' },
+  { key: 'rf', label: '장기수선충당금', shortLabel: '충당금' }
+];
 ---
 <BaseLayout
-  title="우리 단지 관리비 지도 | 바로계산"
-  description="단지명을 찾아 관리비가 비슷한 단지 대비 어느 수준인지 확인합니다."
+  title="전국 아파트 관리비 지도 | 바로계산"
+  description="전국 공동주택을 검색하고 총 관리비, 공용관리비, 장기수선충당금을 지도에서 비교합니다."
   canonical="/map/"
-  robots={isRealData ? 'index, follow' : 'noindex, nofollow'}
+  robots={manifest.stats.complexes > 0 ? 'index, follow' : 'noindex, nofollow'}
 >
-  <section class="fee-map-shell" data-apartment-app>
-    <header class="map-product-head">
+  <section class="map-shell" data-map-app>
+    <header class="product-header">
       <div>
-        <h1>우리 단지 관리비, 어디쯤일까?</h1>
-        <p>총액, 경비비, 난방비, 장기수선충당금을 바꿔보며 주변 단지와 비교합니다.</p>
+        <span>K-apt 전국 공개자료</span>
+        <h1>아파트 관리비 지도</h1>
+        <p>전국 단지를 찾고 공개 주소와 ㎡당 관리비를 한 화면에서 확인합니다.</p>
       </div>
-      <div class="head-actions">
-        <a href="/apartments/">단지 리포트</a>
-      </div>
+      <a href="/apartments/">표로 자세히 보기</a>
     </header>
 
-    <div class="map-filterbar" aria-label="관리비 지도 필터">
-      <label class="global-search">
-        <span aria-hidden="true">⌕</span>
-        <input type="search" data-apartment-search placeholder="단지명이나 동네를 입력하세요" autocomplete="off" />
+    <div class="filter-bar" aria-label="관리비 지도 필터">
+      <label class="search-field">
+        <span>검색</span>
+        <input type="search" data-search placeholder="단지명, 주소, 동 검색" autocomplete="off" />
       </label>
 
-      <div class="metric-tabs" role="list" aria-label="분석 항목">
-        {apartmentMetrics.map((metric) => (
-          <button type="button" data-metric={metric.key} class={metric.key === 'totalFeePerM2' ? 'active' : ''}>
-            {metric.shortLabel}
-          </button>
+      <div class="metric-control" role="list" aria-label="비교 항목">
+        {metrics.map((metric) => (
+          <button type="button" data-metric={metric.key} class={metric.key === 'tf' ? 'active' : ''}>{metric.shortLabel}</button>
         ))}
       </div>
 
-      <label class="select-filter">
+      <label class="select-field">
         <span>지역</span>
-        <select data-region-filter>
-          <option value="all">전체</option>
-          {apartmentRegions.map((region) => <option value={region}>{region}</option>)}
+        <select data-region>
+          <option value="all">전국</option>
+          {manifest.regions.map((region) => <option value={region.name}>{region.name}</option>)}
         </select>
       </label>
 
-      <label class="select-filter">
+      <label class="select-field">
         <span>세대수</span>
-        <select data-household-filter>
+        <select data-households>
           <option value="all">전체</option>
-          <option value="300~499세대">300~499</option>
-          <option value="500~999세대">500~999</option>
-          <option value="1000~1499세대">1000~1499</option>
-          <option value="1500세대 이상">1500+</option>
+          <option value="under-300">300 미만</option>
+          <option value="300-499">300~499</option>
+          <option value="500-999">500~999</option>
+          <option value="1000-1499">1,000~1,499</option>
+          <option value="over-1500">1,500 이상</option>
         </select>
       </label>
 
-      <button type="button" class="reset-button" data-map-reset>초기화</button>
+      <button type="button" class="reset-button" data-reset>초기화</button>
     </div>
 
-    <section class="map-app">
-      <div class="map-stage">
-        <div class="map-toolbar">
-          <div>
-            <strong data-map-count>{apartmentComplexes.length}개 단지</strong>
-            <span data-active-metric>총 관리비 기준</span>
-          </div>
-          <div class="legend" aria-label="마커 색상 설명">
+    <div class="workspace">
+      <section class="map-pane">
+        <div class="map-status">
+          <div><strong data-count>전국 데이터를 불러오는 중</strong><span data-metric-label>총 관리비 기준</span></div>
+          <div class="legend" aria-label="비교 수준 범례">
             <span><i class="low"></i>낮음</span>
             <span><i class="average"></i>평균권</span>
             <span><i class="high"></i>높음</span>
             <span><i class="very-high"></i>매우 높음</span>
           </div>
         </div>
-
-        <div class="map-canvas" id="apartment-real-map" aria-label="종로구 아파트 관리비 지도"></div>
-
-        <div class="nearby-table">
-          <div class="table-head">
-            <strong>비슷한 단지</strong>
-            <span>선택한 항목이 높은 순</span>
-          </div>
-          <div class="nearby-strip" data-result-list aria-label="검색 결과 단지"></div>
+        <div id="apartment-map" class="map-canvas" aria-label="전국 아파트 관리비 지도"></div>
+        <div class="result-area">
+          <div class="result-heading"><strong>검색 결과</strong><span>조건에 맞는 단지 중 최대 6개</span></div>
+          <div class="result-list" data-results aria-live="polite"></div>
         </div>
-      </div>
+      </section>
 
-      <aside class="detail-panel" data-detail-panel aria-label="선택 단지 요약"></aside>
-    </section>
+      <aside class="detail-pane" data-detail aria-label="선택 단지 정보">
+        <div class="empty-detail">
+          <span>단지 선택</span>
+          <strong>지역을 고르거나 단지를 검색하세요</strong>
+          <p>시도 마커를 누르면 해당 지역으로 좁혀집니다. 검색 결과에서 단지를 선택하면 공개 주소 기준 위치와 관리비를 표시합니다.</p>
+        </div>
+      </aside>
+    </div>
 
-    <section class="next-build">
+    <footer class="source-note">
       <strong>데이터 기준</strong>
-      <p>{isRealData ? '국토교통부 공동주택관리정보 공개자료를 ㎡당 금액으로 환산해 비교합니다.' : '현재 화면은 기능 검증용 데이터입니다.'}</p>
-    </section>
+      <p>국토교통부 공동주택관리정보시스템(K-apt) 일괄 공개자료 · 원본 {manifest.sourceDate} · 최신 관리비 {manifest.latestMonth}</p>
+    </footer>
   </section>
 
-  <script is:inline type="application/json" id="apartment-map-data" set:html={JSON.stringify({
-    apartments: mapApartments,
-    metrics: apartmentMetrics,
-    bandLabels: feeBandLabels
+  <script is:inline type="application/json" id="map-payload" set:html={JSON.stringify({
+    indexUrl: manifest.index,
+    metrics,
+    coordinates: apartmentCoordinates
   })} />
 
   <script>
     // @ts-nocheck
     import L from 'leaflet';
-    {
-      const dataNode = document.getElementById('apartment-map-data');
-      const payload = JSON.parse(dataNode?.textContent || '{"apartments":[],"metrics":[]}');
-      const apartments = payload.apartments;
-      const metrics = payload.metrics;
-      const bandLabels = payload.bandLabels;
 
-      const app = document.querySelector('[data-apartment-app]');
-      const mapNode = document.querySelector('#apartment-real-map');
-      const detailPanel = document.querySelector('[data-detail-panel]');
-      const resultList = document.querySelector('[data-result-list]');
-      const searchInput = document.querySelector('[data-apartment-search]');
-      const metricButtons = [...document.querySelectorAll('[data-metric]')];
-      const regionFilter = document.querySelector('[data-region-filter]');
-      const householdFilter = document.querySelector('[data-household-filter]');
-      const resetButton = document.querySelector('[data-map-reset]');
-      const countNode = document.querySelector('[data-map-count]');
-      const activeMetricNode = document.querySelector('[data-active-metric]');
-      const initialSlug = new URLSearchParams(window.location.search).get('apt');
+    const payload = JSON.parse(document.querySelector('#map-payload')?.textContent || '{}');
+    const app = document.querySelector('[data-map-app]');
+    const search = app?.querySelector('[data-search]');
+    const region = app?.querySelector('[data-region]');
+    const households = app?.querySelector('[data-households]');
+    const reset = app?.querySelector('[data-reset]');
+    const count = app?.querySelector('[data-count]');
+    const metricLabelNode = app?.querySelector('[data-metric-label]');
+    const results = app?.querySelector('[data-results]');
+    const detail = app?.querySelector('[data-detail]');
+    const metricButtons = [...(app?.querySelectorAll('[data-metric]') || [])];
+    const initialSlug = new URLSearchParams(window.location.search).get('apt') || '';
 
-      const locatedApartments = apartments.filter((apartment) =>
-        Number.isFinite(apartment.latitude) && Number.isFinite(apartment.longitude)
-      );
-      const initialCenter = locatedApartments.length
-        ? [
-            locatedApartments.reduce((sum, apartment) => sum + apartment.latitude, 0) / locatedApartments.length,
-            locatedApartments.reduce((sum, apartment) => sum + apartment.longitude, 0) / locatedApartments.length
-          ]
-        : [37.573, 126.989];
-      const realMap = L.map(mapNode, { zoomControl: true, attributionControl: true }).setView(initialCenter, 14);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(realMap);
-      const markerLayer = L.layerGroup().addTo(realMap);
+    const provinceCenters = {
+      '서울특별시': [37.5665, 126.978],
+      '부산광역시': [35.1796, 129.0756],
+      '대구광역시': [35.8714, 128.6014],
+      '인천광역시': [37.4563, 126.7052],
+      '광주광역시': [35.1595, 126.8526],
+      '대전광역시': [36.3504, 127.3845],
+      '울산광역시': [35.5384, 129.3114],
+      '세종특별자치시': [36.48, 127.289],
+      '경기도': [37.4138, 127.5183],
+      '강원특별자치도': [37.8228, 128.1555],
+      '충청북도': [36.6357, 127.4917],
+      '충청남도': [36.5184, 126.8],
+      '전북특별자치도': [35.7175, 127.153],
+      '전라남도': [34.8679, 126.991],
+      '경상북도': [36.4919, 128.8889],
+      '경상남도': [35.4606, 128.2132],
+      '제주특별자치도': [33.4996, 126.5312]
+    };
 
-      let activeMetric = 'totalFeePerM2';
-      let selectedSlug = apartments.some((apartment) => apartment.slug === initialSlug)
-        ? initialSlug
-        : apartments[0]?.slug;
+    const map = L.map('apartment-map', { zoomControl: true, attributionControl: true }).setView([36.35, 127.85], 7);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    const markerLayer = L.layerGroup().addTo(map);
 
-      const metricLabel = (key) => metrics.find((metric) => metric.key === key)?.label || '총 관리비';
-      const formatWon = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`;
-      const bandFor = (percentile) => {
-        if (percentile >= 85) return 'very-high';
-        if (percentile >= 65) return 'high';
-        if (percentile <= 35) return 'low';
-        return 'average';
-      };
+    let apartments = [];
+    let activeMetric = 'tf';
+    let selectedSlug = initialSlug;
+    let inputTimer;
 
-      const getFilteredApartments = () => {
-        const query = (searchInput?.value || '').trim().toLowerCase();
-        const region = regionFilter?.value || 'all';
-        const household = householdFilter?.value || 'all';
+    const escapeHtml = (value) => String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+    const formatNumber = (value) => Number(value || 0).toLocaleString('ko-KR');
+    const formatWon = (value) => Number(value) > 0 ? `${formatNumber(value)}원` : '미공개';
+    const metricLabel = () => payload.metrics.find((metric) => metric.key === activeMetric)?.label || '총 관리비';
+    const householdBand = (value) => value < 300 ? 'under-300' : value < 500 ? '300-499' : value < 1000 ? '500-999' : value < 1500 ? '1000-1499' : 'over-1500';
+    const bandFor = (percentile) => percentile >= 85 ? 'very-high' : percentile >= 65 ? 'high' : percentile <= 35 ? 'low' : 'average';
+    const bandLabel = (band) => ({ low: '낮은 편', average: '평균권', high: '높은 편', 'very-high': '매우 높음' })[band];
 
-        return apartments.filter((apartment) => {
-          const haystack = [
-            apartment.name,
-            apartment.region,
-            apartment.sigungu,
-            apartment.dong,
-            apartment.address,
-            apartment.heatingType,
-            apartment.headline
-          ]
-            .join(' ')
-            .toLowerCase();
-          return (
-            (!query || haystack.includes(query)) &&
-            (region === 'all' || apartment.region === region) &&
-            (household === 'all' || apartment.householdBand === household)
-          );
+    const filteredApartments = () => {
+      const query = (search?.value || '').trim().toLowerCase();
+      const selectedRegion = region?.value || 'all';
+      const selectedHouseholds = households?.value || 'all';
+      return apartments.filter((item) => {
+        const text = `${item.n} ${item.sd} ${item.sg} ${item.d} ${item.a}`.toLowerCase();
+        return (!query || text.includes(query))
+          && (selectedRegion === 'all' || item.sd === selectedRegion)
+          && (selectedHouseholds === 'all' || householdBand(Number(item.h || 0)) === selectedHouseholds);
+      });
+    };
+
+    const percentileFor = (items, apartment) => {
+      const values = items.map((item) => Number(item[activeMetric] || 0)).filter((value) => value > 0).sort((a, b) => a - b);
+      const value = Number(apartment?.[activeMetric] || 0);
+      if (!value || values.length < 2) return 50;
+      let low = 0;
+      let high = values.length;
+      while (low < high) {
+        const middle = Math.floor((low + high) / 2);
+        if (values[middle] <= value) low = middle + 1;
+        else high = middle;
+      }
+      return Math.max(1, Math.min(99, Math.round((low / values.length) * 100)));
+    };
+
+    const renderRegionMarkers = (items) => {
+      markerLayer.clearLayers();
+      const regionCounts = new Map();
+      items.forEach((item) => regionCounts.set(item.sd, (regionCounts.get(item.sd) || 0) + 1));
+      const bounds = [];
+      for (const [name, regionCount] of regionCounts) {
+        const coordinate = provinceCenters[name];
+        if (!coordinate) continue;
+        const icon = L.divIcon({
+          className: 'province-marker-wrap',
+          html: `<div class="province-marker"><strong>${formatNumber(regionCount)}</strong><span>${escapeHtml(name)}</span></div>`,
+          iconSize: [64, 64],
+          iconAnchor: [32, 32]
         });
-      };
-
-      const sparkline = (fees) => {
-        const values = fees.map((fee) => fee.totalFeePerM2);
-        const min = Math.min(...values);
-        const max = Math.max(...values);
-        const width = 240;
-        const height = 70;
-        const points = values
-          .map((value, index) => {
-            const x = (index / Math.max(values.length - 1, 1)) * width;
-            const y = height - ((value - min) / Math.max(max - min, 1)) * (height - 8) - 4;
-            return `${x.toFixed(1)},${y.toFixed(1)}`;
+        L.marker(coordinate, { icon, title: `${name} ${formatNumber(regionCount)}개 단지`, keyboard: true })
+          .on('click', () => {
+            region.value = name;
+            selectedSlug = '';
+            render();
           })
-          .join(' ');
-        return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="최근 12개월 총 관리비 추이"><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" /></svg>`;
-      };
+          .addTo(markerLayer);
+        bounds.push(coordinate);
+      }
+      if (bounds.length > 1) map.fitBounds(bounds, { padding: [38, 38], maxZoom: 8 });
+      else if (bounds.length === 1) map.setView(bounds[0], 10);
+    };
 
-      const selectApartment = (slug) => {
-        selectedSlug = slug;
-        render();
-      };
+    const locateApartment = async (apartment, comparison) => {
+      markerLayer.clearLayers();
+      const cacheKey = `cjournal-coordinate:${apartment.c}`;
+      let coordinate = payload.coordinates?.[apartment.c];
+      if (!coordinate) {
+        try { coordinate = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch {}
+      }
+      if (!coordinate) {
+        const status = detail?.querySelector('[data-location-status]');
+        if (status) status.textContent = '공개 주소로 지도 위치 확인 중';
+        try {
+          const url = new URL('https://nominatim.openstreetmap.org/search');
+          url.searchParams.set('q', apartment.a);
+          url.searchParams.set('format', 'jsonv2');
+          url.searchParams.set('limit', '1');
+          url.searchParams.set('countrycodes', 'kr');
+          const response = await fetch(url);
+          const [found] = response.ok ? await response.json() : [];
+          if (found) {
+            coordinate = { latitude: Number(found.lat), longitude: Number(found.lon) };
+            localStorage.setItem(cacheKey, JSON.stringify(coordinate));
+          }
+        } catch {}
+      }
+      if (selectedSlug !== apartment.s) return;
+      const status = detail?.querySelector('[data-location-status]');
+      if (!coordinate) {
+        if (status) status.textContent = '주소 좌표를 찾지 못했습니다';
+        const center = provinceCenters[apartment.sd];
+        if (center) map.setView(center, 10);
+        return;
+      }
+      if (status) status.textContent = '공개 주소 기준 위치';
+      const percentile = percentileFor(comparison, apartment);
+      const band = bandFor(percentile);
+      const icon = L.divIcon({
+        className: 'apartment-marker-wrap',
+        html: `<div class="apartment-marker ${band}"><strong>${percentile}</strong><span>${escapeHtml(apartment.n)}</span></div>`,
+        iconSize: [42, 42],
+        iconAnchor: [21, 21]
+      });
+      L.marker([coordinate.latitude, coordinate.longitude], { icon, title: apartment.n, keyboard: true }).addTo(markerLayer);
+      map.setView([coordinate.latitude, coordinate.longitude], 16);
+    };
 
-      const renderMarkers = (filtered) => {
-        markerLayer.clearLayers();
-        const bounds = [];
-        filtered
-          .filter((apartment) => Number.isFinite(apartment.latitude) && Number.isFinite(apartment.longitude))
-          .forEach((apartment) => {
-          const percentile = apartment.percentileByMetric[activeMetric];
-          const band = bandFor(percentile);
-          const selected = apartment.slug === selectedSlug ? ' selected' : '';
-          const icon = L.divIcon({
-            className: 'apartment-marker-wrap',
-            html: `<div class="map-marker ${band}${selected}"><strong>${percentile}</strong><span>${apartment.name}</span></div>`,
-            iconSize: [38, 38],
-            iconAnchor: [19, 19]
-          });
-          const coordinate = [apartment.latitude, apartment.longitude];
-          L.marker(coordinate, {
-            icon,
-            title: `${apartment.name} · ${metricLabel(activeMetric)} 백분위 ${percentile}`,
-            keyboard: true
-          }).on('click', () => selectApartment(apartment.slug)).addTo(markerLayer);
-          bounds.push(coordinate);
-        });
-        if (bounds.length > 1) realMap.fitBounds(bounds, { padding: [42, 42], maxZoom: 15 });
-        else if (bounds.length === 1) realMap.setView(bounds[0], 16);
-      };
-
-      const renderResultList = (filtered) => {
-        resultList.replaceChildren();
-        filtered
-          .slice()
-          .sort((a, b) => b.percentileByMetric[activeMetric] - a.percentileByMetric[activeMetric])
-          .forEach((apartment) => {
-            const button = document.createElement('button');
-            const percentile = apartment.percentileByMetric[activeMetric];
-            const band = bandFor(percentile);
-            const fee = apartment.latestFee[activeMetric] || apartment.latestFee.totalFeePerM2;
-            button.type = 'button';
-            button.className = `result-card ${band}`;
-            button.classList.toggle('selected', apartment.slug === selectedSlug);
-            button.innerHTML = `
-              <i aria-hidden="true"></i>
-              <span>${apartment.region}</span>
-              <strong>${apartment.name}</strong>
-              <small>${apartment.heatingType} · ${apartment.households.toLocaleString('ko-KR')}세대</small>
-              <b>${percentile}p</b>
-              <em>${formatWon(fee)}/m2</em>
-            `;
-            button.addEventListener('click', () => selectApartment(apartment.slug));
-            resultList.append(button);
-          });
-      };
-
-      const renderDetail = () => {
-        const apartment = apartments.find((item) => item.slug === selectedSlug) || apartments[0];
-        if (!apartment) return;
-        const percentile = apartment.percentileByMetric[activeMetric];
+    const renderResults = (items) => {
+      if (!results) return;
+      const hasQuery = Boolean((search?.value || '').trim());
+      const rows = items.slice().sort((a, b) => hasQuery
+        ? a.n.localeCompare(b.n, 'ko')
+        : Number(b.q || 0) - Number(a.q || 0) || Number(b.h || 0) - Number(a.h || 0) || a.n.localeCompare(b.n, 'ko'))
+        .slice(0, 6);
+      if (!rows.length) {
+        results.innerHTML = '<p class="empty-result">조건에 맞는 단지가 없습니다.</p>';
+        return;
+      }
+      results.innerHTML = rows.map((item) => {
+        const percentile = percentileFor(items, item);
         const band = bandFor(percentile);
-        const latest = apartment.latestFee;
-        const activeFee = latest[activeMetric] || latest.totalFeePerM2;
-        const drivers = apartment.topDrivers
-          .map(
-            (driver) => `<li><span>${driver.label}</span><strong>백분위 ${driver.percentile}</strong><i style="width:${driver.percentile}%"></i></li>`
-          )
-          .join('');
-        const nearby = apartment.nearbySlugs
-          .map((slug) => apartments.find((item) => item.slug === slug))
-          .filter(Boolean)
-          .map(
-            (item) => `<button type="button" data-nearby="${item.slug}"><span>${item.sigungu}</span><strong>${item.name}</strong></button>`
-          )
-          .join('');
-
-        detailPanel.innerHTML = `
-          <div class="detail-title-row">
-            <button type="button" aria-label="즐겨찾기">☆</button>
-            <div>
-              <span>${apartment.region} · ${apartment.heatingType}</span>
-              <h2>${apartment.name}</h2>
-              <p>${apartment.address}</p>
-            </div>
-          </div>
-
-          <div class="score-card ${band}">
-            <section>
-              <span>${metricLabel(activeMetric)} 수준</span>
-              <strong>${bandLabels[band]}</strong>
-              <p>비슷한 단지 중 백분위 ${percentile}</p>
-            </section>
-            <section>
-              <span>기준월 금액</span>
-              <strong>${formatWon(activeFee)}</strong>
-              <p>m2당 기준 금액</p>
-            </section>
-          </div>
-
-          <div class="summary-box">
-            <strong>${apartment.headline}</strong>
-            <p>${apartment.summary}</p>
-          </div>
-          <dl class="fact-grid">
-            <div><dt>세대수</dt><dd>${apartment.households.toLocaleString('ko-KR')}세대</dd></div>
-            <div><dt>준공</dt><dd>${apartment.approvalYear}년</dd></div>
-            <div><dt>관리방식</dt><dd>${apartment.managementType}</dd></div>
-            <div><dt>기준월 총액</dt><dd>${formatWon(latest.totalFeePerM2)}/m2</dd></div>
-          </dl>
-          <div class="trend-box">
-            <div><strong>최근 12개월</strong><span>${formatWon(apartment.monthlyFees[0].totalFeePerM2)} → ${formatWon(latest.totalFeePerM2)}</span></div>
-            ${sparkline(apartment.monthlyFees)}
-          </div>
-          <div class="driver-box">
-            <strong>높게 보는 항목</strong>
-            <ul>${drivers}</ul>
-          </div>
-          <div class="nearby-box">
-            <strong>가까운 비교 단지</strong>
-            ${nearby}
-          </div>
-          <a class="report-link" href="/apartments/${apartment.slug}/">리포트 자세히 보기</a>
-        `;
-        detailPanel.querySelectorAll('[data-nearby]').forEach((button) => {
-          button.addEventListener('click', () => selectApartment(button.dataset.nearby));
-        });
-      };
-
-      const render = () => {
-        const filtered = getFilteredApartments();
-        if (!filtered.some((apartment) => apartment.slug === selectedSlug)) {
-          selectedSlug = filtered[0]?.slug || apartments[0]?.slug;
-        }
-        renderMarkers(filtered);
-        renderResultList(filtered);
-        renderDetail();
-        if (countNode) countNode.textContent = `${filtered.length}개 단지`;
-        if (activeMetricNode) activeMetricNode.textContent = `${metricLabel(activeMetric)} 기준`;
-        app?.classList.toggle('is-empty', filtered.length === 0);
-      };
-
-      searchInput?.addEventListener('input', render);
-      regionFilter?.addEventListener('change', render);
-      householdFilter?.addEventListener('change', render);
-      metricButtons.forEach((button) => {
-        button.addEventListener('click', () => {
-          activeMetric = button.dataset.metric || 'totalFeePerM2';
-          metricButtons.forEach((item) => item.classList.toggle('active', item === button));
-          render();
-        });
+        return `<button type="button" class="result-card ${band}${item.s === selectedSlug ? ' selected' : ''}" data-slug="${escapeHtml(item.s)}">
+          <i aria-hidden="true"></i>
+          <span>${escapeHtml(item.sd)} ${escapeHtml(item.sg)}</span>
+          <strong>${escapeHtml(item.n)}</strong>
+          <small>${escapeHtml(item.ht || '난방 미확인')} · ${formatNumber(item.h)}세대</small>
+          <b>${percentile}p</b>
+          <em>${formatWon(item[activeMetric])}/㎡</em>
+        </button>`;
+      }).join('');
+      results.querySelectorAll('[data-slug]').forEach((button) => {
+        button.addEventListener('click', () => selectApartment(button.dataset.slug));
       });
-      resetButton?.addEventListener('click', () => {
-        if (searchInput) searchInput.value = '';
-        if (regionFilter) regionFilter.value = 'all';
-        if (householdFilter) householdFilter.value = 'all';
-        activeMetric = 'totalFeePerM2';
-        metricButtons.forEach((item) => item.classList.toggle('active', item.dataset.metric === activeMetric));
-        render();
-      });
+    };
 
+    const renderDetail = (apartment, comparison) => {
+      if (!detail) return;
+      const percentile = percentileFor(comparison, apartment);
+      const band = bandFor(percentile);
+      detail.innerHTML = `
+        <div class="detail-head">
+          <span>${escapeHtml(apartment.sd)} ${escapeHtml(apartment.sg)} · ${escapeHtml(apartment.ht || '난방 미확인')}</span>
+          <h2>${escapeHtml(apartment.n)}</h2>
+          <p>${escapeHtml(apartment.a)}</p>
+          <small data-location-status>지도 위치 준비 중</small>
+        </div>
+        <div class="score-box ${band}">
+          <section><span>${metricLabel()} 수준</span><strong>${bandLabel(band)}</strong><p>현재 검색 조건에서 백분위 ${percentile}</p></section>
+          <section><span>기준월 금액</span><strong>${formatWon(apartment[activeMetric])}</strong><p>관리비부과면적 ㎡당</p></section>
+        </div>
+        <p class="comparison-note">${escapeHtml(apartment.sg)} 공개 단지와 비교한 참고값입니다. 세대별 실제 청구액은 전용면적과 사용량에 따라 달라집니다.</p>
+        <dl class="facts">
+          <div><dt>세대수</dt><dd>${formatNumber(apartment.h)}세대</dd></div>
+          <div><dt>사용승인</dt><dd>${apartment.y ? `${apartment.y}년` : '미확인'}</dd></div>
+          <div><dt>관리방식</dt><dd>${escapeHtml(apartment.mt || '미확인')}</dd></div>
+          <div><dt>기준월</dt><dd>${escapeHtml(apartment.lm || '미공개')}</dd></div>
+          <div><dt>총 관리비</dt><dd>${formatWon(apartment.tf)}/㎡</dd></div>
+          <div><dt>공용관리비</dt><dd>${formatWon(apartment.cf)}/㎡</dd></div>
+          <div><dt>장기수선충당금</dt><dd>${formatWon(apartment.rf)}/㎡</dd></div>
+          <div><dt>관리비 부과면적</dt><dd>${formatNumber(apartment.ma)}㎡</dd></div>
+        </dl>
+        ${apartment.q === 1
+          ? `<a class="report-link" href="/apartments/${encodeURIComponent(apartment.s)}/">월별 관리비 리포트</a>`
+          : '<p class="report-unavailable">공개월이 부족해 상세 리포트는 제공하지 않습니다.</p>'}
+      `;
+      locateApartment(apartment, comparison);
+    };
+
+    const selectApartment = (slug) => {
+      selectedSlug = slug;
+      const url = new URL(window.location.href);
+      url.searchParams.set('apt', slug);
+      history.replaceState({}, '', url);
       render();
-    }
+    };
+
+    const render = () => {
+      const filtered = filteredApartments();
+      const selected = apartments.find((item) => item.s === selectedSlug);
+      if (selected) renderDetail(selected, filtered.length ? filtered : apartments);
+      else renderRegionMarkers(filtered);
+      renderResults(filtered);
+      if (count) count.textContent = `${formatNumber(filtered.length)}개 단지`;
+      if (metricLabelNode) metricLabelNode.textContent = `${metricLabel()} 기준`;
+      app?.classList.toggle('empty', filtered.length === 0);
+    };
+
+    search?.addEventListener('input', () => {
+      window.clearTimeout(inputTimer);
+      inputTimer = window.setTimeout(() => { selectedSlug = ''; render(); }, 120);
+    });
+    region?.addEventListener('change', () => { selectedSlug = ''; render(); });
+    households?.addEventListener('change', () => { selectedSlug = ''; render(); });
+    metricButtons.forEach((button) => button.addEventListener('click', () => {
+      activeMetric = button.dataset.metric || 'tf';
+      metricButtons.forEach((item) => item.classList.toggle('active', item === button));
+      render();
+    }));
+    reset?.addEventListener('click', () => {
+      search.value = '';
+      region.value = 'all';
+      households.value = 'all';
+      selectedSlug = '';
+      activeMetric = 'tf';
+      metricButtons.forEach((item) => item.classList.toggle('active', item.dataset.metric === 'tf'));
+      history.replaceState({}, '', window.location.pathname);
+      render();
+    });
+
+    fetch(payload.indexUrl)
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((data) => {
+        apartments = Array.isArray(data) ? data : [];
+        if (selectedSlug && !apartments.some((item) => item.s === selectedSlug)) selectedSlug = '';
+        render();
+      })
+      .catch(() => {
+        if (count) count.textContent = '전국 데이터를 불러오지 못했습니다';
+        if (results) results.innerHTML = '<p class="empty-result">잠시 후 다시 시도해 주세요.</p>';
+      });
   </script>
 </BaseLayout>
 
 <style is:global>
-  .main-content:has(.fee-map-shell) {
-    width: min(1540px, calc(100vw - 28px));
-    padding-top: 14px;
-  }
-  .fee-map-shell {
-    --map-line: #dfe7e3;
-    --map-soft: #f4f8f6;
-    --map-green: #008f73;
-    --map-ink: #17211d;
-    display: grid;
-    gap: 12px;
-  }
-  .map-product-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    min-height: 56px;
-  }
-  .map-product-head h1 {
-    margin: 0;
-    color: var(--map-ink);
-    font: 750 1.65rem/1.1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-    letter-spacing: 0;
-  }
-  .map-product-head p {
-    margin: 5px 0 0;
-    color: #5d6964;
-    font: 750 0.9rem/1.35 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .head-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #6a7771;
-    font: 650 0.78rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-    white-space: nowrap;
-  }
-  .head-actions a,
-  .report-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 38px;
-    border-radius: 8px;
-    background: #08765c;
-    color: #fff;
-    text-decoration: none;
-    padding: 0 14px;
-    font: 750 0.86rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .map-filterbar {
-    display: grid;
-    grid-template-columns: minmax(260px, 1.5fr) minmax(340px, 2.2fr) 145px 126px auto;
-    gap: 8px;
-    align-items: center;
-    border: 1px solid var(--map-line);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.98);
-    padding: 10px;
-    box-shadow: 0 10px 26px rgba(23, 33, 29, 0.06);
-  }
-  .global-search {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 42px;
-    border: 1px solid #d7e2dd;
-    border-radius: 8px;
-    background: #fff;
-    padding: 0 12px;
-  }
-  .global-search span {
-    color: #6b7772;
-    font: 750 1.25rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .global-search input,
-  .select-filter select {
-    width: 100%;
-    border: 0;
-    background: transparent;
-    color: var(--map-ink);
-    font: 650 0.9rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-    outline: 0;
-  }
-  .metric-tabs {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 5px;
-  }
-  .metric-tabs button,
-  .reset-button,
-  .result-card,
-  .nearby-box button,
-  .detail-title-row button {
-    border: 1px solid #d8e3de;
-    border-radius: 8px;
-    background: #fff;
-    color: var(--map-ink);
-    cursor: pointer;
-    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .metric-tabs button {
-    min-height: 42px;
-    padding: 0 6px;
-    font: 750 0.78rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .metric-tabs button.active {
-    border-color: rgba(0, 143, 115, 0.42);
-    background: #e8f7f2;
-    color: #006d58;
-    box-shadow: inset 0 0 0 1px rgba(0, 143, 115, 0.08);
-  }
-  .select-filter {
-    display: grid;
-    gap: 3px;
-    min-height: 42px;
-    border: 1px solid #d8e3de;
-    border-radius: 8px;
-    background: #fff;
-    padding: 6px 10px;
-  }
-  .select-filter span {
-    color: #7a8781;
-    font: 700 0.66rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .reset-button {
-    min-height: 42px;
-    padding: 0 12px;
-    color: #4f5d57;
-    font: 750 0.82rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .map-app {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 384px;
-    gap: 12px;
-    align-items: stretch;
-  }
-  .map-stage,
-  .detail-panel,
-  .next-build {
-    border: 1px solid var(--map-line);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.98);
-    box-shadow: 0 12px 30px rgba(23, 33, 29, 0.07);
-  }
-  .map-stage {
-    display: grid;
-    grid-template-rows: auto minmax(545px, 1fr) auto;
-    overflow: hidden;
-    min-width: 0;
-  }
-  .map-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    min-height: 54px;
-    border-bottom: 1px solid #e0e8e4;
-    padding: 0 14px;
-  }
-  .map-toolbar strong,
-  .table-head strong,
-  .driver-box > strong,
-  .nearby-box > strong,
-  .trend-box strong {
-    color: var(--map-ink);
-    font: 750 0.95rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .map-toolbar span,
-  .table-head span {
-    color: #66736e;
-    font: 800 0.76rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .legend {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    flex-wrap: wrap;
-  }
-  .legend span {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .legend i {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-  }
-  .legend .low { background: #16a172; }
-  .legend .average { background: #75827c; }
-  .legend .high { background: #d38a19; }
-  .legend .very-high { background: #cf4438; }
-  .map-canvas {
-    position: relative;
-    min-height: 545px;
-    overflow: hidden;
-    background:
-      linear-gradient(90deg, rgba(132, 146, 138, 0.15) 1px, transparent 1px),
-      linear-gradient(0deg, rgba(132, 146, 138, 0.15) 1px, transparent 1px),
-      linear-gradient(135deg, rgba(212, 224, 218, 0.38), transparent 42%),
-      #eef4f1;
-    background-size: 48px 48px, 48px 48px, auto, auto;
-  }
-  .map-canvas::before,
-  .map-canvas::after {
-    content: "";
-    position: absolute;
-    inset: auto;
-    pointer-events: none;
-  }
-  .map-canvas::before {
-    left: -10%;
-    top: 22%;
-    width: 120%;
-    height: 16px;
-    transform: rotate(24deg);
-    border-radius: 999px;
-    background: rgba(248, 251, 249, 0.96);
-    box-shadow:
-      0 86px 0 rgba(248, 251, 249, 0.9),
-      0 172px 0 rgba(248, 251, 249, 0.82);
-  }
-  .map-canvas::after {
-    left: 34%;
-    top: -8%;
-    width: 14px;
-    height: 120%;
-    transform: rotate(-2deg);
-    border-radius: 999px;
-    background: rgba(248, 251, 249, 0.94);
-    box-shadow: 190px 0 0 rgba(248, 251, 249, 0.78);
-  }
-  .park {
-    position: absolute;
-    border-radius: 18px;
-    background: rgba(182, 219, 175, 0.4);
-    border: 1px solid rgba(128, 176, 119, 0.25);
-  }
-  .park-a { left: 7%; top: 13%; width: 18%; height: 18%; transform: rotate(-12deg); }
-  .park-b { right: 10%; top: 19%; width: 16%; height: 15%; transform: rotate(16deg); }
-  .river {
-    position: absolute;
-    left: -8%;
-    right: -8%;
-    top: 58%;
-    height: 86px;
-    transform: rotate(-8deg);
-    background: linear-gradient(90deg, rgba(120, 184, 215, 0.4), rgba(91, 166, 204, 0.25));
-    border-top: 1px solid rgba(74, 139, 175, 0.25);
-    border-bottom: 1px solid rgba(74, 139, 175, 0.25);
-  }
-  .road,
-  .subway {
-    position: absolute;
-    border-radius: 999px;
-    pointer-events: none;
-  }
-  .road {
-    background: rgba(255, 255, 255, 0.92);
-    box-shadow: 0 0 0 1px rgba(174, 188, 181, 0.36);
-  }
-  .road-a { left: 8%; top: 35%; width: 78%; height: 12px; transform: rotate(17deg); }
-  .road-b { left: 25%; top: 73%; width: 70%; height: 12px; transform: rotate(-22deg); }
-  .road-c { left: 50%; top: 13%; width: 12px; height: 74%; }
-  .road-d { left: 2%; top: 18%; width: 52%; height: 9px; transform: rotate(-14deg); }
-  .subway {
-    height: 4px;
-    background: rgba(33, 141, 94, 0.56);
-    box-shadow: 0 0 0 3px rgba(33, 141, 94, 0.08);
-  }
-  .subway-a { left: 10%; top: 25%; width: 68%; transform: rotate(-8deg); }
-  .subway-b { right: 4%; top: 41%; width: 48%; transform: rotate(74deg); }
-  .station,
-  .district {
-    position: absolute;
-    z-index: 1;
-    color: rgba(45, 61, 54, 0.58);
-    font: 750 0.72rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-    pointer-events: none;
-  }
-  .station::before {
-    content: "";
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    margin-right: 4px;
-    border-radius: 999px;
-    background: #fff;
-    border: 2px solid #2c9a6d;
-    vertical-align: -1px;
-  }
-  .station-a { left: 18%; top: 23%; }
-  .station-b { right: 14%; top: 38%; }
-  .station-c { left: 50%; bottom: 15%; }
-  .district {
-    color: rgba(45, 61, 54, 0.35);
-    font-size: 0.78rem;
-  }
-  .district-a { left: 9%; top: 43%; }
-  .district-b { right: 11%; top: 44%; }
-  .district-c { left: 40%; bottom: 8%; }
-  .map-zoom {
-    position: absolute;
-    left: 14px;
-    top: 14px;
-    z-index: 3;
-    display: grid;
-    overflow: hidden;
-    border: 1px solid #d8e3de;
-    border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 8px 20px rgba(23, 33, 29, 0.12);
-  }
-  .map-zoom span {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    color: var(--map-ink);
-    font: 700 1.25rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .map-zoom span + span {
-    border-top: 1px solid #e3ebe7;
-  }
-  .map-marker {
-    position: absolute;
-    z-index: 2;
-    display: grid;
-    place-items: center;
-    width: 38px;
-    height: 38px;
-    transform: translate(-50%, -50%);
-    border: 3px solid #fff;
-    border-radius: 999px;
-    color: #fff;
-    box-shadow: 0 12px 24px rgba(23, 33, 29, 0.22);
-    cursor: pointer;
-    transition: transform 140ms ease, box-shadow 140ms ease;
-  }
-  .map-marker strong {
-    font: 750 0.82rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .map-marker span {
-    position: absolute;
-    top: calc(100% + 5px);
-    left: 50%;
-    transform: translateX(-50%);
-    min-width: max-content;
-    border: 1px solid rgba(206, 218, 212, 0.9);
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.96);
-    color: #293730;
-    padding: 3px 7px;
-    font: 750 0.7rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .map-marker:hover,
-  .map-marker.selected {
-    z-index: 4;
-    transform: translate(-50%, -50%) scale(1.12);
-    box-shadow: 0 16px 30px rgba(23, 33, 29, 0.28);
-  }
-  .map-marker:hover span,
-  .map-marker.selected span {
-    opacity: 1;
-  }
-  .map-marker.low { background: #16a172; }
-  .map-marker.average { background: #697770; }
-  .map-marker.high { background: #d38a19; }
-  .map-marker.very-high { background: #cf4438; }
-  .nearby-table {
-    border-top: 1px solid #e0e8e4;
-    background: #fff;
-  }
-  .table-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 14px 6px;
-  }
-  .nearby-strip {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    padding: 8px 14px 14px;
-  }
-  .result-card {
-    display: grid;
-    grid-template-columns: 10px minmax(0, 1fr) auto;
-    grid-template-areas:
-      "dot region score"
-      "dot name fee"
-      "dot meta fee";
-    gap: 3px 9px;
-    min-height: 74px;
-    padding: 10px;
-    text-align: left;
-  }
-  .result-card i {
-    grid-area: dot;
-    align-self: center;
-    width: 9px;
-    height: 9px;
-    border-radius: 999px;
-    background: #697770;
-  }
-  .result-card.low i { background: #16a172; }
-  .result-card.high i { background: #d38a19; }
-  .result-card.very-high i { background: #cf4438; }
-  .result-card span {
-    grid-area: region;
-    color: #6c7872;
-    font: 650 0.7rem/1.15 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .result-card strong {
-    grid-area: name;
-    min-width: 0;
-    overflow: hidden;
-    color: var(--map-ink);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font: 750 0.86rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .result-card small {
-    grid-area: meta;
-    color: #6c7872;
-    font: 800 0.7rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .result-card b {
-    grid-area: score;
-    color: var(--map-ink);
-    font: 750 0.82rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .result-card em {
-    grid-area: fee;
-    align-self: end;
-    color: #44524b;
-    font: normal 900 0.72rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .result-card.selected {
-    border-color: rgba(0, 143, 115, 0.55);
-    box-shadow: 0 0 0 3px rgba(0, 143, 115, 0.11);
-  }
-  .detail-panel {
-    display: grid;
-    gap: 14px;
-    align-content: start;
-    min-width: 0;
-    padding: 18px;
-  }
-  .detail-title-row {
-    display: grid;
-    grid-template-columns: 34px minmax(0, 1fr);
-    gap: 12px;
-    align-items: start;
-  }
-  .detail-title-row button {
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    color: #a1aaa5;
-    font: 700 1.15rem/1 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .detail-title-row span {
-    color: #08765c;
-    font: 750 0.78rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .detail-title-row h2 {
-    margin: 5px 0 5px;
-    color: var(--map-ink);
-    font: 750 1.32rem/1.22 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-    letter-spacing: 0;
-  }
-  .detail-title-row p,
-  .summary-box p {
-    margin: 0;
-    color: #5f6c66;
-    font: 750 0.84rem/1.52 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .score-card {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    overflow: hidden;
-    border: 1px solid #e0e8e4;
-    border-radius: 8px;
-    background: #fff;
-  }
-  .score-card section {
-    display: grid;
-    gap: 5px;
-    padding: 15px;
-  }
-  .score-card section + section {
-    border-left: 1px solid #e0e8e4;
-  }
-  .score-card span,
-  .score-card p {
-    margin: 0;
-    color: #69756f;
-    font: 650 0.72rem/1.25 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .score-card strong {
-    color: var(--map-ink);
-    font: 750 1.18rem/1.18 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .score-card.low strong { color: #168a61; }
-  .score-card.high strong { color: #b86c11; }
-  .score-card.very-high strong { color: #c23f35; }
-  .summary-box {
-    display: grid;
-    gap: 7px;
-    border: 1px solid #dce8e2;
-    border-radius: 8px;
-    background: #f7faf8;
-    padding: 13px;
-  }
-  .summary-box strong {
-    color: var(--map-ink);
-    font: 750 0.93rem/1.36 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .fact-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin: 0;
-  }
-  .fact-grid div {
-    border: 1px solid #e0e8e4;
-    border-radius: 8px;
-    background: #fff;
-    padding: 10px;
-  }
-  .fact-grid dt {
-    color: #74817b;
-    font: 650 0.7rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .fact-grid dd {
-    margin: 5px 0 0;
-    color: var(--map-ink);
-    font: 750 0.86rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .trend-box,
-  .driver-box,
-  .nearby-box {
-    display: grid;
-    gap: 10px;
-    min-width: 0;
-  }
-  .trend-box > div {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .trend-box span {
-    color: #66736e;
-    font: 650 0.72rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .trend-box svg {
-    width: 100%;
-    height: 74px;
-    color: #08765c;
-    border: 1px solid #e0e8e4;
-    border-radius: 8px;
-    background:
-      linear-gradient(90deg, rgba(115, 129, 123, 0.08) 1px, transparent 1px),
-      linear-gradient(0deg, rgba(115, 129, 123, 0.08) 1px, transparent 1px),
-      #fff;
-    background-size: 32px 32px;
-    padding: 8px;
-  }
-  .driver-box ul {
-    display: grid;
-    gap: 9px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .driver-box li {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 6px 8px;
-    align-items: center;
-  }
-  .driver-box span,
-  .driver-box strong {
-    color: #4f5d57;
-    font: 650 0.76rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .driver-box li i {
-    grid-column: 1 / -1;
-    height: 7px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #16a172, #d38a19, #cf4438);
-  }
-  .nearby-box button {
-    display: grid;
-    gap: 3px;
-    width: 100%;
-    padding: 10px;
-    text-align: left;
-  }
-  .nearby-box button span {
-    color: #74817b;
-    font: 650 0.7rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .nearby-box button strong {
-    color: var(--map-ink);
-    font: 750 0.82rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .report-link {
-    min-height: 44px;
-    width: 100%;
-  }
-  .next-build {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 14px;
-    align-items: center;
-    padding: 12px 14px;
-  }
-  .next-build strong {
-    color: var(--map-ink);
-    font: 750 0.9rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  .next-build p {
-    margin: 0;
-    color: #5f6c66;
-    font: 750 0.82rem/1.5 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  }
-  @media (max-width: 1180px) {
-    .map-filterbar {
-      grid-template-columns: minmax(0, 1fr) 150px 150px 86px;
-    }
-    .global-search { grid-column: 1; }
-    .metric-tabs {
-      grid-column: 1 / -1;
-      grid-row: 2;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-    .map-app {
-      grid-template-columns: 1fr;
-    }
-    .detail-panel {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .detail-title-row,
-    .score-card,
-    .summary-box,
-    .report-link {
-      grid-column: 1 / -1;
-    }
-  }
-  @media (max-width: 760px) {
-    .main-content:has(.fee-map-shell) {
-      width: min(100vw - 20px, 1540px);
-      padding-top: 10px;
-    }
-    .map-product-head,
-    .head-actions,
-    .map-toolbar,
-    .next-build {
-      display: grid;
-      justify-items: start;
-    }
-    .head-actions {
-      white-space: normal;
-    }
-    .map-filterbar { grid-template-columns: 1fr; }
-    .global-search,
-    .metric-tabs { grid-column: 1; grid-row: auto; }
-    .metric-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .map-stage {
-      grid-template-rows: auto minmax(440px, 1fr) auto;
-    }
-    .map-canvas {
-      min-height: 440px;
-    }
-    .nearby-strip,
-    .detail-panel,
-    .score-card,
-    .fact-grid {
-      grid-template-columns: 1fr;
-    }
-    .score-card section + section {
-      border-left: 0;
-      border-top: 1px solid #e0e8e4;
-    }
-  }
-</style>
-
-<style is:global>
-  .fee-map-shell,
-  .fee-map-shell button,
-  .fee-map-shell input,
-  .fee-map-shell select {
-    font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Segoe UI', sans-serif;
-    letter-spacing: 0;
-  }
-  #apartment-real-map {
-    isolation: isolate;
-    min-height: 545px;
-    background: #e9eeeb;
-  }
-  #apartment-real-map::before,
-  #apartment-real-map::after {
-    content: none;
-  }
-  .leaflet-container {
-    color: #242b27;
-    font-family: inherit;
-  }
-  .leaflet-control-zoom {
-    overflow: hidden;
-    border: 1px solid #d9dfdc !important;
-    border-radius: 6px !important;
-    box-shadow: 0 3px 12px rgba(30, 38, 34, 0.12) !important;
-  }
-  .leaflet-control-zoom a {
-    color: #28312c;
-    font-weight: 500;
-  }
-  .leaflet-control-attribution {
-    color: #68716d;
-    font-size: 10px;
-  }
-  .apartment-marker-wrap {
-    border: 0;
-    background: transparent;
-  }
-  .apartment-marker-wrap .map-marker {
-    position: relative;
-    inset: auto;
-    width: 38px;
-    height: 38px;
-    transform: none;
-    border-width: 2px;
-  }
-  .apartment-marker-wrap .map-marker:hover,
-  .apartment-marker-wrap .map-marker.selected {
-    transform: scale(1.12);
-  }
-  .apartment-marker-wrap .map-marker strong {
-    font-size: 0.75rem;
-    font-weight: 760;
-    font-variant-numeric: tabular-nums;
-  }
-  .apartment-marker-wrap .map-marker span {
-    font-size: 0.68rem;
-    font-weight: 650;
-  }
-  @media (max-width: 760px) {
-    #apartment-real-map { min-height: 440px; }
-  }
-</style>
-
-<style is:global>
-  .main-content:has(.fee-map-shell) {
-    width: min(1480px, calc(100vw - 40px));
-    padding: 16px 0 28px;
-  }
-  .fee-map-shell {
-    --map-line: #dfe3e1;
-    --map-soft: #f7f8f7;
-    --map-green: #13795b;
-    --map-ink: #171b19;
-    gap: 10px;
-  }
-  .map-product-head {
-    min-height: 46px;
-  }
-  .map-product-head h1 {
-    font-size: 1.25rem;
-    line-height: 1.2;
-    font-weight: 750;
-  }
-  .map-product-head p {
-    margin-top: 3px;
-    color: #747c78;
-    font-size: 0.72rem;
-    font-weight: 650;
-  }
-  .head-actions {
-    color: #78807c;
-    font-size: 0.7rem;
-  }
-  .head-actions a,
-  .report-link {
-    min-height: 34px;
-    border: 1px solid #d9deda;
-    border-radius: 6px;
-    background: #fff;
-    color: #202623;
-    padding: 0 12px;
-    font-size: 0.74rem;
-  }
-  .map-filterbar {
-    grid-template-columns: minmax(230px, 1.2fr) minmax(390px, 2.2fr) 150px 130px auto;
-    gap: 7px;
-    border-color: #dfe3e1;
-    border-radius: 7px;
-    padding: 8px;
-    box-shadow: none;
-  }
-  .global-search,
-  .select-filter,
-  .metric-tabs button,
-  .reset-button {
-    min-height: 38px;
-    border-color: #dce1de;
-    border-radius: 5px;
-  }
-  .global-search {
-    padding: 0 10px;
-  }
-  .global-search input,
-  .select-filter select {
-    font-size: 0.76rem;
-  }
-  .metric-tabs {
-    gap: 3px;
-  }
-  .metric-tabs button {
-    font-size: 0.69rem;
-  }
-  .metric-tabs button.active {
-    border-color: #13795b;
-    background: #13795b;
-    color: #fff;
-    box-shadow: none;
-  }
-  .select-filter {
-    padding: 4px 8px;
-  }
-  .reset-button {
-    padding: 0 10px;
-    font-size: 0.7rem;
-  }
-  .map-app {
-    grid-template-columns: minmax(0, 1fr) 350px;
-    gap: 10px;
-    min-height: 710px;
-    height: calc(100vh - 206px);
-  }
-  .map-stage,
-  .detail-panel,
-  .next-build {
-    border-color: #dfe3e1;
-    border-radius: 7px;
-    box-shadow: none;
-  }
-  .map-stage {
-    grid-template-rows: 44px minmax(420px, 1fr) 154px;
-  }
-  .map-toolbar {
-    min-height: 44px;
-    padding: 0 13px;
-  }
-  .map-toolbar strong,
-  .table-head strong,
-  .driver-box > strong,
-  .nearby-box > strong,
-  .trend-box strong {
-    font-size: 0.78rem;
-  }
-  .map-toolbar span,
-  .table-head span {
-    font-size: 0.67rem;
-  }
-  .legend {
-    gap: 9px;
-  }
-  .legend i {
-    width: 7px;
-    height: 7px;
-  }
-  .map-canvas {
-    min-height: 0;
-    background:
-      linear-gradient(90deg, rgba(147, 156, 151, 0.14) 1px, transparent 1px),
-      linear-gradient(0deg, rgba(147, 156, 151, 0.14) 1px, transparent 1px),
-      #edf0ee;
-    background-size: 54px 54px;
-  }
-  .map-canvas::before {
-    height: 10px;
-    background: rgba(255,255,255,.9);
-  }
-  .map-canvas::after {
-    width: 9px;
-    background: rgba(255,255,255,.88);
-  }
-  .river {
-    height: 72px;
-    background: #b9dae8;
-  }
-  .park {
-    border-radius: 5px;
-    background: #cfe1cb;
-  }
-  .map-marker {
-    width: 32px;
-    height: 32px;
-    border-width: 2px;
-    box-shadow: 0 4px 10px rgba(28, 35, 31, .2);
-  }
-  .map-marker strong {
-    font-size: 0.7rem;
-  }
-  .map-marker span {
-    border-radius: 4px;
-    padding: 3px 6px;
-    font-size: 0.65rem;
-  }
-  .map-zoom {
-    left: 10px;
-    top: 10px;
-    border-radius: 5px;
-    box-shadow: 0 3px 10px rgba(20, 26, 23, .12);
-  }
-  .map-zoom span {
-    width: 31px;
-    height: 31px;
-    font-size: 1rem;
-  }
-  .nearby-table {
-    border-top: 1px solid #e3e7e4;
-  }
-  .table-head {
-    min-height: 38px;
-    padding: 0 12px;
-  }
-  .nearby-strip {
-    gap: 0;
-    overflow-x: auto;
-    padding: 0;
-  }
-  .result-card {
-    min-width: 210px;
-    min-height: 110px;
-    border: 0;
-    border-right: 1px solid #e7eae8;
-    border-radius: 0;
-    padding: 12px;
-  }
-  .result-card.selected {
-    background: #f0f7f4;
-    box-shadow: inset 0 3px #13795b;
-  }
-  .detail-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 13px;
-    overflow-y: auto;
-    padding: 16px;
-  }
-  .detail-title-row {
-    grid-template-columns: 24px minmax(0, 1fr);
-    gap: 8px;
-  }
-  .detail-title-row button {
-    width: 24px;
-    height: 24px;
-    border: 0;
-    color: #787f7b;
-  }
-  .detail-title-row h2 {
-    margin: 3px 0;
-    font-size: 1.05rem;
-  }
-  .detail-title-row p,
-  .summary-box p {
-    font-size: 0.7rem;
-  }
-  .score-card {
-    border-radius: 6px;
-  }
-  .score-card section {
-    padding: 12px;
-  }
-  .score-card strong {
-    font-size: 1rem;
-  }
-  .summary-box {
-    border: 0;
-    border-left: 3px solid #13795b;
-    border-radius: 0;
-    background: #f7f9f8;
-    padding: 10px 11px;
-  }
-  .summary-box strong {
-    font-size: 0.78rem;
-  }
-  .fact-grid {
-    gap: 0;
-    border: 1px solid #e3e7e4;
-    border-radius: 6px;
-  }
-  .fact-grid div {
-    border: 0;
-    border-right: 1px solid #e8ebe9;
-    border-bottom: 1px solid #e8ebe9;
-    border-radius: 0;
-    padding: 9px;
-  }
-  .fact-grid dt {
-    font-size: 0.62rem;
-  }
-  .fact-grid dd {
-    font-size: 0.73rem;
-  }
-  .trend-box svg {
-    height: 62px;
-    border-radius: 5px;
-    background: #fff;
-  }
-  .driver-box li i {
-    height: 4px;
-    background: #e5e9e6;
-  }
-  .driver-box li i::before {
-    content: '';
-    display: block;
-    width: inherit;
-    height: 100%;
-    background: #13795b;
-  }
-  .nearby-box button {
-    border-width: 0 0 1px;
-    border-radius: 0;
-    padding: 8px 0;
-  }
-  .next-build {
-    border: 0;
-    border-top: 1px solid #dfe3e1;
-    border-radius: 0;
-    background: transparent;
-    padding: 10px 2px 0;
-    box-shadow: none;
-  }
-  .next-build strong {
-    font-size: 0.72rem;
-  }
-  .next-build p {
-    font-size: 0.68rem;
-  }
-  @media (max-width: 1180px) {
-    .map-filterbar { grid-template-columns: minmax(0, 1fr) 150px 150px 86px; }
-    .global-search { grid-column: 1; }
-    .metric-tabs { grid-column: 1 / -1; grid-row: 2; }
-    .map-app { grid-template-columns: 1fr; height: auto; }
-    .map-stage { min-height: 690px; }
-    .detail-panel { display: grid; grid-template-columns: repeat(2, 1fr); overflow: visible; }
-  }
-  @media (max-width: 760px) {
-    .main-content:has(.fee-map-shell) { width: calc(100vw - 24px); }
-    .map-product-head { align-items: start; }
-    .map-product-head p { display: none; }
-    .map-filterbar { grid-template-columns: 1fr; }
-    .global-search, .metric-tabs { grid-column: 1; }
-    .global-search { grid-row: auto; }
-    .metric-tabs { grid-row: auto; }
-    .metric-tabs { grid-template-columns: repeat(4, 1fr); }
-    .map-stage { min-height: 620px; grid-template-rows: 44px 420px 154px; }
-    .detail-panel { grid-template-columns: 1fr; }
-  }
-</style>
-
-<style is:global>
-  .map-product-head h1 { font-size: 1.42rem; font-weight: 780; line-height: 1.28; }
-  .map-product-head p { color: #69726e; font-size: 0.82rem; font-weight: 520; line-height: 1.5; }
-  .head-actions, .global-search input, .select-filter select,
-  .metric-tabs button, .reset-button { font-weight: 650; }
-  .map-toolbar strong, .table-head strong, .driver-box > strong,
-  .nearby-box > strong, .trend-box strong { font-weight: 740; }
-  .detail-title-row h2 { font-weight: 760; }
-  .detail-title-row p, .summary-box p, .level-copy { font-weight: 450; line-height: 1.55; }
-  .result-card strong, .nearby-panel strong { font-weight: 700; }
-  @media (max-width: 760px) {
-    .map-product-head h1 { font-size: 1.28rem; }
+  .main-content:has(.map-shell) { width: min(1540px, calc(100vw - 28px)); padding-top: 14px; }
+  .map-shell { --line: #dce4df; --ink: #17211d; --green: #08765c; display: grid; gap: 12px; }
+  .product-header { min-height: 66px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+  .product-header span { color: #08765c; font-size: .72rem; font-weight: 850; }
+  .product-header h1 { margin: 3px 0 0; color: var(--ink); font-size: 1.65rem; line-height: 1.16; font-weight: 780; letter-spacing: 0; }
+  .product-header p { margin: 5px 0 0; color: #68736e; font-size: .84rem; font-weight: 680; }
+  .product-header > a, .report-link { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; background: var(--green); color: #fff; text-decoration: none; padding: 0 14px; font-size: .8rem; font-weight: 850; }
+  .filter-bar { display: grid; grid-template-columns: minmax(260px, 1fr) 230px 180px 170px auto; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 8px 24px rgba(23, 33, 29, .05); }
+  .search-field, .select-field { min-height: 44px; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; border: 1px solid #d9e1dc; border-radius: 7px; padding: 0 12px; }
+  .search-field span, .select-field span { color: #7a847f; font-size: .68rem; font-weight: 850; }
+  .search-field input, .select-field select { width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: .82rem; font-weight: 730; }
+  .metric-control { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  .metric-control button, .reset-button { border: 1px solid #d9e1dc; border-radius: 7px; background: #fff; color: #45514b; font-size: .76rem; font-weight: 850; cursor: pointer; }
+  .metric-control button.active { border-color: #8ac8b7; background: #e8f5f1; color: #006c55; }
+  .reset-button { padding: 0 14px; }
+  .workspace { min-height: 680px; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 12px; }
+  .map-pane, .detail-pane, .source-note { border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 10px 28px rgba(23, 33, 29, .06); }
+  .map-pane { min-width: 0; display: grid; grid-template-rows: auto minmax(500px, 1fr) auto; overflow: hidden; }
+  .map-status { min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 14px; border-bottom: 1px solid #e4e9e6; }
+  .map-status > div:first-child { display: flex; align-items: baseline; gap: 9px; }
+  .map-status strong { color: var(--ink); font-size: .9rem; }
+  .map-status span, .result-heading span { color: #6e7973; font-size: .7rem; font-weight: 750; }
+  .legend { display: flex; gap: 10px; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend i { width: 9px; height: 9px; border-radius: 50%; }
+  .low { --band: #15956b; } .average { --band: #68766f; } .high { --band: #c77b17; } .very-high { --band: #c7473c; }
+  .legend i.low { background: #15956b; } .legend i.average { background: #68766f; } .legend i.high { background: #c77b17; } .legend i.very-high { background: #c7473c; }
+  .map-canvas { min-height: 500px; background: #edf3ef; }
+  .leaflet-container { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; }
+  .province-marker-wrap, .apartment-marker-wrap { background: transparent; border: 0; }
+  .province-marker { width: 64px; height: 64px; display: grid; place-content: center; gap: 2px; border: 3px solid #fff; border-radius: 50%; background: #08765c; color: #fff; text-align: center; box-shadow: 0 8px 20px rgba(15, 73, 58, .28); }
+  .province-marker strong { font-size: .86rem; line-height: 1; }
+  .province-marker span { max-width: 58px; overflow: hidden; font-size: .6rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+  .apartment-marker { position: relative; width: 42px; height: 42px; display: grid; place-items: center; border: 3px solid #fff; border-radius: 50%; background: var(--band); color: #fff; box-shadow: 0 9px 22px rgba(23, 33, 29, .28); }
+  .apartment-marker strong { font-size: .78rem; }
+  .apartment-marker span { position: absolute; top: 46px; left: 50%; min-width: max-content; transform: translateX(-50%); border: 1px solid #d8e0dc; border-radius: 5px; background: #fff; color: #27332d; padding: 4px 7px; font-size: .68rem; font-weight: 800; }
+  .result-area { border-top: 1px solid #e4e9e6; }
+  .result-heading { min-height: 38px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; }
+  .result-heading strong { font-size: .82rem; }
+  .result-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 14px 14px; }
+  .result-card { min-width: 0; min-height: 75px; display: grid; grid-template-columns: 9px minmax(0, 1fr) auto; grid-template-areas: 'dot region score' 'dot name fee' 'dot meta fee'; gap: 3px 8px; border: 1px solid #dce4df; border-radius: 7px; background: #fff; padding: 10px; text-align: left; cursor: pointer; }
+  .result-card:hover, .result-card.selected { border-color: #65b49e; box-shadow: 0 0 0 3px rgba(8, 118, 92, .1); }
+  .result-card i { grid-area: dot; align-self: center; width: 8px; height: 8px; border-radius: 50%; background: var(--band); }
+  .result-card span { grid-area: region; overflow: hidden; color: #707b75; font-size: .65rem; font-weight: 720; text-overflow: ellipsis; white-space: nowrap; }
+  .result-card strong { grid-area: name; overflow: hidden; color: var(--ink); font-size: .8rem; text-overflow: ellipsis; white-space: nowrap; }
+  .result-card small { grid-area: meta; overflow: hidden; color: #707b75; font-size: .65rem; font-weight: 720; text-overflow: ellipsis; white-space: nowrap; }
+  .result-card b { grid-area: score; font-size: .74rem; }
+  .result-card em { grid-area: fee; align-self: end; color: #45524b; font-size: .68rem; font-style: normal; font-weight: 850; }
+  .empty-result { grid-column: 1 / -1; margin: 8px 0; color: #707b75; font-size: .78rem; }
+  .detail-pane { min-width: 0; display: grid; align-content: start; gap: 14px; padding: 18px; }
+  .empty-detail { min-height: 320px; display: grid; place-content: center; gap: 8px; text-align: center; }
+  .empty-detail span { color: #08765c; font-size: .68rem; font-weight: 850; }
+  .empty-detail strong { color: var(--ink); font-size: 1rem; }
+  .empty-detail p { max-width: 280px; margin: 0; color: #6b7670; font-size: .78rem; line-height: 1.6; }
+  .detail-head span { color: #08765c; font-size: .72rem; font-weight: 850; }
+  .detail-head h2 { margin: 5px 0; color: var(--ink); font-size: 1.3rem; line-height: 1.25; letter-spacing: 0; }
+  .detail-head p { margin: 0; color: #65706a; font-size: .78rem; line-height: 1.5; }
+  .detail-head small { display: block; margin-top: 7px; color: #89918d; font-size: .66rem; font-weight: 730; }
+  .score-box { display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; border: 1px solid #dce4df; border-radius: 7px; }
+  .score-box section { display: grid; gap: 5px; padding: 14px; }
+  .score-box section + section { border-left: 1px solid #e2e8e4; }
+  .score-box span, .score-box p { margin: 0; color: #707b75; font-size: .66rem; }
+  .score-box strong { color: var(--band); font-size: 1.05rem; }
+  .comparison-note { margin: 0; border: 1px solid #dfe8e3; border-radius: 7px; background: #f6f9f7; color: #5d6963; padding: 12px; font-size: .75rem; line-height: 1.55; }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin: 0; }
+  .facts div { min-width: 0; border: 1px solid #e0e6e2; border-radius: 7px; padding: 9px 10px; }
+  .facts dt { color: #7b8580; font-size: .64rem; font-weight: 760; }
+  .facts dd { overflow: hidden; margin: 4px 0 0; color: var(--ink); font-size: .76rem; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+  .report-unavailable { margin: 0; color: #777f7b; font-size: .72rem; line-height: 1.5; }
+  .source-note { display: flex; align-items: center; gap: 12px; padding: 12px 15px; }
+  .source-note strong { color: var(--ink); font-size: .75rem; }
+  .source-note p { margin: 0; color: #6e7973; font-size: .7rem; }
+  @media (max-width: 1100px) {
+    .filter-bar { grid-template-columns: minmax(240px, 1fr) 220px 1fr 1fr; }
+    .reset-button { min-height: 40px; grid-column: 1 / -1; }
+    .workspace { grid-template-columns: 1fr; }
+    .detail-pane { min-height: 0; }
+  }
+  @media (max-width: 720px) {
+    .main-content:has(.map-shell) { width: min(100% - 20px, 1540px); padding-top: 10px; }
+    .product-header { align-items: flex-start; }
+    .product-header h1 { font-size: 1.35rem; }
+    .product-header p { max-width: 250px; font-size: .74rem; }
+    .product-header > a { min-height: 34px; padding: 0 10px; font-size: .7rem; }
+    .filter-bar { grid-template-columns: 1fr 1fr; }
+    .search-field, .metric-control { grid-column: 1 / -1; }
+    .reset-button { grid-column: 1 / -1; }
+    .map-status { align-items: flex-start; flex-direction: column; padding: 10px 12px; }
+    .legend { gap: 8px; }
+    .map-pane { grid-template-rows: auto minmax(420px, 1fr) auto; }
+    .map-canvas { min-height: 420px; }
+    .result-list { grid-template-columns: 1fr; }
+    .source-note { align-items: flex-start; flex-direction: column; gap: 4px; }
   }
 </style>

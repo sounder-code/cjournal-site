@@ -58,6 +58,12 @@ const keyForRegion = (sido: string) =>
     .toLowerCase()
     .replace(/특별자치도|특별자치시|특별시|광역시|도$/g, '')
     .replace(/[^a-z0-9가-힣]+/g, '-');
+const normalizeSido = (sido: string, sigungu: string, address: string) => {
+  if (sido !== '전남광주통합특별시') return sido;
+  if (address.startsWith('광주광역시')) return '광주광역시';
+  if (address.startsWith('전라남도')) return '전라남도';
+  return ['광산구', '남구', '동구', '북구', '서구'].includes(sigungu) ? '광주광역시' : '전라남도';
+};
 const slugify = (name: string, code: string) =>
   `${name}-${code}`
     .toLowerCase()
@@ -101,13 +107,18 @@ for await (const row of rowsFromWorkbook(basicPath)) {
   const code = text(row['단지코드']);
   if (!code || !text(row['단지명'])) continue;
   if (complexes.has(code)) duplicateComplexes += 1;
+  const rawSido = text(row['시도']);
+  const sigungu = text(row['시군구']);
+  const rawAddress = text(row['도로명주소']) || text(row['법정동주소']);
+  const sido = normalizeSido(rawSido, sigungu, rawAddress);
+  const address = rawAddress.replace(/^전남광주통합특별시/, sido);
   complexes.set(code, {
     code,
     name: text(row['단지명']),
-    sido: text(row['시도']),
-    sigungu: text(row['시군구']),
+    sido,
+    sigungu,
     dong: text(row['동리']) || text(row['읍면']),
-    address: text(row['도로명주소']) || text(row['법정동주소']),
+    address,
     households: rounded(number(row['세대수'])),
     buildings: rounded(number(row['동수'])),
     approvalYear: Number(text(row['사용승인일']).replace(/\D/g, '').slice(0, 4)) || 0,

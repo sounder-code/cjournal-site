@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-13T10:10:52.627Z",
+  "generatedAt": "2026-07-13T11:17:58.891Z",
   "sourceDate": "20260710",
   "source": "K-apt 주간 일괄 공개자료",
   "units": {
@@ -79,6 +79,13 @@
       "file": "/data/apartments/regions/경상북.json"
     },
     {
+      "key": "광주",
+      "name": "광주광역시",
+      "count": 930,
+      "withFees": 919,
+      "file": "/data/apartments/regions/광주.json"
+    },
+    {
       "key": "대구",
       "name": "대구광역시",
       "count": 1175,
@@ -128,11 +135,11 @@
       "file": "/data/apartments/regions/인천.json"
     },
     {
-      "key": "전남광주통합",
-      "name": "전남광주통합특별시",
-      "count": 1707,
-      "withFees": 1684,
-      "file": "/data/apartments/regions/전남광주통합.json"
+      "key": "전라남",
+      "name": "전라남도",
+      "count": 777,
+      "withFees": 765,
+      "file": "/data/apartments/regions/전라남.json"
     },
     {
       "key": "전북",
