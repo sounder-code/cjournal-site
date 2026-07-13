@@ -30,7 +30,8 @@ const metrics = [
     <div class="filter-bar" aria-label="관리비 지도 필터">
       <label class="search-field">
         <span>검색</span>
-        <input type="search" data-search placeholder="단지명, 주소, 동 검색" autocomplete="off" />
+        <input type="search" data-search placeholder="단지명, 주소, 동 검색" autocomplete="off" enterkeyhint="search" />
+        <output data-search-feedback aria-live="polite" hidden></output>
       </label>
 
       <div class="metric-control" role="list" aria-label="비교 항목">
@@ -108,6 +109,7 @@ const metrics = [
     const payload = JSON.parse(document.querySelector('#map-payload')?.textContent || '{}');
     const app = document.querySelector('[data-map-app]');
     const search = app?.querySelector('[data-search]');
+    const searchFeedback = app?.querySelector('[data-search-feedback]');
     const region = app?.querySelector('[data-region]');
     const households = app?.querySelector('[data-households]');
     const reset = app?.querySelector('[data-reset]');
@@ -332,18 +334,36 @@ const metrics = [
 
     const render = () => {
       const filtered = filteredApartments();
+      const hasQuery = Boolean((search?.value || '').trim());
       const selected = apartments.find((item) => item.s === selectedSlug);
       if (selected) renderDetail(selected, filtered.length ? filtered : apartments);
       else renderRegionMarkers(filtered);
       renderResults(filtered);
       if (count) count.textContent = `${formatNumber(filtered.length)}개 단지`;
+      if (searchFeedback) {
+        searchFeedback.hidden = !hasQuery;
+        searchFeedback.textContent = hasQuery ? `${formatNumber(filtered.length)}개 찾음` : '';
+      }
       if (metricLabelNode) metricLabelNode.textContent = `${metricLabel()} 기준`;
       app?.classList.toggle('empty', filtered.length === 0);
     };
 
     search?.addEventListener('input', () => {
       window.clearTimeout(inputTimer);
+      if (searchFeedback) {
+        searchFeedback.hidden = !(search.value || '').trim();
+        searchFeedback.textContent = (search.value || '').trim() ? '검색 중' : '';
+      }
       inputTimer = window.setTimeout(() => { selectedSlug = ''; render(); }, 120);
+    });
+    search?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      window.clearTimeout(inputTimer);
+      selectedSlug = '';
+      render();
+      search.blur();
+      window.setTimeout(() => document.querySelector('.result-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 180);
     });
     region?.addEventListener('change', () => { selectedSlug = ''; render(); });
     households?.addEventListener('change', () => { selectedSlug = ''; render(); });
@@ -389,9 +409,13 @@ const metrics = [
   .product-header p { margin: 5px 0 0; color: #68736e; font-size: .84rem; font-weight: 680; }
   .product-header > a, .report-link { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; background: var(--green); color: #fff; text-decoration: none; padding: 0 14px; font-size: .8rem; font-weight: 850; }
   .filter-bar { display: grid; grid-template-columns: minmax(260px, 1fr) 230px 180px 170px auto; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 8px 24px rgba(23, 33, 29, .05); }
-  .search-field, .select-field { min-height: 44px; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; border: 1px solid #d9e1dc; border-radius: 7px; padding: 0 12px; }
+  .search-field, .select-field { min-height: 44px; display: grid; align-items: center; gap: 10px; border: 1px solid #d9e1dc; border-radius: 7px; padding: 0 12px; }
+  .search-field { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .select-field { grid-template-columns: auto minmax(0, 1fr); }
+  .search-field:focus-within { border-color: #70bba6; box-shadow: 0 0 0 3px rgba(8, 118, 92, .09); }
   .search-field span, .select-field span { color: #7a847f; font-size: .68rem; font-weight: 850; }
   .search-field input, .select-field select { width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: .82rem; font-weight: 730; }
+  .search-field output { border-radius: 5px; background: #e8f5f1; color: #006c55; padding: 5px 7px; font-size: .68rem; font-weight: 850; white-space: nowrap; }
   .metric-control { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
   .metric-control button, .reset-button { border: 1px solid #d9e1dc; border-radius: 7px; background: #fff; color: #45514b; font-size: .76rem; font-weight: 850; cursor: pointer; }
   .metric-control button.active { border-color: #8ac8b7; background: #e8f5f1; color: #006c55; }
@@ -467,6 +491,8 @@ const metrics = [
     .product-header > a { min-height: 34px; padding: 0 10px; font-size: .7rem; }
     .filter-bar { grid-template-columns: 1fr 1fr; }
     .search-field, .metric-control { grid-column: 1 / -1; }
+    .search-field { position: sticky; top: 8px; z-index: 500; min-height: 50px; box-shadow: 0 8px 22px rgba(23, 33, 29, .08); }
+    .search-field output { padding: 6px 8px; font-size: .72rem; }
     .reset-button { grid-column: 1 / -1; }
     .map-status { align-items: flex-start; flex-direction: column; padding: 10px 12px; }
     .legend { gap: 8px; }
