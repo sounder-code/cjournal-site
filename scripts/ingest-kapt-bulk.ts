@@ -213,7 +213,7 @@ for (const complex of complexes.values()) {
   if (monthlyFees.length) complexesWithFees += 1;
   publishedFeeRows += monthlyFees.length;
   const isPublishable =
-    monthlyFees.length >= 4 &&
+    monthlyFees.length >= 5 &&
     area > 0 &&
     Number(latest?.totalFeePerM2 ?? 0) > 0 &&
     complex.households > 0 &&

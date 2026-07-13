@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-13T09:54:48.865Z",
+  "generatedAt": "2026-07-13T10:10:52.627Z",
   "sourceDate": "20260710",
   "source": "K-apt 주간 일괄 공개자료",
   "units": {
@@ -45,7 +45,7 @@
     "feeRowsWithoutArea": 1118,
     "feeRowsWithoutComplex": 2,
     "publishedFeeRows": 103089,
-    "publishableComplexes": 20952,
+    "publishableComplexes": 18021,
     "negativeAdjustmentValues": 1005
   },
   "index": "/data/apartments/index.json",

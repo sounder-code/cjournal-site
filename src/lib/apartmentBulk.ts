@@ -100,7 +100,7 @@ export const loadApartmentEntries = () => {
 };
 
 export const isPublishableApartment = (entry: ApartmentEntry) =>
-  entry.f.length >= 4 &&
+  entry.f.length >= 5 &&
   entry.ma > 0 &&
   entry.tf > 0 &&
   entry.h > 0 &&
