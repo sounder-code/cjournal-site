@@ -24,6 +24,7 @@
     "data:kapt:bulk": "tsx scripts/ingest-kapt-bulk.ts",
     "data:kapt:bulk:validate": "tsx scripts/validate-kapt-bulk.ts",
     "data:kapt:refresh:check": "tsx scripts/check-kapt-refresh.ts",
+    "data:admin-centers": "tsx scripts/generate-admin-centers.ts",
     "quality:apartments": "tsx scripts/audit-apartment-pages.ts",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up --build -d",

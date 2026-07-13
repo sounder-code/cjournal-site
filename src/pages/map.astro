@@ -3,6 +3,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import 'leaflet/dist/leaflet.css';
 import { loadApartmentManifest } from '@/lib/apartmentBulk';
 import apartmentCoordinates from '@/data/apartment-coordinates.json';
+import adminCenters from '@/data/admin-centers.json';
 
 const manifest = await loadApartmentManifest();
 const metrics = [
@@ -68,7 +69,10 @@ const metrics = [
     <div class="workspace">
       <section class="map-pane">
         <div class="map-status">
-          <div><strong data-count>전국 데이터를 불러오는 중</strong><span data-metric-label>총 관리비 기준</span></div>
+          <div class="map-summary">
+            <button type="button" data-map-back hidden></button>
+            <strong data-count>전국 데이터를 불러오는 중</strong><span data-metric-label>총 관리비 기준</span>
+          </div>
           <div class="legend" aria-label="비교 수준 범례">
             <span><i class="low"></i>낮음</span>
             <span><i class="average"></i>평균권</span>
@@ -94,14 +98,18 @@ const metrics = [
 
     <footer class="source-note">
       <strong>데이터 기준</strong>
-      <p>국토교통부 공동주택관리정보시스템(K-apt) 일괄 공개자료 · 원본 {manifest.sourceDate} · 최신 관리비 {manifest.latestMonth}</p>
+      <div>
+        <p>국토교통부 공동주택관리정보시스템(K-apt) 일괄 공개자료 · 원본 {manifest.sourceDate} · 최신 관리비 {manifest.latestMonth} · 행정경계 {adminCenters.sourceDate}</p>
+        <small>행정경계는 <a href="https://sgis.kostat.go.kr" target="_blank" rel="noopener noreferrer">통계청 SGIS</a> 공공누리 제1유형 자료를 <a href="https://github.com/vuski/admdongkor" target="_blank" rel="noopener noreferrer">vuski/admdongkor</a>가 가공한 CC BY 4.0 데이터입니다.</small>
+      </div>
     </footer>
   </section>
 
   <script is:inline type="application/json" id="map-payload" set:html={JSON.stringify({
     indexUrl: manifest.index,
     metrics,
-    coordinates: apartmentCoordinates
+    coordinates: apartmentCoordinates,
+    adminCenters
   })} />
 
   <script>
@@ -116,6 +124,7 @@ const metrics = [
     const region = app?.querySelector('[data-region]');
     const households = app?.querySelector('[data-households]');
     const reset = app?.querySelector('[data-reset]');
+    const mapBack = app?.querySelector('[data-map-back]');
     const count = app?.querySelector('[data-count]');
     const metricLabelNode = app?.querySelector('[data-metric-label]');
     const results = app?.querySelector('[data-results]');
@@ -153,6 +162,9 @@ const metrics = [
     let apartments = [];
     let activeMetric = 'tf';
     let selectedSlug = initialSlug;
+    let activeProvince = '';
+    let activeDistrict = '';
+    let activeDong = '';
     let inputTimer;
 
     const escapeHtml = (value) => String(value ?? '')
@@ -167,6 +179,10 @@ const metrics = [
     const householdBand = (value) => value < 300 ? 'under-300' : value < 500 ? '300-499' : value < 1000 ? '500-999' : value < 1500 ? '1000-1499' : 'over-1500';
     const bandFor = (percentile) => percentile >= 85 ? 'very-high' : percentile >= 65 ? 'high' : percentile <= 35 ? 'low' : 'average';
     const bandLabel = (band) => ({ low: '낮은 편', average: '평균권', high: '높은 편', 'very-high': '매우 높음' })[band];
+    const normalizeDistrict = (value) => String(value || '').replaceAll('시', '');
+    const normalizeDong = (value) => String(value || '').replace(/제?\d+(?=동$)/g, '');
+    const districtKey = (province, district) => `${province}|${normalizeDistrict(district)}`;
+    const districtCenters = new Map(payload.adminCenters.districts.map((item) => [districtKey(item.province, item.district), item]));
 
     const filteredApartments = () => {
       const query = (search?.value || '').trim().toLowerCase();
@@ -194,31 +210,137 @@ const metrics = [
       return Math.max(1, Math.min(99, Math.round((low / values.length) * 100)));
     };
 
-    const renderRegionMarkers = (items) => {
+    const representativeValue = (items) => {
+      const values = items.map((item) => Number(item[activeMetric] || 0)).filter((value) => value > 0).sort((a, b) => a - b);
+      if (!values.length) return 0;
+      const middle = Math.floor(values.length / 2);
+      return values.length % 2 ? values[middle] : Math.round((values[middle - 1] + values[middle]) / 2);
+    };
+
+    const addAreaMarker = ({ coordinate, name, items, kind, onClick, selected = false }) => {
+      const value = representativeValue(items);
+      const icon = L.divIcon({
+        className: `${kind}-marker-wrap`,
+        html: kind === 'province'
+          ? `<div class="province-marker"><strong>${formatNumber(items.length)}</strong><span>${escapeHtml(name)}</span></div>`
+          : `<div class="area-marker ${kind}${selected ? ' selected' : ''}"><strong>${escapeHtml(name)}</strong><span>${formatNumber(items.length)}개${kind !== 'district' && value ? ` · ${formatNumber(value)}원` : ''}</span></div>`,
+        iconSize: kind === 'province' ? [64, 64] : kind === 'district' ? [62, 58] : [88, 44],
+        iconAnchor: kind === 'province' ? [32, 32] : kind === 'district' ? [31, 29] : [44, 22]
+      });
+      return L.marker(coordinate, {
+        icon,
+        title: `${name} ${formatNumber(items.length)}개 단지`,
+        keyboard: true,
+        riseOnHover: true,
+        zIndexOffset: kind === 'province'
+          ? ({ '서울특별시': 500, '인천광역시': 400, '세종특별자치시': 300 }[name] || 0)
+          : 0
+      }).on('click', onClick).addTo(markerLayer);
+    };
+
+    const renderProvinceMarkers = (items, fitMap = false) => {
       markerLayer.clearLayers();
       const regionCounts = new Map();
-      items.forEach((item) => regionCounts.set(item.sd, (regionCounts.get(item.sd) || 0) + 1));
+      items.forEach((item) => {
+        const group = regionCounts.get(item.sd) || [];
+        group.push(item);
+        regionCounts.set(item.sd, group);
+      });
       const bounds = [];
-      for (const [name, regionCount] of regionCounts) {
+      for (const [name, regionItems] of regionCounts) {
         const coordinate = provinceCenters[name];
         if (!coordinate) continue;
-        const icon = L.divIcon({
-          className: 'province-marker-wrap',
-          html: `<div class="province-marker"><strong>${formatNumber(regionCount)}</strong><span>${escapeHtml(name)}</span></div>`,
-          iconSize: [64, 64],
-          iconAnchor: [32, 32]
-        });
-        L.marker(coordinate, { icon, title: `${name} ${formatNumber(regionCount)}개 단지`, keyboard: true })
-          .on('click', () => {
-            region.value = name;
-            selectedSlug = '';
-            render();
-          })
-          .addTo(markerLayer);
+        addAreaMarker({ coordinate, name, items: regionItems, kind: 'province', onClick: () => openProvince(name) });
         bounds.push(coordinate);
       }
-      if (bounds.length > 1) map.fitBounds(bounds, { padding: [38, 38], maxZoom: 8 });
-      else if (bounds.length === 1) map.setView(bounds[0], 10);
+      if (fitMap && bounds.length > 1) map.fitBounds(bounds, { padding: [38, 38], maxZoom: 8, animate: true });
+      else if (fitMap && bounds.length === 1) map.setView(bounds[0], 8, { animate: true });
+    };
+
+    const renderDistrictMarkers = (items, fitMap = false) => {
+      markerLayer.clearLayers();
+      const groups = new Map();
+      items.forEach((item) => {
+        const key = districtKey(item.sd, item.sg);
+        const group = groups.get(key) || { name: item.sg, items: [] };
+        group.items.push(item);
+        groups.set(key, group);
+      });
+      const bounds = [];
+      for (const [key, group] of groups) {
+        const center = districtCenters.get(key);
+        if (!center) continue;
+        const coordinate = [center.latitude, center.longitude];
+        addAreaMarker({
+          coordinate,
+          name: group.name,
+          items: group.items,
+          kind: 'district',
+          selected: key === activeDistrict,
+          onClick: () => openDistrict(key, coordinate)
+        });
+        bounds.push(coordinate);
+      }
+      if (fitMap && bounds.length > 1) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 11, animate: true });
+      else if (fitMap && bounds.length === 1) map.setView(bounds[0], 12, { animate: true });
+    };
+
+    const renderDongMarkers = (items, fitMap = false) => {
+      markerLayer.clearLayers();
+      const district = districtCenters.get(activeDistrict);
+      if (!district) return;
+      const dongCenters = new Map();
+      district.dongs.forEach((dong) => {
+        const key = normalizeDong(dong.name);
+        const matches = dongCenters.get(key) || [];
+        matches.push(dong);
+        dongCenters.set(key, matches);
+      });
+      const groups = new Map();
+      items.forEach((item) => {
+        const group = groups.get(item.d) || [];
+        group.push(item);
+        groups.set(item.d, group);
+      });
+      const bounds = [];
+      const unmatched = [];
+      for (const [name, group] of groups) {
+        const centers = dongCenters.get(normalizeDong(name));
+        if (!centers?.length) {
+          unmatched.push(...group);
+          continue;
+        }
+        const coordinate = [
+          centers.reduce((sum, center) => sum + center.latitude, 0) / centers.length,
+          centers.reduce((sum, center) => sum + center.longitude, 0) / centers.length
+        ];
+        addAreaMarker({
+          coordinate,
+          name,
+          items: group,
+          kind: 'dong',
+          selected: name === activeDong,
+          onClick: () => openDong(name, coordinate)
+        });
+        bounds.push(coordinate);
+      }
+      if (unmatched.length) {
+        const coordinate = [district.latitude, district.longitude];
+        addAreaMarker({
+          coordinate,
+          name: '그 외 지역',
+          items: unmatched,
+          kind: 'unmatched',
+          onClick: () => {
+            activeDong = '';
+            map.setView(coordinate, Math.max(map.getZoom(), 13), { animate: true });
+            render();
+          }
+        });
+        bounds.push(coordinate);
+      }
+      if (fitMap && bounds.length > 1) map.fitBounds(bounds, { padding: [55, 55], maxZoom: 12, animate: true });
+      else if (fitMap && bounds.length === 1) map.setView(bounds[0], 13, { animate: true });
     };
 
     const locateApartment = async (apartment, comparison) => {
@@ -377,21 +499,62 @@ const metrics = [
       render();
     };
 
-    const render = () => {
+    const openProvince = (name) => {
+      activeProvince = name;
+      activeDistrict = '';
+      activeDong = '';
+      selectedSlug = '';
+      region.value = name;
+      map.setView(provinceCenters[name], 11, { animate: true });
+      render();
+    };
+
+    const openDistrict = (key, coordinate) => {
+      activeDistrict = key;
+      activeDong = '';
+      selectedSlug = '';
+      map.setView(coordinate, 13, { animate: true });
+      render();
+    };
+
+    const openDong = (name, coordinate) => {
+      activeDong = name;
+      selectedSlug = '';
+      map.setView(coordinate, 15, { animate: true });
+      render();
+    };
+
+    const updateMapNavigation = () => {
+      if (!mapBack) return;
+      const district = districtCenters.get(activeDistrict);
+      mapBack.hidden = !activeProvince;
+      mapBack.textContent = activeDistrict
+        ? `${activeProvince} · ${district?.district || ''}`
+        : activeProvince || '';
+      mapBack.setAttribute('aria-label', activeDistrict ? '시도 단계로 돌아가기' : '전국 단계로 돌아가기');
+    };
+
+    const render = ({ fitMap = false } = {}) => {
       const filtered = filteredApartments();
+      const navigated = filtered.filter((item) =>
+        (!activeDistrict || districtKey(item.sd, item.sg) === activeDistrict)
+        && (!activeDong || item.d === activeDong));
       const hasQuery = Boolean((search?.value || '').trim());
       const selected = apartments.find((item) => item.s === selectedSlug);
       if (selected) renderDetail(selected, filtered.length ? filtered : apartments);
-      else renderRegionMarkers(filtered);
-      renderResults(filtered);
-      renderMobileSuggestions(filtered);
-      if (count) count.textContent = `${formatNumber(filtered.length)}개 단지`;
+      else if (activeDistrict) renderDongMarkers(navigated, fitMap);
+      else if (activeProvince) renderDistrictMarkers(filtered, fitMap);
+      else renderProvinceMarkers(filtered, fitMap);
+      renderResults(navigated);
+      renderMobileSuggestions(navigated);
+      updateMapNavigation();
+      if (count) count.textContent = `${formatNumber(navigated.length)}개 단지`;
       if (searchFeedback) {
         searchFeedback.hidden = !hasQuery;
         searchFeedback.textContent = hasQuery ? `${formatNumber(filtered.length)}개 찾음` : '';
       }
       if (metricLabelNode) metricLabelNode.textContent = `${metricLabel()} 기준`;
-      app?.classList.toggle('empty', filtered.length === 0);
+      app?.classList.toggle('empty', navigated.length === 0);
     };
 
     search?.addEventListener('input', () => {
@@ -402,7 +565,7 @@ const metrics = [
         searchFeedback.hidden = !(search.value || '').trim();
         searchFeedback.textContent = (search.value || '').trim() ? '검색 중' : '';
       }
-      inputTimer = window.setTimeout(() => { selectedSlug = ''; render(); }, 120);
+      inputTimer = window.setTimeout(() => { selectedSlug = ''; activeDong = ''; render(); }, 120);
     });
     search?.addEventListener('focus', () => {
       if ((search.value || '').trim()) app?.classList.add('mobile-searching');
@@ -412,12 +575,19 @@ const metrics = [
       event.preventDefault();
       window.clearTimeout(inputTimer);
       selectedSlug = '';
+      activeDong = '';
       render();
       search.blur();
       window.setTimeout(() => document.querySelector('.search-field')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
     });
-    region?.addEventListener('change', () => { selectedSlug = ''; render(); });
-    households?.addEventListener('change', () => { selectedSlug = ''; render(); });
+    region?.addEventListener('change', () => {
+      selectedSlug = '';
+      activeProvince = region.value === 'all' ? '' : region.value;
+      activeDistrict = '';
+      activeDong = '';
+      render({ fitMap: true });
+    });
+    households?.addEventListener('change', () => { selectedSlug = ''; activeDong = ''; render(); });
     metricButtons.forEach((button) => button.addEventListener('click', () => {
       activeMetric = button.dataset.metric || 'tf';
       metricButtons.forEach((item) => item.classList.toggle('active', item === button));
@@ -428,11 +598,77 @@ const metrics = [
       region.value = 'all';
       households.value = 'all';
       selectedSlug = '';
+      activeProvince = '';
+      activeDistrict = '';
+      activeDong = '';
       app?.classList.remove('mobile-searching');
       activeMetric = 'tf';
       metricButtons.forEach((item) => item.classList.toggle('active', item.dataset.metric === 'tf'));
       history.replaceState({}, '', window.location.pathname);
+      map.setView([36.35, 127.85], 7, { animate: true });
       render();
+    });
+
+    mapBack?.addEventListener('click', () => {
+      selectedSlug = '';
+      if (activeDistrict) {
+        activeDistrict = '';
+        activeDong = '';
+        map.setView(provinceCenters[activeProvince], 11, { animate: true });
+      } else {
+        activeProvince = '';
+        region.value = 'all';
+        map.setView([36.35, 127.85], 7, { animate: true });
+      }
+      render();
+    });
+
+    map.on('zoomend', () => {
+      const zoom = map.getZoom();
+      let changed = false;
+      if (selectedSlug && zoom < 14) {
+        selectedSlug = '';
+        const url = new URL(window.location.href);
+        url.searchParams.delete('apt');
+        history.replaceState({}, '', url);
+        changed = true;
+      }
+      if (zoom <= 8 && activeProvince) {
+        activeProvince = '';
+        activeDistrict = '';
+        activeDong = '';
+        region.value = 'all';
+        changed = true;
+      } else if (zoom <= 11 && activeDistrict) {
+        activeDistrict = '';
+        activeDong = '';
+        changed = true;
+      } else if (zoom <= 13 && activeDong) {
+        activeDong = '';
+        changed = true;
+      }
+      if (!activeProvince && zoom >= 9) {
+        const center = map.getCenter();
+        const available = [...new Set(filteredApartments().map((item) => item.sd))].filter((name) => provinceCenters[name]);
+        const nearest = available.sort((a, b) => center.distanceTo(provinceCenters[a]) - center.distanceTo(provinceCenters[b]))[0];
+        if (nearest) {
+          activeProvince = nearest;
+          region.value = nearest;
+          changed = true;
+        }
+      }
+      if (activeProvince && !activeDistrict && zoom >= 12) {
+        const center = map.getCenter();
+        const available = [...new Set(filteredApartments().map((item) => districtKey(item.sd, item.sg)))]
+          .map((key) => [key, districtCenters.get(key)])
+          .filter((entry) => entry[1]);
+        const nearest = available.sort((a, b) => center.distanceTo([a[1].latitude, a[1].longitude]) - center.distanceTo([b[1].latitude, b[1].longitude]))[0];
+        if (nearest) {
+          activeDistrict = nearest[0];
+          changed = true;
+        }
+      }
+      if (changed) render();
     });
 
     fetch(payload.indexUrl)
@@ -443,7 +679,7 @@ const metrics = [
       .then((data) => {
         apartments = Array.isArray(data) ? data : [];
         if (selectedSlug && !apartments.some((item) => item.s === selectedSlug)) selectedSlug = '';
-        render();
+        render({ fitMap: true });
       })
       .catch(() => {
         if (count) count.textContent = '전국 데이터를 불러오지 못했습니다';
@@ -477,7 +713,9 @@ const metrics = [
   .map-pane, .detail-pane, .source-note { border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 10px 28px rgba(23, 33, 29, .06); }
   .map-pane { min-width: 0; display: grid; grid-template-rows: auto minmax(500px, 1fr) auto; overflow: hidden; }
   .map-status { min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 14px; border-bottom: 1px solid #e4e9e6; }
-  .map-status > div:first-child { display: flex; align-items: baseline; gap: 9px; }
+  .map-status > div:first-child { display: flex; align-items: center; gap: 9px; }
+  .map-summary button { min-height: 30px; border: 1px solid #cddbd4; border-radius: 6px; background: #f5f9f7; color: #076e57; padding: 0 9px; font-size: .68rem; font-weight: 850; cursor: pointer; }
+  .map-summary button::before { content: '\2190'; margin-right: 5px; }
   .map-status strong { color: var(--ink); font-size: .9rem; }
   .map-status span, .result-heading span { color: #6e7973; font-size: .7rem; font-weight: 750; }
   .legend { display: flex; gap: 10px; }
@@ -487,10 +725,19 @@ const metrics = [
   .legend i.low { background: #15956b; } .legend i.average { background: #68766f; } .legend i.high { background: #c77b17; } .legend i.very-high { background: #c7473c; }
   .map-canvas { min-height: 500px; background: #edf3ef; }
   .leaflet-container { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; }
-  .province-marker-wrap, .apartment-marker-wrap { background: transparent; border: 0; }
+  .province-marker-wrap, .district-marker-wrap, .dong-marker-wrap, .unmatched-marker-wrap, .apartment-marker-wrap { background: transparent; border: 0; }
   .province-marker { width: 64px; height: 64px; display: grid; place-content: center; gap: 2px; border: 3px solid #fff; border-radius: 50%; background: #08765c; color: #fff; text-align: center; box-shadow: 0 8px 20px rgba(15, 73, 58, .28); }
   .province-marker strong { font-size: .86rem; line-height: 1; }
   .province-marker span { max-width: 58px; overflow: hidden; font-size: .6rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+  .area-marker { width: 88px; min-height: 42px; display: grid; place-content: center; gap: 3px; border: 2px solid #fff; border-radius: 7px; background: #08765c; color: #fff; text-align: center; box-shadow: 0 7px 18px rgba(15, 73, 58, .24); }
+  .area-marker strong { max-width: 78px; overflow: hidden; font-size: .7rem; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+  .area-marker span { color: rgba(255, 255, 255, .86); font-size: .59rem; font-weight: 760; white-space: nowrap; }
+  .area-marker.dong { border-color: #08765c; background: #fff; color: #075f4c; box-shadow: 0 6px 16px rgba(23, 33, 29, .2); }
+  .area-marker.dong span { color: #63726b; }
+  .area-marker.district { width: 62px; min-height: 58px; border-radius: 50%; }
+  .area-marker.district strong { max-width: 54px; font-size: .66rem; }
+  .area-marker.unmatched { border-color: #fff; background: #66736d; }
+  .area-marker.selected { outline: 3px solid rgba(8, 118, 92, .2); transform: translateY(-2px); }
   .apartment-marker { position: relative; width: 42px; height: 42px; display: grid; place-items: center; border: 3px solid #fff; border-radius: 50%; background: var(--band); color: #fff; box-shadow: 0 9px 22px rgba(23, 33, 29, .28); }
   .apartment-marker strong { font-size: .78rem; }
   .apartment-marker span { position: absolute; top: 46px; left: 50%; min-width: max-content; transform: translateX(-50%); border: 1px solid #d8e0dc; border-radius: 5px; background: #fff; color: #27332d; padding: 4px 7px; font-size: .68rem; font-weight: 800; }
@@ -530,6 +777,9 @@ const metrics = [
   .source-note { display: flex; align-items: center; gap: 12px; padding: 12px 15px; }
   .source-note strong { color: var(--ink); font-size: .75rem; }
   .source-note p { margin: 0; color: #6e7973; font-size: .7rem; }
+  .source-note > div { display: grid; gap: 3px; }
+  .source-note small { color: #88918d; font-size: .62rem; line-height: 1.45; }
+  .source-note small a { color: #53635c; text-underline-offset: 2px; }
   @media (max-width: 1100px) {
     .filter-bar { grid-template-columns: minmax(240px, 1fr) 220px 1fr 1fr; }
     .reset-button { min-height: 40px; grid-column: 1 / -1; }
