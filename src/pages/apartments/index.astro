@@ -212,6 +212,9 @@ const latestMonth = manifest.latestMonth.replace('-', '.');
         })
         .then((data) => {
           apartments = Array.isArray(data) ? data : [];
+          const params = new URLSearchParams(window.location.search);
+          if (search && params.get('q')) search.value = params.get('q');
+          if (region && params.get('region')) region.value = params.get('region');
           applyFilters();
         })
         .catch(() => {

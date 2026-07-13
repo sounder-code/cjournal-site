@@ -1,0 +1,76 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+const articleJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: '아파트 관리비 읽는 법: 항목, 비교 단가, 확인 순서',
+  description: '공용관리비, 개별사용료, 장기수선충당금의 차이와 단지 관리비를 비교할 때 확인할 기준을 설명합니다.',
+  datePublished: '2026-07-13',
+  dateModified: '2026-07-13',
+  author: { '@type': 'Organization', name: '바로계산' },
+  publisher: { '@type': 'Organization', name: '바로계산' }
+};
+---
+<BaseLayout
+  title="아파트 관리비 읽는 법: 항목과 비교 기준 | 바로계산"
+  description="공용관리비, 개별사용료, 장기수선충당금의 차이와 단지 관리비를 비교할 때 확인할 순서를 설명합니다."
+  canonical="/management-fee-guide/"
+  type="article"
+  publishedTime="2026-07-13"
+  updatedTime="2026-07-13"
+  structuredData={articleJsonLd}
+>
+  <article class="fee-guide">
+    <nav aria-label="현재 위치"><a href="/">홈</a><span>/</span><span>관리비 가이드</span></nav>
+    <header>
+      <p>관리비 기본 가이드 · 2026.07.13 검토</p>
+      <h1>아파트 관리비를 비교하기 전에 읽어야 할 기준</h1>
+      <p>관리비 총액 하나만 보면 단지의 규모, 난방방식, 공용시설과 계절 차이를 놓치기 쉽습니다. 고지서와 공개자료가 무엇을 뜻하는지부터 구분해야 비교가 의미를 갖습니다.</p>
+    </header>
+
+    <aside class="summary">
+      <strong>먼저 기억할 세 가지</strong>
+      <ol><li>단지 공개액과 우리 집 고지서 금액은 같은 숫자가 아닙니다.</li><li>총액은 공용관리비, 개별사용료, 장기수선충당금으로 나눠 봅니다.</li><li>같은 지역·비슷한 세대수라도 난방과 시설 조건을 함께 확인합니다.</li></ol>
+    </aside>
+
+    <div class="guide-body">
+      <section>
+        <h2>1. 단지 공개 관리비와 세대 고지서는 왜 다른가</h2>
+        <p>K-apt의 관리비 공개자료는 공동주택 단위로 집계된 금액입니다. 바로계산은 단지 전체 공개액을 관리비부과면적으로 나눠 ㎡당 금액으로 환산합니다. 면적이 다른 단지끼리 총액을 그대로 비교하는 문제를 줄이기 위한 단위입니다.</p>
+        <p>세대 고지서는 전용면적, 전기·수도·난방 사용량, 할인, 연체와 이전 달 정산에 따라 달라집니다. 따라서 리포트의 ㎡당 금액에 전용면적을 단순히 곱한 값이 실제 청구액과 정확히 일치하지 않을 수 있습니다. 공개자료는 단지 수준의 흐름을 비교하는 데 사용하고, 세대별 부담은 실제 고지서로 확인해야 합니다.</p>
+      </section>
+      <section>
+        <h2>2. 공용관리비에서 확인할 항목</h2>
+        <p>공용관리비는 일반관리비, 청소비, 경비비, 승강기 유지비, 수선유지비처럼 공동 공간과 관리 운영에 쓰이는 비용을 포함합니다. 입주민이 개별적으로 사용한 전기나 난방과는 성격이 다릅니다.</p>
+        <p>경비 방식, 관리인원, 승강기 수, 조경과 커뮤니티 시설이 다르면 공용관리비도 달라집니다. 경비비가 높다는 이유만으로 비효율이라고 단정할 수 없고, 단지의 경비 형태와 제공 서비스가 비슷한지 확인해야 합니다. 수선유지비가 특정 달에 크게 늘었다면 일회성 작업이나 정산이 있었는지도 월별 추이로 살펴보는 편이 좋습니다.</p>
+      </section>
+      <section>
+        <h2>3. 개별사용료는 계절과 난방방식을 함께 본다</h2>
+        <p>개별사용료에는 전기, 수도, 난방, 급탕 등 사용량에 영향을 받는 비용이 포함됩니다. 같은 단지에서도 여름과 겨울의 차이가 크며 지역난방, 중앙난방, 개별난방에 따라 공개 항목의 구조가 달라질 수 있습니다.</p>
+        <p>한 달의 난방비만 비교하면 계절과 검침 시점 때문에 판단이 흔들립니다. 최소 여러 달의 추이를 보고 같은 계절 또는 비슷한 난방방식의 단지와 비교해야 합니다. 일부 항목의 음수는 오류가 아니라 환급이나 이전 기간 정산이 원본에 반영된 값일 수 있으므로 임의로 0원으로 바꾸지 않습니다.</p>
+      </section>
+      <section>
+        <h2>4. 장기수선충당금은 적립 성격의 금액이다</h2>
+        <p>장기수선충당금은 승강기, 외벽, 배관 등 공동주택 주요 시설의 장기적인 교체와 보수를 위해 적립하는 금액입니다. 당월의 운영비와 목적이 다르므로 공용관리비와 분리해 보는 것이 좋습니다.</p>
+        <p>충당금이 낮다고 무조건 유리한 것은 아닙니다. 단지의 장기수선계획, 적립률, 공사 일정에 따라 필요한 수준이 달라질 수 있습니다. 임차인이 납부한 장기수선충당금의 반환 문제는 계약 관계와 실제 납부 내역을 기준으로 관리주체나 임대인에게 확인해야 하며, 이 사이트의 비교값만으로 권리관계를 판단해서는 안 됩니다.</p>
+      </section>
+      <section>
+        <h2>5. 단지 비교는 같은 조건부터 시작한다</h2>
+        <p>바로계산은 우선 같은 시·군·구와 세대수 구간의 단지를 비교합니다. 표본이 너무 적으면 지역 전체 또는 같은 시·도의 비슷한 규모 단지로 범위를 넓힙니다. 백분위가 80이면 비교군의 약 80%보다 ㎡당 금액이 높은 쪽이라는 뜻이지, 관리 품질이 상위 80%라는 뜻은 아닙니다.</p>
+        <p>비교할 때는 준공연도, 난방방식, 관리방식, 공용시설을 추가로 확인합니다. 세대수가 큰 단지는 고정 관리비가 분산될 수 있지만 시설 규모도 커질 수 있습니다. 서로 다른 조건을 하나의 순위로 평가하지 않고, 차이가 생긴 이유를 찾는 출발점으로 사용해야 합니다.</p>
+      </section>
+      <section>
+        <h2>6. 금액이 이상할 때 확인하는 순서</h2>
+        <ol><li>단지 리포트에서 최근 한 달만이 아니라 5개월 흐름을 확인합니다.</li><li>총액 변화가 공용관리비인지 개별사용료인지 구분합니다.</li><li>경비, 청소, 수선·시설, 난방, 충당금 중 변동이 큰 항목을 찾습니다.</li><li>K-apt 원본과 관리사무소 공개자료 또는 세대 고지서를 대조합니다.</li><li>정산·환급·일회성 공사 여부가 불분명하면 관리주체에 산출 근거를 문의합니다.</li></ol>
+        <p>바로계산은 정부 공개자료를 재가공한 비교 서비스이며 K-apt 또는 관리주체의 공식 판단을 대신하지 않습니다. 원본 수정이 확인되면 다음 데이터 갱신 때 반영하며, 재현 가능한 계산 오류는 문의를 통해 수정 요청을 받을 수 있습니다.</p>
+      </section>
+    </div>
+
+    <section class="guide-actions"><div><h2>내 단지 확인하기</h2><p>단지명을 검색해 월별 항목과 같은 조건의 비교군을 확인할 수 있습니다.</p></div><a href="/apartments/">전국 단지 찾기</a><a href="/methodology/">산정식 보기</a></section>
+  </article>
+</BaseLayout>
+
+<style>
+  :global(.main-content:has(.fee-guide)){width:min(1040px,calc(100vw - 40px))}.fee-guide{display:grid;gap:22px}.fee-guide>nav{display:flex;gap:8px;color:var(--subtle);font-size:.78rem;font-weight:750}.fee-guide>nav a{color:var(--green-strong);text-decoration:none}.fee-guide>header{max-width:900px;padding:28px 0 12px}.fee-guide>header>p:first-child{margin:0 0 10px;color:var(--green-strong);font-size:.78rem;font-weight:850}.fee-guide h1{margin:0;font-size:clamp(2.2rem,5vw,4.2rem);line-height:1.1;font-weight:820}.fee-guide>header>p:last-child{max-width:800px;margin:18px 0 0;color:var(--muted);font-size:1.05rem;line-height:1.8;font-weight:650}.summary{display:grid;grid-template-columns:220px 1fr;gap:28px;border-left:4px solid var(--green);background:#edf7f2;padding:22px}.summary strong{font-size:1rem}.summary ol{margin:0;padding-left:1.25rem}.summary li{font-weight:700;line-height:1.65}.summary li+li{margin-top:5px}.guide-body{display:grid;gap:0;border-top:1px solid var(--line)}.guide-body section{display:grid;grid-template-columns:270px 1fr;column-gap:42px;padding:30px 0;border-bottom:1px solid var(--line)}.guide-body h2{grid-row:1/span 4;margin:0;font-size:1.15rem;line-height:1.45}.guide-body p,.guide-body ol{margin:0;color:#47534d;font-size:.96rem;line-height:1.85;font-weight:620}.guide-body p+p,.guide-body ol+p{margin-top:12px}.guide-body ol{padding-left:1.3rem}.guide-body li+li{margin-top:6px}.guide-actions{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;background:#18221e;color:#fff;padding:24px}.guide-actions h2{margin:0;font-size:1.15rem}.guide-actions p{margin:4px 0 0;color:#cbd7d1;font-size:.8rem}.guide-actions a{border:1px solid #6b7d74;border-radius:5px;color:#fff;padding:10px 13px;text-decoration:none;font-size:.78rem;font-weight:800}.guide-actions a:first-of-type{border-color:#63c69a;background:#13795b}@media(max-width:760px){:global(.main-content:has(.fee-guide)){width:calc(100vw - 24px)}.summary,.guide-body section,.guide-actions{grid-template-columns:1fr}.summary{gap:12px}.guide-body h2{grid-row:auto;margin-bottom:12px}.guide-actions{align-items:stretch}.guide-actions a{text-align:center}}
+</style>

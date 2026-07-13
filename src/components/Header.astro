@@ -4,7 +4,7 @@ const navItems = [
   ['관리비 지도', '/map/'],
   ['단지 찾기', '/apartments/'],
   ['생활 계산기', '/calculators/'],
-  ['가이드', '/news']
+  ['관리비 가이드', '/management-fee-guide/']
 ];
 
 const isActive = (href: string) =>
@@ -138,8 +138,7 @@ const isActive = (href: string) =>
       font-size: 0.78rem;
       white-space: nowrap;
     }
-    .primary-nav a:nth-child(n + 3) {
-      display: none;
-    }
+    .primary-nav { scrollbar-width: none; }
+    .primary-nav::-webkit-scrollbar { display: none; }
   }
 </style>
