@@ -34,6 +34,8 @@ const metrics = [
         <output data-search-feedback aria-live="polite" hidden></output>
       </label>
 
+      <div class="mobile-suggestions" data-mobile-suggestions hidden></div>
+
       <div class="metric-control" role="list" aria-label="비교 항목">
         {metrics.map((metric) => (
           <button type="button" data-metric={metric.key} class={metric.key === 'tf' ? 'active' : ''}>{metric.shortLabel}</button>
@@ -110,6 +112,7 @@ const metrics = [
     const app = document.querySelector('[data-map-app]');
     const search = app?.querySelector('[data-search]');
     const searchFeedback = app?.querySelector('[data-search-feedback]');
+    const mobileSuggestions = app?.querySelector('[data-mobile-suggestions]');
     const region = app?.querySelector('[data-region]');
     const households = app?.querySelector('[data-households]');
     const reset = app?.querySelector('[data-reset]');
@@ -291,6 +294,48 @@ const metrics = [
       });
     };
 
+    const renderMobileSuggestions = (items) => {
+      if (!mobileSuggestions) return;
+      const query = (search?.value || '').trim().toLowerCase();
+      if (!query) {
+        mobileSuggestions.hidden = true;
+        mobileSuggestions.replaceChildren();
+        app?.classList.remove('mobile-searching');
+        return;
+      }
+      const relevance = (item) => {
+        const name = String(item.n || '').toLowerCase();
+        const area = `${item.sg} ${item.d}`.toLowerCase();
+        if (name === query) return 0;
+        if (name.startsWith(query)) return 1;
+        if (name.includes(query)) return 2;
+        if (area.includes(query)) return 3;
+        return 4;
+      };
+      const rows = items.slice().sort((a, b) => relevance(a) - relevance(b) || a.n.localeCompare(b.n, 'ko')).slice(0, 4);
+      mobileSuggestions.hidden = false;
+      mobileSuggestions.innerHTML = `
+        <div class="suggestion-heading"><strong>${formatNumber(items.length)}개 검색 결과</strong><button type="button" data-mobile-close>필터 보기</button></div>
+        ${rows.map((item) => `<button type="button" class="suggestion-row" data-mobile-slug="${escapeHtml(item.s)}">
+          <span><strong>${escapeHtml(item.n)}</strong><small>${escapeHtml(item.sd)} ${escapeHtml(item.sg)} · ${formatNumber(item.h)}세대</small></span>
+          <em>${formatWon(item.tf)}/㎡</em>
+        </button>`).join('')}
+        ${rows.length ? '' : '<p>조건에 맞는 단지가 없습니다.</p>'}
+      `;
+      mobileSuggestions.querySelectorAll('[data-mobile-slug]').forEach((button) => {
+        button.addEventListener('click', () => {
+          app?.classList.remove('mobile-searching');
+          search?.blur();
+          selectApartment(button.dataset.mobileSlug);
+          window.setTimeout(() => detail?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 180);
+        });
+      });
+      mobileSuggestions.querySelector('[data-mobile-close]')?.addEventListener('click', () => {
+        app?.classList.remove('mobile-searching');
+        search?.blur();
+      });
+    };
+
     const renderDetail = (apartment, comparison) => {
       if (!detail) return;
       const percentile = percentileFor(comparison, apartment);
@@ -339,6 +384,7 @@ const metrics = [
       if (selected) renderDetail(selected, filtered.length ? filtered : apartments);
       else renderRegionMarkers(filtered);
       renderResults(filtered);
+      renderMobileSuggestions(filtered);
       if (count) count.textContent = `${formatNumber(filtered.length)}개 단지`;
       if (searchFeedback) {
         searchFeedback.hidden = !hasQuery;
@@ -350,11 +396,16 @@ const metrics = [
 
     search?.addEventListener('input', () => {
       window.clearTimeout(inputTimer);
+      if ((search.value || '').trim()) app?.classList.add('mobile-searching');
+      else app?.classList.remove('mobile-searching');
       if (searchFeedback) {
         searchFeedback.hidden = !(search.value || '').trim();
         searchFeedback.textContent = (search.value || '').trim() ? '검색 중' : '';
       }
       inputTimer = window.setTimeout(() => { selectedSlug = ''; render(); }, 120);
+    });
+    search?.addEventListener('focus', () => {
+      if ((search.value || '').trim()) app?.classList.add('mobile-searching');
     });
     search?.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter') return;
@@ -363,7 +414,7 @@ const metrics = [
       selectedSlug = '';
       render();
       search.blur();
-      window.setTimeout(() => document.querySelector('.result-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 180);
+      window.setTimeout(() => document.querySelector('.search-field')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
     });
     region?.addEventListener('change', () => { selectedSlug = ''; render(); });
     households?.addEventListener('change', () => { selectedSlug = ''; render(); });
@@ -377,6 +428,7 @@ const metrics = [
       region.value = 'all';
       households.value = 'all';
       selectedSlug = '';
+      app?.classList.remove('mobile-searching');
       activeMetric = 'tf';
       metricButtons.forEach((item) => item.classList.toggle('active', item.dataset.metric === 'tf'));
       history.replaceState({}, '', window.location.pathname);
@@ -416,6 +468,7 @@ const metrics = [
   .search-field span, .select-field span { color: #7a847f; font-size: .68rem; font-weight: 850; }
   .search-field input, .select-field select { width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: .82rem; font-weight: 730; }
   .search-field output { border-radius: 5px; background: #e8f5f1; color: #006c55; padding: 5px 7px; font-size: .68rem; font-weight: 850; white-space: nowrap; }
+  .mobile-suggestions { display: none; }
   .metric-control { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
   .metric-control button, .reset-button { border: 1px solid #d9e1dc; border-radius: 7px; background: #fff; color: #45514b; font-size: .76rem; font-weight: 850; cursor: pointer; }
   .metric-control button.active { border-color: #8ac8b7; background: #e8f5f1; color: #006c55; }
@@ -493,6 +546,21 @@ const metrics = [
     .search-field, .metric-control { grid-column: 1 / -1; }
     .search-field { position: sticky; top: 8px; z-index: 500; min-height: 50px; box-shadow: 0 8px 22px rgba(23, 33, 29, .08); }
     .search-field output { padding: 6px 8px; font-size: .72rem; }
+    .map-shell.mobile-searching .product-header { display: none; }
+    .map-shell.mobile-searching .filter-bar { grid-template-columns: 1fr; gap: 7px; }
+    .map-shell.mobile-searching .metric-control,
+    .map-shell.mobile-searching .select-field,
+    .map-shell.mobile-searching .reset-button { display: none; }
+    .map-shell.mobile-searching .mobile-suggestions:not([hidden]) { grid-column: 1 / -1; display: grid; overflow: hidden; border: 1px solid #d9e4df; border-radius: 7px; background: #fff; }
+    .suggestion-heading { min-height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 10px; background: #f5f8f6; }
+    .suggestion-heading strong { color: #4e5a54; font-size: .7rem; }
+    .suggestion-heading button { border: 0; background: transparent; color: #08765c; font-size: .68rem; font-weight: 850; cursor: pointer; }
+    .suggestion-row { min-width: 0; min-height: 56px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; border: 0; border-top: 1px solid #e7ece9; background: #fff; padding: 8px 10px; text-align: left; cursor: pointer; }
+    .suggestion-row > span { min-width: 0; display: grid; gap: 4px; }
+    .suggestion-row strong { overflow: hidden; color: var(--ink); font-size: .8rem; text-overflow: ellipsis; white-space: nowrap; }
+    .suggestion-row small { overflow: hidden; color: #75807a; font-size: .65rem; font-weight: 720; text-overflow: ellipsis; white-space: nowrap; }
+    .suggestion-row em { color: #08765c; font-size: .7rem; font-style: normal; font-weight: 850; white-space: nowrap; }
+    .mobile-suggestions > p { margin: 0; padding: 18px 10px; color: #707b75; font-size: .75rem; }
     .reset-button { grid-column: 1 / -1; }
     .map-status { align-items: flex-start; flex-direction: column; padding: 10px 12px; }
     .legend { gap: 8px; }
