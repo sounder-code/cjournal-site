@@ -2,7 +2,7 @@ import rss from '@astrojs/rss';
 
 export async function GET(context: { site: URL }) {
   return rss({
-    title: '바로계산 아파트 관리비 피드',
+    title: '단지표 아파트 관리비 피드',
     description: 'K-apt 공개자료를 기반으로 한 아파트 관리비 데이터와 산정 기준 업데이트',
     site: context.site,
     items: [

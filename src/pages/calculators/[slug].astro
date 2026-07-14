@@ -14,7 +14,7 @@ export function getStaticPaths() {
 
 const { calculator } = Astro.props;
 const calculatorScriptVersion = calculators.length;
-const seoTitle = `${calculator.title} - 무료 계산 | 바로계산`;
+const seoTitle = `${calculator.title} - 무료 계산 | 단지표`;
 const inputKeywords = calculator.inputs
   .map((input) => input.label.replace(/[·/]/g, ' '))
   .slice(0, 6)
@@ -143,7 +143,7 @@ const appJsonLd = {
   url: `${Astro.site}calculators/${calculator.slug}/`,
   publisher: {
     '@type': 'Organization',
-    name: '바로계산'
+    name: '단지표'
   }
 };
 const breadcrumbJsonLd = {
@@ -153,7 +153,7 @@ const breadcrumbJsonLd = {
     {
       '@type': 'ListItem',
       position: 1,
-      name: '바로계산',
+      name: '단지표',
       item: `${Astro.site}`
     },
     {

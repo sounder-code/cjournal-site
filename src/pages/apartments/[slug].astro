@@ -87,7 +87,7 @@ const structuredData = [
     description,
     url: `https://cjournal.kr/apartments/${apartment.s}/`,
     creator: { '@type': 'Organization', name: '국토교통부 공동주택관리정보시스템(K-apt)', url: 'https://www.k-apt.go.kr/' },
-    publisher: { '@type': 'Organization', name: '바로계산', url: 'https://cjournal.kr/' },
+    publisher: { '@type': 'Organization', name: '단지표', url: 'https://cjournal.kr/' },
     dateModified: sourceDate,
     temporalCoverage: `${apartment.f[0][0]}/${latest[0]}`,
     spatialCoverage: apartment.a,
@@ -97,7 +97,7 @@ const structuredData = [
 ];
 ---
 <BaseLayout
-  title={`${apartment.n} 관리비 ${latest[0]} · ${titleSuffix} | 바로계산`}
+  title={`${apartment.n} 관리비 ${latest[0]} · ${titleSuffix} | 단지표`}
   description={description}
   canonical={`/apartments/${apartment.s}/`}
   robots="index, follow"
