@@ -1,10 +1,10 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import 'leaflet/dist/leaflet.css';
 import { loadApartmentManifest } from '@/lib/apartmentBulk';
 import adminCenters from '@/data/admin-centers.json';
 
 const manifest = await loadApartmentManifest();
+const naverMapClientId = import.meta.env.PUBLIC_NAVER_MAP_CLIENT_ID || '8qq4ptrbjt';
 const metrics = [
   { key: 'tf', label: '총 관리비', shortLabel: '총액' },
   { key: 'cf', label: '공용관리비', shortLabel: '공용' },
@@ -99,7 +99,7 @@ const metrics = [
       <strong>데이터 기준</strong>
       <div>
         <p>국토교통부 공동주택관리정보시스템(K-apt) 일괄 공개자료 · 원본 {manifest.sourceDate} · 최신 관리비 {manifest.latestMonth} · K-apt 지도 좌표 · 행정경계 {adminCenters.sourceDate}</p>
-        <small>행정경계는 <a href="https://sgis.kostat.go.kr" target="_blank" rel="noopener noreferrer">통계청 SGIS</a> 공공누리 제1유형 자료를 <a href="https://github.com/vuski/admdongkor" target="_blank" rel="noopener noreferrer">vuski/admdongkor</a>가 가공한 CC BY 4.0 데이터입니다.</small>
+        <small>배경지도는 네이버 Dynamic Map을 사용합니다. 행정경계는 <a href="https://sgis.kostat.go.kr" target="_blank" rel="noopener noreferrer">통계청 SGIS</a> 공공누리 제1유형 자료를 <a href="https://github.com/vuski/admdongkor" target="_blank" rel="noopener noreferrer">vuski/admdongkor</a>가 가공한 CC BY 4.0 데이터입니다.</small>
       </div>
     </footer>
   </section>
@@ -110,10 +110,10 @@ const metrics = [
     adminCenters
   })} />
 
+  <script is:inline src={`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${naverMapClientId}&submodules=geocoder`}></script>
+
   <script>
     // @ts-nocheck
-    import L from 'leaflet';
-
     const payload = JSON.parse(document.querySelector('#map-payload')?.textContent || '{}');
     const app = document.querySelector('[data-map-app]');
     const search = app?.querySelector('[data-search]');
@@ -150,12 +150,117 @@ const metrics = [
       '제주특별자치도': [33.4996, 126.5312]
     };
 
-    const map = L.map('apartment-map', { zoomControl: true, attributionControl: true }).setView([36.35, 127.85], 7);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const mapElement = document.querySelector('#apartment-map');
+    if (!window.naver?.maps || !mapElement) {
+      if (count) count.textContent = '지도를 불러오지 못했습니다';
+      throw new Error('NAVER Maps SDK를 불러오지 못했습니다.');
+    }
+
+    const toLatLng = (coordinate) => Array.isArray(coordinate)
+      ? new naver.maps.LatLng(Number(coordinate[0]), Number(coordinate[1]))
+      : coordinate;
+    const rawMap = new naver.maps.Map(mapElement, {
+      center: toLatLng([36.35, 127.85]),
+      zoom: 7,
+      minZoom: 6,
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-    const markerLayer = L.layerGroup().addTo(map);
+      zoomControl: true,
+      zoomControlOptions: { position: naver.maps.Position.TOP_LEFT },
+      scaleControl: false,
+      logoControlOptions: { position: naver.maps.Position.BOTTOM_LEFT },
+      mapDataControlOptions: { position: naver.maps.Position.BOTTOM_LEFT }
+    });
+
+    const map = {
+      getZoom: () => rawMap.getZoom(),
+      getCenter: () => rawMap.getCenter(),
+      getContainer: () => mapElement,
+      setView: (coordinate, zoom) => {
+        rawMap.setCenter(toLatLng(coordinate));
+        rawMap.setZoom(zoom);
+      },
+      fitBounds: (coordinates, options = {}) => {
+        const bounds = new naver.maps.LatLngBounds();
+        coordinates.forEach((coordinate) => bounds.extend(toLatLng(coordinate)));
+        const padding = Number(options.padding?.[0] || 40);
+        const listener = naver.maps.Event.addListener(rawMap, 'idle', () => {
+          naver.maps.Event.removeListener(listener);
+          if (Number.isFinite(options.maxZoom) && rawMap.getZoom() > options.maxZoom) rawMap.setZoom(options.maxZoom);
+        });
+        rawMap.fitBounds(bounds, { top: padding, right: padding, bottom: padding, left: padding });
+      },
+      latLngToContainerPoint: (coordinate) => rawMap.getProjection().fromCoordToOffset(toLatLng(coordinate)),
+      on: (event, handler) => naver.maps.Event.addListener(
+        rawMap,
+        event === 'zoomend' ? 'zoom_changed' : event === 'moveend' ? 'idle' : event,
+        handler
+      )
+    };
+
+    const markerLayer = {
+      markers: [],
+      clearLayers() {
+        this.markers.forEach((marker) => marker.raw.setMap(null));
+        this.markers = [];
+      }
+    };
+
+    const L = {
+      divIcon: (options) => options,
+      marker: (coordinate, options = {}) => {
+        const root = document.createElement('div');
+        const icon = options.icon || {};
+        root.className = icon.className || '';
+        root.innerHTML = icon.html || '';
+        root.style.position = 'relative';
+        root.style.width = `${Number(icon.iconSize?.[0] || 20)}px`;
+        root.style.height = `${Number(icon.iconSize?.[1] || 20)}px`;
+        root.setAttribute('role', 'button');
+        root.setAttribute('aria-label', options.title || '지도 마커');
+        root.title = options.title || '';
+        if (options.keyboard !== false) root.tabIndex = 0;
+        const raw = new naver.maps.Marker({
+          position: toLatLng(coordinate),
+          icon: {
+            content: root,
+            anchor: new naver.maps.Point(
+              Number(icon.iconAnchor?.[0] || 0),
+              Number(icon.iconAnchor?.[1] || 0)
+            )
+          },
+          zIndex: Number(options.zIndexOffset || 0)
+        });
+        const marker = {
+          raw,
+          clickHandler: null,
+          on(event, handler) {
+            if (event === 'click') this.clickHandler = handler;
+            naver.maps.Event.addListener(raw, event, handler);
+            return this;
+          },
+          addTo(layer) {
+            raw.setMap(rawMap);
+            layer.markers.push(this);
+            if (options.keyboard !== false) {
+              root.addEventListener('keydown', (event) => {
+                if ((event.key === 'Enter' || event.key === ' ') && this.clickHandler) {
+                  event.preventDefault();
+                  this.clickHandler();
+                }
+              });
+            }
+            return this;
+          },
+          bindTooltip(html) {
+            root.title = String(html).replace(/<br\s*\/?>/gi, ' · ').replace(/<[^>]+>/g, '').trim();
+            return this;
+          },
+          getElement: () => root,
+          getLatLng: () => raw.getPosition()
+        };
+        return marker;
+      }
+    };
     let complexMarkerEntries = [];
 
     const updateComplexLabels = () => {
@@ -208,6 +313,23 @@ const metrics = [
       .replaceAll("'", '&#039;');
     const formatNumber = (value) => Number(value || 0).toLocaleString('ko-KR');
     const formatWon = (value) => Number(value) > 0 ? `${formatNumber(value)}원` : '미공개';
+    const distanceBetween = (origin, destination) => {
+      const [originLatitude, originLongitude] = Array.isArray(origin)
+        ? origin.map(Number)
+        : [Number(origin.lat()), Number(origin.lng())];
+      const [destinationLatitude, destinationLongitude] = Array.isArray(destination)
+        ? destination.map(Number)
+        : [Number(destination.lat()), Number(destination.lng())];
+      const radians = (degrees) => degrees * Math.PI / 180;
+      const latitudeDelta = radians(destinationLatitude - originLatitude);
+      const longitudeDelta = radians(destinationLongitude - originLongitude);
+      const latitudeArc = Math.sin(latitudeDelta / 2);
+      const longitudeArc = Math.sin(longitudeDelta / 2);
+      const haversine = latitudeArc * latitudeArc
+        + Math.cos(radians(originLatitude)) * Math.cos(radians(destinationLatitude))
+        * longitudeArc * longitudeArc;
+      return 12742000 * Math.asin(Math.sqrt(haversine));
+    };
     const metricLabel = () => payload.metrics.find((metric) => metric.key === activeMetric)?.label || '총 관리비';
     const householdBand = (value) => value < 300 ? 'under-300' : value < 500 ? '300-499' : value < 1000 ? '500-999' : value < 1500 ? '1000-1499' : 'over-1500';
     const bandFor = (percentile) => percentile >= 85 ? 'very-high' : percentile >= 65 ? 'high' : percentile <= 35 ? 'low' : 'average';
@@ -249,16 +371,28 @@ const metrics = [
       const middle = Math.floor(values.length / 2);
       return values.length % 2 ? values[middle] : Math.round((values[middle - 1] + values[middle]) / 2);
     };
+    const centerOfApartments = (items) => {
+      const coordinates = items
+        .map((item) => [Number(item.la), Number(item.lo)])
+        .filter(([latitude, longitude]) => Number.isFinite(latitude) && Number.isFinite(longitude));
+      if (!coordinates.length) return null;
+      return [
+        coordinates.reduce((sum, [latitude]) => sum + latitude, 0) / coordinates.length,
+        coordinates.reduce((sum, [, longitude]) => sum + longitude, 0) / coordinates.length
+      ];
+    };
 
     const addAreaMarker = ({ coordinate, name, items, kind, onClick, selected = false }) => {
       const value = representativeValue(items);
+      const compactProvinceMarker = kind === 'province' && window.matchMedia('(max-width: 720px)').matches;
+      const provinceSize = compactProvinceMarker ? 54 : 64;
       const icon = L.divIcon({
         className: `${kind}-marker-wrap`,
         html: kind === 'province'
           ? `<div class="province-marker"><strong>${formatNumber(items.length)}</strong><span>${escapeHtml(name)}</span></div>`
           : `<div class="area-marker ${kind}${selected ? ' selected' : ''}"><strong>${escapeHtml(name)}</strong><span>${formatNumber(items.length)}개${kind !== 'district' && value ? ` · ${formatNumber(value)}원` : ''}</span></div>`,
-        iconSize: kind === 'province' ? [64, 64] : kind === 'district' ? [62, 58] : [88, 44],
-        iconAnchor: kind === 'province' ? [32, 32] : kind === 'district' ? [31, 29] : [44, 22]
+        iconSize: kind === 'province' ? [provinceSize, provinceSize] : kind === 'district' ? [62, 58] : [88, 44],
+        iconAnchor: kind === 'province' ? [provinceSize / 2, provinceSize / 2] : kind === 'district' ? [31, 29] : [44, 22]
       });
       return L.marker(coordinate, {
         icon,
@@ -288,7 +422,11 @@ const metrics = [
         addAreaMarker({ coordinate, name, items: regionItems, kind: 'province', onClick: () => openProvince(name) });
         bounds.push(coordinate);
       }
-      if (fitMap && bounds.length > 1) map.fitBounds(bounds, { padding: [38, 38], maxZoom: 8, animate: true });
+      if (fitMap && bounds.length > 1) map.fitBounds(bounds, {
+        padding: [38, 38],
+        maxZoom: window.matchMedia('(max-width: 720px)').matches ? 6 : 7,
+        animate: true
+      });
       else if (fitMap && bounds.length === 1) map.setView(bounds[0], 8, { animate: true });
     };
 
@@ -306,8 +444,9 @@ const metrics = [
       const bounds = [];
       for (const [key, group] of groups) {
         const center = districtCenters.get(key);
-        if (!center) continue;
-        const coordinate = [center.latitude, center.longitude];
+        const coordinate = centerOfApartments(group.items)
+          || (center ? [center.latitude, center.longitude] : null);
+        if (!coordinate) continue;
         addAreaMarker({
           coordinate,
           name: group.name,
@@ -345,14 +484,14 @@ const metrics = [
       const unmatched = [];
       for (const [name, group] of groups) {
         const centers = dongCenters.get(normalizeDong(name));
-        if (!centers?.length) {
+        const coordinate = centerOfApartments(group) || (centers?.length ? [
+          centers.reduce((sum, center) => sum + center.latitude, 0) / centers.length,
+          centers.reduce((sum, center) => sum + center.longitude, 0) / centers.length
+        ] : null);
+        if (!coordinate) {
           unmatched.push(...group);
           continue;
         }
-        const coordinate = [
-          centers.reduce((sum, center) => sum + center.latitude, 0) / centers.length,
-          centers.reduce((sum, center) => sum + center.longitude, 0) / centers.length
-        ];
         addAreaMarker({
           coordinate,
           name,
@@ -671,7 +810,7 @@ const metrics = [
       activeMetric = 'tf';
       metricButtons.forEach((item) => item.classList.toggle('active', item.dataset.metric === 'tf'));
       history.replaceState({}, '', window.location.pathname);
-      map.setView([36.35, 127.85], 7, { animate: true });
+      map.setView([36.35, 127.85], window.matchMedia('(max-width: 720px)').matches ? 6 : 7, { animate: true });
       render();
     });
 
@@ -684,7 +823,7 @@ const metrics = [
       } else {
         activeProvince = '';
         region.value = 'all';
-        map.setView([36.35, 127.85], 7, { animate: true });
+        map.setView([36.35, 127.85], window.matchMedia('(max-width: 720px)').matches ? 6 : 7, { animate: true });
       }
       render();
     });
@@ -717,7 +856,7 @@ const metrics = [
       if (!activeProvince && zoom >= 9) {
         const center = map.getCenter();
         const available = [...new Set(filteredApartments().map((item) => item.sd))].filter((name) => provinceCenters[name]);
-        const nearest = available.sort((a, b) => center.distanceTo(provinceCenters[a]) - center.distanceTo(provinceCenters[b]))[0];
+        const nearest = available.sort((a, b) => distanceBetween(center, provinceCenters[a]) - distanceBetween(center, provinceCenters[b]))[0];
         if (nearest) {
           activeProvince = nearest;
           region.value = nearest;
@@ -729,7 +868,7 @@ const metrics = [
         const available = [...new Set(filteredApartments().map((item) => districtKey(item.sd, item.sg)))]
           .map((key) => [key, districtCenters.get(key)])
           .filter((entry) => entry[1]);
-        const nearest = available.sort((a, b) => center.distanceTo([a[1].latitude, a[1].longitude]) - center.distanceTo([b[1].latitude, b[1].longitude]))[0];
+        const nearest = available.sort((a, b) => distanceBetween(center, [a[1].latitude, a[1].longitude]) - distanceBetween(center, [b[1].latitude, b[1].longitude]))[0];
         if (nearest) {
           activeDistrict = nearest[0];
           changed = true;
@@ -792,7 +931,7 @@ const metrics = [
   .low { --band: #15956b; } .average { --band: #68766f; } .high { --band: #c77b17; } .very-high { --band: #c7473c; }
   .legend i.low { background: #15956b; } .legend i.average { background: #68766f; } .legend i.high { background: #c77b17; } .legend i.very-high { background: #c7473c; }
   .map-canvas { min-height: 500px; background: #edf3ef; }
-  .leaflet-container { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; }
+  .map-canvas, .map-canvas * { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; }
   .province-marker-wrap, .district-marker-wrap, .dong-marker-wrap, .unmatched-marker-wrap, .apartment-marker-wrap, .complex-marker-wrap { background: transparent; border: 0; }
   .province-marker { width: 64px; height: 64px; display: grid; place-content: center; gap: 2px; border: 3px solid #fff; border-radius: 50%; background: #08765c; color: #fff; text-align: center; box-shadow: 0 8px 20px rgba(15, 73, 58, .28); }
   .province-marker strong { font-size: .86rem; line-height: 1; }
@@ -903,6 +1042,9 @@ const metrics = [
     .legend { gap: 8px; }
     .map-pane { grid-template-rows: auto minmax(420px, 1fr) auto; }
     .map-canvas { min-height: 420px; }
+    .province-marker { width: 54px; height: 54px; border-width: 2px; box-shadow: 0 6px 15px rgba(15, 73, 58, .24); }
+    .province-marker strong { font-size: .76rem; }
+    .province-marker span { max-width: 48px; font-size: .52rem; }
     .result-list { grid-template-columns: 1fr; }
     .source-note { align-items: flex-start; flex-direction: column; gap: 4px; }
   }
