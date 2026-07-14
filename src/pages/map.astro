@@ -94,6 +94,35 @@ const metrics = [
       </aside>
     </div>
 
+    <aside class="compare-tray" data-compare-tray aria-label="비교할 단지" hidden>
+      <div class="compare-tray-heading">
+        <strong><span data-compare-count>0</span>개 단지 비교</strong>
+        <button type="button" data-compare-clear>전체 해제</button>
+      </div>
+      <div class="compare-chips" data-compare-chips></div>
+      <button type="button" class="compare-open" data-compare-open disabled>2개부터 비교</button>
+    </aside>
+
+    <section class="compare-dialog" data-compare-dialog role="dialog" aria-modal="true" aria-labelledby="compare-title" hidden>
+      <button type="button" class="compare-backdrop" data-compare-close aria-label="비교 화면 닫기"></button>
+      <div class="compare-sheet">
+        <header class="compare-sheet-head">
+          <div>
+            <span>선택 단지</span>
+            <h2 id="compare-title">단지 관리비 비교</h2>
+            <p data-compare-subtitle></p>
+          </div>
+          <div class="compare-sheet-actions">
+            <button type="button" data-compare-share>비교 결과 공유</button>
+            <button type="button" class="compare-sheet-close" data-compare-close aria-label="비교 화면 닫기">&#215;</button>
+          </div>
+        </header>
+        <div class="compare-content" data-compare-content></div>
+      </div>
+    </section>
+
+    <output class="map-toast" data-map-toast aria-live="polite" hidden></output>
+
     <footer class="source-note">
       <strong>데이터 기준</strong>
       <div>
@@ -126,8 +155,21 @@ const metrics = [
     const metricLabelNode = app?.querySelector('[data-metric-label]');
     const results = app?.querySelector('[data-results]');
     const detail = app?.querySelector('[data-detail]');
+    const compareTray = app?.querySelector('[data-compare-tray]');
+    const compareCount = app?.querySelector('[data-compare-count]');
+    const compareChips = app?.querySelector('[data-compare-chips]');
+    const compareOpen = app?.querySelector('[data-compare-open]');
+    const compareClear = app?.querySelector('[data-compare-clear]');
+    const compareDialog = app?.querySelector('[data-compare-dialog]');
+    const compareSubtitle = app?.querySelector('[data-compare-subtitle]');
+    const compareContent = app?.querySelector('[data-compare-content]');
+    const compareShare = app?.querySelector('[data-compare-share]');
+    const mapToast = app?.querySelector('[data-map-toast]');
     const metricButtons = [...(app?.querySelectorAll('[data-metric]') || [])];
-    const initialSlug = new URLSearchParams(window.location.search).get('apt') || '';
+    const initialParams = new URLSearchParams(window.location.search);
+    const initialSlug = initialParams.get('apt') || '';
+    const initialCompareSlugs = (initialParams.get('compare') || '').split(',').map((slug) => slug.trim()).filter(Boolean).slice(0, 4);
+    const initialCompareOpen = initialParams.get('view') === 'compare';
 
     const provinceCenters = {
       '서울특별시': [37.5665, 126.978],
@@ -277,7 +319,7 @@ const metrics = [
       const occupied = [];
       complexMarkerEntries
         .slice()
-        .sort((a, b) => Number(b.selected) - Number(a.selected) || Number(b.apartment.h || 0) - Number(a.apartment.h || 0))
+        .sort((a, b) => Number(b.selected) - Number(a.selected) || Number(b.compared) - Number(a.compared) || Number(b.apartment.h || 0) - Number(a.apartment.h || 0))
         .forEach((entry) => {
           const element = entry.marker.getElement();
           if (!element) return;
@@ -312,6 +354,9 @@ const metrics = [
     let locatingSelection = false;
     let apartmentMode = Boolean(initialSlug);
     let selectionNeedsCenter = Boolean(initialSlug);
+    let compareSlugs = [...new Set(initialCompareSlugs)];
+    let compareDialogOpen = initialCompareOpen && compareSlugs.length >= 2;
+    let toastTimer = 0;
 
     const escapeHtml = (value) => String(value ?? '')
       .replaceAll('&', '&amp;')
@@ -321,6 +366,67 @@ const metrics = [
       .replaceAll("'", '&#039;');
     const formatNumber = (value) => Number(value || 0).toLocaleString('ko-KR');
     const formatWon = (value) => Number(value) > 0 ? `${formatNumber(value)}원` : '미공개';
+    const showToast = (message) => {
+      if (!mapToast) return;
+      window.clearTimeout(toastTimer);
+      mapToast.textContent = message;
+      mapToast.hidden = false;
+      toastTimer = window.setTimeout(() => {
+        mapToast.hidden = true;
+      }, 2200);
+    };
+    const copyText = async (text) => {
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return;
+        } catch {}
+      }
+      const area = document.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.append(area);
+      area.select();
+      document.execCommand('copy');
+      area.remove();
+    };
+    const shareLink = async ({ title, text, url }) => {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title, text, url });
+          return;
+        } catch (error) {
+          if (error?.name === 'AbortError') return;
+        }
+      }
+      try {
+        await copyText(url);
+        showToast('공유 링크를 복사했습니다');
+      } catch {
+        showToast('링크를 복사하지 못했습니다');
+      }
+    };
+    const apartmentShareUrl = (slug) => {
+      const url = new URL(window.location.pathname, window.location.origin);
+      url.searchParams.set('apt', slug);
+      return url.toString();
+    };
+    const comparisonShareUrl = () => {
+      const url = new URL(window.location.pathname, window.location.origin);
+      url.searchParams.set('compare', compareSlugs.join(','));
+      url.searchParams.set('view', 'compare');
+      return url.toString();
+    };
+    const syncComparisonUrl = () => {
+      const url = new URL(window.location.href);
+      if (compareSlugs.length) url.searchParams.set('compare', compareSlugs.join(','));
+      else url.searchParams.delete('compare');
+      if (compareDialogOpen && compareSlugs.length >= 2) url.searchParams.set('view', 'compare');
+      else url.searchParams.delete('view');
+      history.replaceState({}, '', url);
+    };
     const distanceBetween = (origin, destination) => {
       const [originLatitude, originLongitude] = Array.isArray(origin)
         ? origin.map(Number)
@@ -399,6 +505,148 @@ const metrics = [
         .slice(0, limit);
       if (selected && !visible.some((item) => item.s === selected.s)) visible.unshift(selected);
       return visible;
+    };
+
+    const comparedApartments = () => compareSlugs
+      .map((slug) => apartments.find((item) => item.s === slug))
+      .filter(Boolean);
+
+    const comparisonRows = [
+      { key: 'tf', label: '총 관리비', note: '㎡당', kind: 'won', lowerIsBetter: true },
+      { key: 'cf', label: '공용관리비', note: '㎡당', kind: 'won', lowerIsBetter: true },
+      { key: 'rf', label: '장기수선충당금', note: '㎡당', kind: 'won', lowerIsBetter: true },
+      { key: 'h', label: '세대수', kind: 'households' },
+      { key: 'y', label: '사용승인', kind: 'year' },
+      { key: 'ht', label: '난방방식', kind: 'text' },
+      { key: 'mt', label: '관리방식', kind: 'text' },
+      { key: 'ma', label: '관리비 부과면적', kind: 'area' },
+      { key: 'lm', label: '관리비 기준월', kind: 'text' }
+    ];
+
+    const formatComparisonValue = (row, apartment) => {
+      const value = apartment[row.key];
+      if (row.kind === 'won') return `${formatWon(value)}/㎡`;
+      if (row.kind === 'households') return Number(value) > 0 ? `${formatNumber(value)}세대` : '미확인';
+      if (row.kind === 'year') return value ? `${escapeHtml(value)}년` : '미확인';
+      if (row.kind === 'area') return Number(value) > 0 ? `${formatNumber(value)}㎡` : '미공개';
+      return escapeHtml(value || '미확인');
+    };
+
+    const renderComparisonDialog = () => {
+      if (!compareDialog || !compareContent) return;
+      const items = comparedApartments();
+      compareDialog.hidden = !compareDialogOpen || items.length < 2;
+      document.body.classList.toggle('compare-dialog-open', !compareDialog.hidden);
+      if (compareDialog.hidden) return;
+      if (compareSubtitle) compareSubtitle.textContent = `${formatNumber(items.length)}개 단지 · K-apt 월별 공개금액 기준`;
+      const totalValues = items.map((item) => Number(item.tf || 0)).filter((value) => value > 0);
+      const lowestTotal = totalValues.length ? Math.min(...totalValues) : 0;
+      const highestTotal = totalValues.length ? Math.max(...totalValues) : 0;
+      const lowestApartment = items.find((item) => Number(item.tf || 0) === lowestTotal);
+      const difference = highestTotal > lowestTotal ? highestTotal - lowestTotal : 0;
+      compareContent.innerHTML = `
+        ${lowestApartment ? `<div class="compare-summary">
+          <span>총 관리비 확인</span>
+          <strong>${escapeHtml(lowestApartment.n)}</strong>
+          <p>선택 단지 중 ㎡당 공개금액이 가장 낮습니다.${difference ? ` 최고 단지와 ${formatNumber(difference)}원/㎡ 차이입니다.` : ''}</p>
+        </div>` : ''}
+        <div class="compare-table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th scope="col">비교 항목</th>
+                ${items.map((item) => `<th scope="col">
+                  <button type="button" class="compare-apartment" data-compare-select="${escapeHtml(item.s)}">
+                    <span>${escapeHtml(item.sd)} ${escapeHtml(item.sg)}</span>
+                    <strong>${escapeHtml(item.n)}</strong>
+                    <small>${escapeHtml(item.a)}</small>
+                  </button>
+                  <button type="button" class="compare-remove" data-compare-remove="${escapeHtml(item.s)}" aria-label="${escapeHtml(item.n)} 비교에서 빼기">빼기</button>
+                </th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${comparisonRows.map((row) => {
+                const numericValues = row.lowerIsBetter
+                  ? items.map((item) => Number(item[row.key] || 0)).filter((value) => value > 0)
+                  : [];
+                const best = numericValues.length ? Math.min(...numericValues) : 0;
+                return `<tr>
+                  <th scope="row"><strong>${row.label}</strong>${row.note ? `<span>${row.note}</span>` : ''}</th>
+                  ${items.map((item) => {
+                    const isBest = row.lowerIsBetter && best > 0 && Number(item[row.key] || 0) === best;
+                    return `<td class="${isBest ? 'best-value' : ''}">${formatComparisonValue(row, item)}${isBest ? '<span>최저</span>' : ''}</td>`;
+                  }).join('')}
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+        <p class="compare-caption">관리비는 관리비부과면적 ㎡당 금액입니다. 세대별 실제 청구액은 전용면적과 사용량에 따라 달라질 수 있습니다.</p>
+      `;
+      compareContent.querySelectorAll('[data-compare-remove]').forEach((button) => {
+        button.addEventListener('click', () => toggleCompare(button.dataset.compareRemove));
+      });
+      compareContent.querySelectorAll('[data-compare-select]').forEach((button) => {
+        button.addEventListener('click', () => {
+          closeComparison();
+          selectApartment(button.dataset.compareSelect, { center: true });
+        });
+      });
+    };
+
+    const renderCompareTray = () => {
+      if (!compareTray || !compareChips || !compareOpen) return;
+      const items = comparedApartments();
+      compareTray.hidden = items.length === 0;
+      if (compareCount) compareCount.textContent = String(items.length);
+      compareChips.innerHTML = items.map((item) => `<span class="compare-chip">
+        <button type="button" data-compare-select="${escapeHtml(item.s)}">${escapeHtml(item.n)}</button>
+        <button type="button" data-compare-remove="${escapeHtml(item.s)}" aria-label="${escapeHtml(item.n)} 비교에서 빼기">&#215;</button>
+      </span>`).join('');
+      compareOpen.disabled = items.length < 2;
+      compareOpen.textContent = items.length < 2 ? '1개 더 선택' : `${items.length}개 상세 비교`;
+      compareChips.querySelectorAll('[data-compare-remove]').forEach((button) => {
+        button.addEventListener('click', () => toggleCompare(button.dataset.compareRemove));
+      });
+      compareChips.querySelectorAll('[data-compare-select]').forEach((button) => {
+        button.addEventListener('click', () => selectApartment(button.dataset.compareSelect, { center: true }));
+      });
+      renderComparisonDialog();
+    };
+
+    const toggleCompare = (slug) => {
+      if (!slug) return;
+      if (compareSlugs.includes(slug)) {
+        compareSlugs = compareSlugs.filter((item) => item !== slug);
+        if (compareSlugs.length < 2) compareDialogOpen = false;
+      } else {
+        if (compareSlugs.length >= 4) {
+          showToast('비교는 최대 4개 단지까지 가능합니다');
+          render();
+          return;
+        }
+        compareSlugs.push(slug);
+        showToast(compareSlugs.length === 1 ? '비교할 단지를 1개 더 선택하세요' : '비교 목록에 담았습니다');
+      }
+      syncComparisonUrl();
+      render();
+    };
+
+    const openComparison = () => {
+      if (compareSlugs.length < 2) {
+        showToast('비교할 단지를 2개 이상 선택하세요');
+        return;
+      }
+      compareDialogOpen = true;
+      syncComparisonUrl();
+      renderComparisonDialog();
+    };
+
+    const closeComparison = () => {
+      compareDialogOpen = false;
+      syncComparisonUrl();
+      renderComparisonDialog();
     };
 
     const percentileFor = (items, apartment) => {
@@ -587,9 +835,10 @@ const metrics = [
         const band = bandFor(percentile);
         const value = Number(apartment[activeMetric] || 0);
         const isSelected = apartment.s === selectedApartmentSlug;
+        const isCompared = compareSlugs.includes(apartment.s);
         const icon = L.divIcon({
-          className: `complex-marker-wrap${isSelected ? ' selected-complex' : ''}`,
-          html: `<div class="complex-marker ${band}${isSelected ? ' selected' : ''}"><span>${escapeHtml(apartment.n)}</span><strong>${value ? `${formatNumber(value)}원/㎡` : '관리비 미공개'}</strong></div>`,
+          className: `complex-marker-wrap${isSelected ? ' selected-complex' : ''}${isCompared ? ' compared-complex' : ''}`,
+          html: `<div class="complex-marker ${band}${isSelected ? ' selected' : ''}${isCompared ? ' compared' : ''}"><span>${escapeHtml(apartment.n)}</span><strong>${value ? `${formatNumber(value)}원/㎡` : '관리비 미공개'}</strong></div>`,
           iconSize: [20, 20],
           iconAnchor: [10, 10]
         });
@@ -604,7 +853,7 @@ const metrics = [
           .on('mouseover', () => marker.getElement()?.classList.add('label-hover'))
           .on('mouseout', () => marker.getElement()?.classList.remove('label-hover'))
           .addTo(markerLayer);
-        complexMarkerEntries.push({ marker, apartment, selected: isSelected });
+        complexMarkerEntries.push({ marker, apartment, selected: isSelected, compared: isCompared });
         marker.bindTooltip(
           `<strong>${escapeHtml(apartment.n)}</strong><br>${escapeHtml(apartment.a)}`,
           { direction: 'top', offset: [0, -13], className: 'complex-tooltip' }
@@ -675,17 +924,27 @@ const metrics = [
       results.innerHTML = rows.map((item) => {
         const percentile = percentileFor(items, item);
         const band = bandFor(percentile);
-        return `<button type="button" class="result-card ${band}${item.s === selectedSlug ? ' selected' : ''}" data-slug="${escapeHtml(item.s)}">
-          <i aria-hidden="true"></i>
-          <span>${escapeHtml(item.sd)} ${escapeHtml(item.sg)}</span>
-          <strong>${escapeHtml(item.n)}</strong>
-          <small>${escapeHtml(item.ht || '난방 미확인')} · ${formatNumber(item.h)}세대</small>
-          <b>${percentile}p</b>
-          <em>${formatWon(item[activeMetric])}/㎡</em>
-        </button>`;
+        const isCompared = compareSlugs.includes(item.s);
+        return `<article class="result-card ${band}${item.s === selectedSlug ? ' selected' : ''}${isCompared ? ' compared' : ''}">
+          <button type="button" class="result-card-main" data-slug="${escapeHtml(item.s)}">
+            <i aria-hidden="true"></i>
+            <span>${escapeHtml(item.sd)} ${escapeHtml(item.sg)}</span>
+            <strong>${escapeHtml(item.n)}</strong>
+            <small>${escapeHtml(item.ht || '난방 미확인')} · ${formatNumber(item.h)}세대</small>
+            <b>${percentile}p</b>
+            <em>${formatWon(item[activeMetric])}/㎡</em>
+          </button>
+          <label class="result-compare">
+            <input type="checkbox" data-compare-slug="${escapeHtml(item.s)}" ${isCompared ? 'checked' : ''} />
+            <span>비교</span>
+          </label>
+        </article>`;
       }).join('');
       results.querySelectorAll('[data-slug]').forEach((button) => {
         button.addEventListener('click', () => selectApartment(button.dataset.slug, { center: !apartmentMode }));
+      });
+      results.querySelectorAll('[data-compare-slug]').forEach((input) => {
+        input.addEventListener('change', () => toggleCompare(input.dataset.compareSlug));
       });
     };
 
@@ -737,6 +996,7 @@ const metrics = [
       if (!detail) return;
       const percentile = percentileFor(comparison, apartment);
       const band = bandFor(percentile);
+      const isCompared = compareSlugs.includes(apartment.s);
       detail.innerHTML = `
         <button type="button" class="detail-close" data-detail-close aria-label="단지 정보 닫기">&#215;</button>
         <div class="detail-head">
@@ -744,6 +1004,10 @@ const metrics = [
           <h2>${escapeHtml(apartment.n)}</h2>
           <p>${escapeHtml(apartment.a)}</p>
           <small data-location-status>지도 위치 준비 중</small>
+        </div>
+        <div class="detail-actions">
+          <button type="button" class="detail-compare${isCompared ? ' active' : ''}" data-detail-compare aria-pressed="${isCompared}">${isCompared ? '비교에서 빼기' : '비교 담기'}</button>
+          <button type="button" data-detail-share>단지 공유</button>
         </div>
         <div class="score-box ${band}">
           <section><span>${metricLabel()} 수준</span><strong>${bandLabel(band)}</strong><p>비슷한 규모 ${formatNumber(comparison.length)}개 단지 중 백분위 ${percentile}</p></section>
@@ -764,6 +1028,12 @@ const metrics = [
           ? `<a class="report-link" href="/apartments/${encodeURIComponent(apartment.s)}/">월별 관리비 리포트</a>`
           : '<p class="report-unavailable">최근 관리비 공개 이력이 5개월 미만입니다.</p>'}
       `;
+      detail.querySelector('[data-detail-compare]')?.addEventListener('click', () => toggleCompare(apartment.s));
+      detail.querySelector('[data-detail-share]')?.addEventListener('click', () => shareLink({
+        title: `${apartment.n} 관리비`,
+        text: `${apartment.n}의 공개 관리비와 단지 정보를 확인해 보세요.`,
+        url: apartmentShareUrl(apartment.s)
+      }));
       detail.querySelector('[data-detail-close]')?.addEventListener('click', () => {
         selectedSlug = '';
         selectionNeedsCenter = false;
@@ -856,6 +1126,7 @@ const metrics = [
       if (!apartmentMode) renderResults(navigated);
       renderMobileSuggestions(navigated);
       updateMapNavigation();
+      renderCompareTray();
       if (count && !apartmentMode) count.textContent = `${formatNumber(navigated.length)}개 단지`;
       if (searchFeedback) {
         searchFeedback.hidden = !hasQuery;
@@ -928,6 +1199,9 @@ const metrics = [
       activeDong = '';
       apartmentMode = false;
       selectionNeedsCenter = false;
+      compareSlugs = [];
+      compareDialogOpen = false;
+      document.body.classList.remove('compare-dialog-open');
       app?.classList.remove('mobile-searching');
       activeMetric = 'tf';
       metricButtons.forEach((item) => item.classList.toggle('active', item.dataset.metric === 'tf'));
@@ -950,6 +1224,28 @@ const metrics = [
         map.setView([36.35, 127.85], window.matchMedia('(max-width: 720px)').matches ? 6 : 7, { animate: true });
       }
       render();
+    });
+
+    compareOpen?.addEventListener('click', openComparison);
+    compareClear?.addEventListener('click', () => {
+      compareSlugs = [];
+      compareDialogOpen = false;
+      syncComparisonUrl();
+      render();
+    });
+    app?.querySelectorAll('[data-compare-close]').forEach((button) => {
+      button.addEventListener('click', closeComparison);
+    });
+    compareShare?.addEventListener('click', () => {
+      const items = comparedApartments();
+      shareLink({
+        title: '아파트 관리비 비교',
+        text: `${items.map((item) => item.n).join(', ')} 관리비 비교 결과입니다.`,
+        url: comparisonShareUrl()
+      });
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && compareDialogOpen) closeComparison();
     });
 
     map.on('zoomend', () => {
@@ -1015,6 +1311,8 @@ const metrics = [
       })
       .then((data) => {
         apartments = Array.isArray(data) ? data : [];
+        compareSlugs = compareSlugs.filter((slug) => apartments.some((item) => item.s === slug)).slice(0, 4);
+        if (compareSlugs.length < 2) compareDialogOpen = false;
         if (selectedSlug && !apartments.some((item) => item.s === selectedSlug)) {
           selectedSlug = '';
           apartmentMode = false;
@@ -1097,6 +1395,7 @@ const metrics = [
   .area-marker.selected { outline: 3px solid rgba(8, 118, 92, .2); transform: translateY(-2px); }
   .complex-marker { position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; display: grid; place-items: center; border: 2px solid #fff; border-radius: 50%; background: var(--band); color: #fff; box-shadow: 0 4px 10px rgba(23, 33, 29, .28); transform: translate(-50%, -50%); transition: width .15s ease, height .15s ease, border-radius .15s ease, box-shadow .15s ease; }
   .complex-marker.selected { outline: 4px solid rgba(8, 118, 92, .24); box-shadow: 0 8px 20px rgba(8, 87, 67, .32); }
+  .complex-marker.compared::before { position: absolute; z-index: 3; top: -8px; right: -8px; width: 18px; height: 18px; display: grid; place-items: center; border: 2px solid #fff; border-radius: 50%; background: #08765c; color: #fff; content: '\2713'; font-size: .61rem; font-weight: 900; box-shadow: 0 3px 8px rgba(23, 33, 29, .24); }
   .complex-marker::after { display: none; position: absolute; bottom: -5px; left: 50%; width: 7px; height: 7px; border-right: 1px solid #cfd9d3; border-bottom: 1px solid #cfd9d3; background: #fff; content: ''; transform: translateX(-50%) rotate(45deg); }
   .complex-marker span, .complex-marker strong { position: relative; z-index: 1; display: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .complex-marker-wrap.label-visible .complex-marker,
@@ -1120,14 +1419,18 @@ const metrics = [
   .result-heading { min-height: 38px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; }
   .result-heading strong { font-size: .82rem; }
   .result-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 14px 14px; }
-  .result-card { min-width: 0; min-height: 75px; display: grid; grid-template-columns: 9px minmax(0, 1fr) auto; grid-template-areas: 'dot region score' 'dot name fee' 'dot meta fee'; gap: 3px 8px; border: 1px solid #dce4df; border-radius: 7px; background: #fff; padding: 10px; text-align: left; cursor: pointer; }
+  .result-card { position: relative; min-width: 0; min-height: 75px; overflow: hidden; border: 1px solid #dce4df; border-radius: 7px; background: #fff; text-align: left; }
+  .result-card-main { width: 100%; min-height: 75px; display: grid; grid-template-columns: 9px minmax(0, 1fr) auto; grid-template-areas: 'dot region score' 'dot name fee' 'dot meta fee'; gap: 3px 8px; border: 0; background: transparent; padding: 10px 62px 10px 10px; text-align: left; cursor: pointer; }
   .result-card:hover, .result-card.selected { border-color: #65b49e; box-shadow: 0 0 0 3px rgba(8, 118, 92, .1); }
+  .result-card.compared { background: #f5faf7; }
   .result-card i { grid-area: dot; align-self: center; width: 8px; height: 8px; border-radius: 50%; background: var(--band); }
   .result-card span { grid-area: region; overflow: hidden; color: #707b75; font-size: .65rem; font-weight: 720; text-overflow: ellipsis; white-space: nowrap; }
   .result-card strong { grid-area: name; overflow: hidden; color: var(--ink); font-size: .8rem; text-overflow: ellipsis; white-space: nowrap; }
   .result-card small { grid-area: meta; overflow: hidden; color: #707b75; font-size: .65rem; font-weight: 720; text-overflow: ellipsis; white-space: nowrap; }
   .result-card b { grid-area: score; font-size: .74rem; }
   .result-card em { grid-area: fee; align-self: end; color: #45524b; font-size: .68rem; font-style: normal; font-weight: 850; }
+  .result-compare { position: absolute; top: 50%; right: 10px; display: inline-flex; align-items: center; gap: 5px; color: #53615a; font-size: .68rem; font-weight: 850; cursor: pointer; transform: translateY(-50%); }
+  .result-compare input { width: 17px; height: 17px; margin: 0; accent-color: #08765c; cursor: pointer; }
   .empty-result { grid-column: 1 / -1; margin: 8px 0; color: #707b75; font-size: .78rem; }
   .detail-pane { min-width: 0; display: grid; align-content: start; gap: 14px; padding: 18px; }
   .empty-detail { min-height: 320px; display: grid; place-content: center; gap: 8px; text-align: center; }
@@ -1138,6 +1441,11 @@ const metrics = [
   .detail-head h2 { margin: 5px 0; color: var(--ink); font-size: 1.3rem; line-height: 1.25; letter-spacing: 0; }
   .detail-head p { margin: 0; color: #65706a; font-size: .78rem; line-height: 1.5; }
   .detail-head small { display: block; margin-top: 7px; color: #89918d; font-size: .66rem; font-weight: 730; }
+  .detail-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .detail-actions button { min-height: 40px; border: 1px solid #cad8d1; border-radius: 7px; background: #fff; color: #33413a; font-size: .76rem; font-weight: 850; cursor: pointer; }
+  .detail-actions button:hover { border-color: #71ad9c; background: #f2f8f5; }
+  .detail-actions .detail-compare { border-color: #08765c; background: #08765c; color: #fff; }
+  .detail-actions .detail-compare.active { border-color: #b9cec5; background: #edf5f1; color: #076e57; }
   .score-box { display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; border: 1px solid #dce4df; border-radius: 7px; }
   .score-box section { display: grid; gap: 5px; padding: 14px; }
   .score-box section + section { border-left: 1px solid #e2e8e4; }
@@ -1155,6 +1463,76 @@ const metrics = [
   .source-note > div { display: grid; gap: 3px; }
   .source-note small { color: #88918d; font-size: .62rem; line-height: 1.45; }
   .source-note small a { color: #53635c; text-underline-offset: 2px; }
+  .compare-tray {
+    position: absolute;
+    z-index: 900;
+    right: 14px;
+    bottom: 16px;
+    left: 390px;
+    width: min(720px, calc(100% - 404px));
+    min-height: 64px;
+    display: grid;
+    grid-template-columns: auto minmax(120px, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    margin: 0 auto;
+    border: 1px solid #cbd8d1;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .98);
+    padding: 9px 10px;
+    box-shadow: 0 12px 34px rgba(23, 45, 36, .22);
+    backdrop-filter: blur(12px);
+  }
+  .map-shell.has-detail .compare-tray { right: 414px; width: min(620px, calc(100% - 804px)); }
+  .compare-tray[hidden] { display: none; }
+  .compare-tray-heading { display: grid; gap: 2px; padding-left: 2px; white-space: nowrap; }
+  .compare-tray-heading strong { color: var(--ink); font-size: .75rem; }
+  .compare-tray-heading button { border: 0; background: transparent; color: #78827d; padding: 0; font-size: .62rem; font-weight: 760; text-align: left; cursor: pointer; }
+  .compare-chips { min-width: 0; display: flex; gap: 6px; overflow-x: auto; padding: 2px; scrollbar-width: thin; }
+  .compare-chip { flex: 0 0 auto; display: inline-grid; grid-template-columns: minmax(0, auto) 25px; align-items: center; overflow: hidden; border: 1px solid #d6e0db; border-radius: 6px; background: #f6f9f7; }
+  .compare-chip button { min-height: 31px; border: 0; background: transparent; color: #35433c; font-size: .68rem; font-weight: 820; cursor: pointer; }
+  .compare-chip button:first-child { max-width: 140px; overflow: hidden; padding: 0 7px 0 9px; text-overflow: ellipsis; white-space: nowrap; }
+  .compare-chip button:last-child { color: #7b8580; padding: 0; font-size: .98rem; }
+  .compare-open { min-height: 40px; border: 0; border-radius: 7px; background: #08765c; color: #fff; padding: 0 14px; font-size: .74rem; font-weight: 850; white-space: nowrap; cursor: pointer; }
+  .compare-open:disabled { background: #dfe7e3; color: #78837d; cursor: default; }
+  .compare-dialog { position: fixed; z-index: 2500; inset: 0; display: grid; place-items: center; padding: 26px; }
+  .compare-dialog[hidden] { display: none; }
+  .compare-backdrop { position: absolute; inset: 0; border: 0; background: rgba(16, 26, 22, .48); cursor: default; backdrop-filter: blur(3px); }
+  .compare-sheet { position: relative; width: min(1180px, 100%); max-height: min(820px, calc(100dvh - 52px)); display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; border: 1px solid #cfd9d4; border-radius: 8px; background: #fff; box-shadow: 0 24px 70px rgba(10, 25, 19, .28); }
+  .compare-sheet-head { min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid #dde4e0; padding: 14px 18px; }
+  .compare-sheet-head > div:first-child { min-width: 0; }
+  .compare-sheet-head span { color: #08765c; font-size: .68rem; font-weight: 850; }
+  .compare-sheet-head h2 { margin: 3px 0; color: var(--ink); font-size: 1.35rem; letter-spacing: 0; }
+  .compare-sheet-head p { margin: 0; color: #6d7872; font-size: .72rem; }
+  .compare-sheet-actions { display: flex; align-items: center; gap: 7px; }
+  .compare-sheet-actions button { min-height: 38px; border: 1px solid #ccd8d2; border-radius: 7px; background: #fff; color: #33423a; padding: 0 12px; font-size: .74rem; font-weight: 850; cursor: pointer; }
+  .compare-sheet-actions .compare-sheet-close { width: 38px; padding: 0; font-size: 1.2rem; }
+  .compare-content { overflow: auto; padding: 18px; }
+  .compare-summary { display: grid; grid-template-columns: auto 1fr; grid-template-areas: 'label title' 'label copy'; align-items: center; gap: 2px 14px; border-left: 4px solid #08765c; background: #f1f7f4; padding: 12px 14px; }
+  .compare-summary span { grid-area: label; color: #08765c; font-size: .68rem; font-weight: 850; }
+  .compare-summary strong { grid-area: title; color: var(--ink); font-size: .9rem; }
+  .compare-summary p { grid-area: copy; margin: 0; color: #66726c; font-size: .7rem; line-height: 1.45; }
+  .compare-table-wrap { overflow-x: auto; margin-top: 14px; border: 1px solid #dce4df; border-radius: 7px; }
+  .compare-table { width: 100%; min-width: 760px; border-collapse: collapse; table-layout: fixed; }
+  .compare-table th, .compare-table td { border-right: 1px solid #e1e7e4; border-bottom: 1px solid #e1e7e4; }
+  .compare-table tr > *:last-child { border-right: 0; }
+  .compare-table tbody tr:last-child > * { border-bottom: 0; }
+  .compare-table thead th { position: relative; height: 132px; background: #f7f9f8; padding: 12px; vertical-align: top; }
+  .compare-table thead th:first-child { width: 132px; color: #5e6963; font-size: .72rem; text-align: left; }
+  .compare-apartment { width: 100%; display: grid; gap: 5px; border: 0; background: transparent; padding: 0 30px 0 0; text-align: left; cursor: pointer; }
+  .compare-apartment span { overflow: hidden; color: #08765c; font-size: .62rem; font-weight: 820; text-overflow: ellipsis; white-space: nowrap; }
+  .compare-apartment strong { overflow: hidden; color: var(--ink); font-size: .86rem; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+  .compare-apartment small { display: -webkit-box; overflow: hidden; color: #75807a; font-size: .64rem; font-weight: 680; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .compare-remove { position: absolute; top: 10px; right: 8px; border: 0; background: transparent; color: #7b8580; padding: 3px; font-size: .64rem; font-weight: 800; cursor: pointer; }
+  .compare-table tbody th { width: 132px; background: #f8faf9; padding: 13px 12px; text-align: left; }
+  .compare-table tbody th strong { display: block; color: #35423b; font-size: .72rem; }
+  .compare-table tbody th span { display: block; margin-top: 2px; color: #8a938e; font-size: .6rem; }
+  .compare-table td { position: relative; color: #29362f; padding: 13px 12px; font-size: .74rem; font-weight: 760; text-align: right; }
+  .compare-table td.best-value { background: #eef7f3; color: #006c55; font-weight: 900; }
+  .compare-table td.best-value > span { display: inline-block; margin-left: 5px; border-radius: 4px; background: #08765c; color: #fff; padding: 2px 4px; font-size: .55rem; vertical-align: 1px; }
+  .compare-caption { margin: 12px 0 0; color: #77817c; font-size: .68rem; line-height: 1.5; }
+  .map-toast { position: fixed; z-index: 3000; right: 18px; bottom: 18px; border-radius: 7px; background: #17211d; color: #fff; padding: 11px 14px; font-size: .74rem; font-weight: 800; box-shadow: 0 10px 28px rgba(10, 24, 18, .24); }
+  .map-toast[hidden] { display: none; }
   @media (max-width: 1100px) {
     .filter-bar { grid-template-columns: minmax(240px, 1fr) 220px 1fr 1fr; }
     .reset-button { min-height: 40px; grid-column: 1 / -1; }
@@ -1306,8 +1684,8 @@ const metrics = [
     border: 0;
     border-top: 1px solid #e4e9e6;
     border-radius: 0;
-    padding: 11px 13px;
   }
+  .result-card-main { min-height: 78px; padding: 11px 72px 11px 13px; }
   .result-card:hover,
   .result-card.selected { border-color: #d5e4de; background: #f2f8f5; box-shadow: inset 3px 0 0 #08765c; }
   .detail-pane {
@@ -1345,6 +1723,10 @@ const metrics = [
   .detail-head { padding-right: 34px; }
   .source-note { display: none; }
 
+  @media (min-width: 961px) and (max-width: 1200px) {
+    .map-shell.has-detail .compare-tray { right: 414px; left: 14px; width: auto; }
+  }
+
   @media (min-width: 721px) and (max-width: 960px) {
     .filter-bar { grid-template-columns: 180px minmax(0, 1fr) 1fr auto; }
     .map-brand { grid-column: 1; }
@@ -1355,6 +1737,8 @@ const metrics = [
     .result-area { top: 168px; max-height: calc(100% - 182px); }
     .detail-pane { top: 114px; width: 360px; }
     .mobile-suggestions:not([hidden]) { left: 196px; width: min(460px, calc(100% - 210px)); }
+    .compare-tray,
+    .map-shell.has-detail .compare-tray { right: 374px; left: 14px; width: auto; }
   }
 
   @media (max-width: 720px) {
@@ -1407,5 +1791,34 @@ const metrics = [
     .detail-head h2 { font-size: 1.08rem; }
     .score-box section { padding: 11px; }
     .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .compare-tray,
+    .map-shell.has-detail .compare-tray {
+      right: 8px;
+      bottom: 8px;
+      left: 8px;
+      width: auto;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 7px;
+      padding: 8px;
+    }
+    .compare-tray-heading { grid-column: 1; grid-row: 1; }
+    .compare-chips { grid-column: 1 / -1; grid-row: 2; }
+    .compare-open { grid-column: 2; grid-row: 1; min-height: 36px; padding: 0 11px; }
+    .compare-chip button:first-child { max-width: 120px; }
+    .compare-dialog { padding: 0; }
+    .compare-sheet { width: 100%; height: 100dvh; max-height: none; border: 0; border-radius: 0; }
+    .compare-sheet-head { min-height: 82px; gap: 10px; padding: 12px 14px; }
+    .compare-sheet-head h2 { font-size: 1.08rem; }
+    .compare-sheet-head p { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .compare-sheet-actions button:first-child { min-height: 36px; padding: 0 9px; font-size: .68rem; }
+    .compare-sheet-actions .compare-sheet-close { width: 36px; }
+    .compare-content { padding: 12px; }
+    .compare-summary { grid-template-columns: 1fr; grid-template-areas: 'label' 'title' 'copy'; gap: 3px; padding: 10px 12px; }
+    .compare-table { min-width: 720px; }
+    .compare-table thead th:first-child,
+    .compare-table tbody th { position: sticky; left: 0; z-index: 2; width: 112px; }
+    .compare-table thead th:first-child { z-index: 3; }
+    .compare-table thead th { height: 124px; }
+    .map-toast { right: 10px; bottom: 104px; left: 10px; text-align: center; }
   }
 </style>
