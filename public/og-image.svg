@@ -1,32 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
   <title id="title">단지표</title>
-  <desc id="desc">K-apt 공개자료로 전국 아파트 관리비를 비교하는 단지표</desc>
+  <desc id="desc">아파트 관리비를 지도에서 비교하는 단지표</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#ffffff" />
-      <stop offset="0.55" stop-color="#f7f9f8" />
-      <stop offset="1" stop-color="#eef5ff" />
+      <stop offset="0.62" stop-color="#f5f8f6" />
+      <stop offset="1" stop-color="#e4f1ea" />
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="#17261f" flood-opacity="0.14" />
-    </filter>
+    <pattern id="grid" width="72" height="72" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+      <path d="M 72 0 L 0 0 0 72" fill="none" stroke="#bfd2c8" stroke-width="1" opacity="0.34" />
+    </pattern>
   </defs>
   <rect width="1200" height="630" fill="url(#bg)" />
-  <rect x="76" y="76" width="1048" height="478" rx="24" fill="#ffffff" filter="url(#shadow)" />
-  <rect x="118" y="124" width="238" height="54" rx="10" fill="#10231b" />
-  <text x="148" y="160" font-family="Noto Sans KR, Apple SD Gothic Neo, sans-serif" font-size="28" font-weight="900" fill="#ffffff">단지표</text>
-  <text x="118" y="260" font-family="Noto Sans KR, Apple SD Gothic Neo, sans-serif" font-size="68" font-weight="950" fill="#17261f">아파트 관리비를</text>
-  <text x="118" y="350" font-family="Noto Sans KR, Apple SD Gothic Neo, sans-serif" font-size="68" font-weight="950" fill="#13795b">같은 기준으로</text>
-  <text x="122" y="420" font-family="Noto Sans KR, Apple SD Gothic Neo, sans-serif" font-size="28" font-weight="700" fill="#5f6d66">전국 공동주택의 월별 관리비와 비교 지표를 확인합니다.</text>
-  <g transform="translate(782 136)">
-    <rect width="268" height="340" rx="18" fill="#10231b" />
-    <rect x="26" y="30" width="216" height="58" rx="10" fill="#f8faf9" />
-    <rect x="26" y="108" width="216" height="58" rx="10" fill="#f8faf9" opacity="0.9" />
-    <rect x="26" y="186" width="216" height="58" rx="10" fill="#f8faf9" opacity="0.82" />
-    <rect x="26" y="270" width="96" height="34" rx="8" fill="#16824f" />
-    <rect x="140" y="270" width="102" height="34" rx="8" fill="#2f6686" />
-    <text x="46" y="68" font-family="Noto Sans KR, Apple SD Gothic Neo, sans-serif" font-size="24" font-weight="900" fill="#17261f">순이익</text>
-    <text x="46" y="146" font-family="Noto Sans KR, Apple SD Gothic Neo, sans-serif" font-size="24" font-weight="900" fill="#17261f">월 부담</text>
-    <text x="46" y="224" font-family="Noto Sans KR, Apple SD Gothic Neo, sans-serif" font-size="24" font-weight="900" fill="#17261f">총 비용</text>
-  </g>
+  <rect x="620" width="580" height="630" fill="url(#grid)" />
+  <path d="M620 630 C748 496 716 375 846 290 C951 222 1052 199 1200 48 L1200 630Z" fill="#d7e9df" />
+  <path d="M736 630 C844 512 840 416 936 346 C1028 279 1113 253 1200 166" fill="none" stroke="#ffffff" stroke-width="34" opacity="0.9" />
+  <circle cx="872" cy="290" r="28" fill="#ffffff" />
+  <circle cx="872" cy="290" r="13" fill="#0d7a5a" />
+  <circle cx="1085" cy="196" r="28" fill="#ffffff" />
+  <circle cx="1085" cy="196" r="13" fill="#ef735f" />
+  <rect x="72" y="64" width="64" height="64" rx="17" fill="#0d7a5a" />
+  <circle cx="104" cy="96" r="15" fill="#ffffff" />
+  <circle cx="104" cy="96" r="7" fill="#0d7a5a" />
+  <text x="158" y="110" font-family="Apple SD Gothic Neo, sans-serif" font-size="42" font-weight="800" fill="#0f1f19">단지표</text>
+  <text x="72" y="282" font-family="Apple SD Gothic Neo, sans-serif" font-size="78" font-weight="800" fill="#0f1f19">아파트 관리비를</text>
+  <text x="72" y="382" font-family="Apple SD Gothic Neo, sans-serif" font-size="78" font-weight="800" fill="#0d7a5a">지도에서 비교</text>
 </svg>
