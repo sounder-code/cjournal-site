@@ -104,6 +104,26 @@ const structuredData = [
   updatedTime={`${sourceDate}T00:00:00+09:00`}
   structuredData={structuredData}
 >
+  <script is:inline define:vars={{ embedSlug: apartment.s, embedTitle: apartment.n, embedMonth: latest[0] }}>
+    if (new URLSearchParams(window.location.search).get('embed') === 'map') {
+      document.documentElement.classList.add('report-embed');
+      window.parent.postMessage({
+        type: 'danjipyo:report-loaded',
+        slug: embedSlug,
+        title: embedTitle,
+        month: embedMonth
+      }, window.location.origin);
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const link = target.closest('a[href^="/apartments/"]');
+        if (!(link instanceof HTMLAnchorElement)) return;
+        const url = new URL(link.href, window.location.origin);
+        url.searchParams.set('embed', 'map');
+        link.href = url.toString();
+      });
+    }
+  </script>
   <article class="report">
     <header class="report-head">
       <div>
@@ -211,7 +231,7 @@ const structuredData = [
   .fact-strip div:last-child { border: 0; }
   .fact-strip span, .method-note dt { color: #7b847f; font-size: .66rem; font-weight: 700; }
   .fact-strip strong { font-size: .78rem; }
-  .summary-panel { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 24px; align-items: center; border: 1px solid #d7e1dc; border-left: 4px solid #13795b; border-radius: 7px; background: #fff; padding: 20px 22px; }
+  .summary-panel { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 24px; align-items: center; border: 1px solid #d7e1dc; border-radius: 7px; background: #fff; padding: 20px 22px; }
   .summary-panel > div > span { color: #13795b; font-size: .7rem; font-weight: 800; }
   .summary-panel h2 { margin: 5px 0 8px; font-size: 1.18rem; line-height: 1.35; }
   .summary-panel p { margin: 0; color: #58625d; font-size: .8rem; line-height: 1.7; }
@@ -275,6 +295,12 @@ const structuredData = [
   .faq-panel details { border-bottom: 1px solid #e0e5e2; padding: 10px 0; }
   .faq-panel summary { cursor: pointer; font-size: .76rem; font-weight: 800; }
   .faq-panel p { margin: 8px 0 2px; color: #59635e; font-size: .72rem; line-height: 1.65; }
+  :global(html.report-embed body) { overflow: auto; background: #f7f9f8; }
+  :global(html.report-embed .site-header),
+  :global(html.report-embed .site-footer) { display: none; }
+  :global(html.report-embed .main-content:has(.report)) { width: min(1400px, calc(100vw - 32px)); min-height: 100%; padding: 16px 0 36px; }
+  :global(html.report-embed .report-head) { display: none; }
+  :global(html.report-embed .report) { gap: 12px; }
   @media (max-width: 980px) { .content-grid { grid-template-columns: 1fr; } aside { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 760px) {
     :global(.main-content:has(.report)) { width: calc(100vw - 24px); }
@@ -285,5 +311,6 @@ const structuredData = [
     aside { grid-template-columns: 1fr; } .chart svg { height: 165px; }
     .reading-panel > div { grid-template-columns: 1fr; } .reading-panel article { border-right: 0; border-bottom: 1px solid #e8ebe9; }
     .method-note { grid-template-columns: 1fr; gap: 16px; } .method-note dl { grid-template-columns: 1fr; }
+    :global(html.report-embed .main-content:has(.report)) { width: calc(100vw - 20px); padding: 10px 0 24px; }
   }
 </style>

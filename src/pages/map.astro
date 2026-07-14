@@ -127,6 +127,32 @@ const metrics = [
       </div>
     </section>
 
+    <section class="report-dialog" data-report-dialog role="dialog" aria-modal="true" aria-labelledby="report-dialog-title" hidden>
+      <div class="report-sheet">
+        <header class="report-sheet-head">
+          <div class="report-title-block">
+            <a href="/" class="map-brand report-brand" aria-label="단지표 아파트 관리비 지도 홈">
+              <span aria-hidden="true"><i></i></span>
+              <strong>단지표</strong>
+            </a>
+            <div class="report-title-copy">
+              <span>월별 공개 내역</span>
+              <h2 id="report-dialog-title">월별 관리비 리포트</h2>
+              <p data-report-subtitle></p>
+            </div>
+          </div>
+          <div class="report-sheet-actions">
+            <button type="button" data-report-share>리포트 공유</button>
+            <button type="button" class="report-sheet-close" data-report-close aria-label="월별 관리비 리포트 닫기">&#215;</button>
+          </div>
+        </header>
+        <div class="report-frame-wrap" data-report-frame-wrap>
+          <div class="report-loading" data-report-loading><strong>월별 관리비를 불러오는 중</strong><span>최근 공개 내역과 비교 지표를 준비하고 있습니다.</span></div>
+          <iframe data-report-frame title="월별 관리비 리포트" loading="eager"></iframe>
+        </div>
+      </div>
+    </section>
+
     <output class="map-toast" data-map-toast aria-live="polite" hidden></output>
 
     <footer class="source-note">
@@ -170,12 +196,18 @@ const metrics = [
     const compareSubtitle = app?.querySelector('[data-compare-subtitle]');
     const compareContent = app?.querySelector('[data-compare-content]');
     const compareShare = app?.querySelector('[data-compare-share]');
+    const reportDialog = app?.querySelector('[data-report-dialog]');
+    const reportSubtitle = app?.querySelector('[data-report-subtitle]');
+    const reportFrame = app?.querySelector('[data-report-frame]');
+    const reportLoading = app?.querySelector('[data-report-loading]');
+    const reportShare = app?.querySelector('[data-report-share]');
     const mapToast = app?.querySelector('[data-map-toast]');
     const metricButtons = [...(app?.querySelectorAll('[data-metric]') || [])];
     const initialParams = new URLSearchParams(window.location.search);
     const initialSlug = initialParams.get('apt') || '';
     const initialCompareSlugs = (initialParams.get('compare') || '').split(',').map((slug) => slug.trim()).filter(Boolean).slice(0, 4);
     const initialCompareOpen = initialParams.get('view') === 'compare';
+    const initialReportOpen = initialParams.get('report') === '1';
 
     const provinceCenters = {
       '서울특별시': [37.5665, 126.978],
@@ -362,6 +394,7 @@ const metrics = [
     let selectionNeedsCenter = Boolean(initialSlug);
     let compareSlugs = [...new Set(initialCompareSlugs)];
     let compareDialogOpen = initialCompareOpen && compareSlugs.length >= 2;
+    let reportDialogOpen = initialReportOpen && Boolean(initialSlug);
     let toastTimer = 0;
 
     const escapeHtml = (value) => String(value ?? '')
@@ -423,6 +456,12 @@ const metrics = [
       const url = new URL(window.location.pathname, window.location.origin);
       url.searchParams.set('compare', compareSlugs.join(','));
       url.searchParams.set('view', 'compare');
+      return url.toString();
+    };
+    const reportShareUrl = (slug) => {
+      const url = new URL(window.location.pathname, window.location.origin);
+      url.searchParams.set('apt', slug);
+      url.searchParams.set('report', '1');
       return url.toString();
     };
     const syncComparisonUrl = () => {
@@ -724,6 +763,47 @@ const metrics = [
       compareDialogOpen = false;
       syncComparisonUrl();
       renderComparisonDialog();
+    };
+
+    const syncReportUrl = () => {
+      const url = new URL(window.location.href);
+      if (reportDialogOpen && selectedSlug) url.searchParams.set('report', '1');
+      else url.searchParams.delete('report');
+      history.replaceState({}, '', url);
+    };
+
+    const renderReportDialog = (apartment = null) => {
+      if (!reportDialog || !reportFrame) return;
+      const shouldOpen = reportDialogOpen && apartment?.q === 1;
+      reportDialog.hidden = !shouldOpen;
+      document.body.classList.toggle('report-dialog-open', shouldOpen);
+      if (!shouldOpen) return;
+      if (reportSubtitle) reportSubtitle.textContent = `${apartment.n} · ${apartment.lm || '최근 공개월'}`;
+      reportFrame.title = `${apartment.n} 월별 관리비 리포트`;
+      const source = `/apartments/${encodeURIComponent(apartment.s)}/?embed=map`;
+      if (reportFrame.dataset.source !== source) {
+        reportFrame.dataset.source = source;
+        if (reportLoading) reportLoading.hidden = false;
+        reportFrame.hidden = true;
+        reportFrame.src = source;
+      }
+    };
+
+    const openReport = (apartment) => {
+      if (!apartment || apartment.q !== 1) return;
+      reportDialogOpen = true;
+      selectedSlug = apartment.s;
+      const url = new URL(window.location.href);
+      url.searchParams.set('apt', apartment.s);
+      history.replaceState({}, '', url);
+      syncReportUrl();
+      renderReportDialog(apartment);
+    };
+
+    const closeReport = () => {
+      reportDialogOpen = false;
+      syncReportUrl();
+      render();
     };
 
     const percentileFor = (items, apartment) => {
@@ -1099,7 +1179,7 @@ const metrics = [
           <div><dt>관리비 부과면적</dt><dd>${formatNumber(apartment.ma)}㎡</dd></div>
         </dl>
         ${apartment.q === 1
-          ? `<a class="report-link" href="/apartments/${encodeURIComponent(apartment.s)}/">월별 관리비 리포트</a>`
+          ? `<a class="report-link" data-report-open href="/apartments/${encodeURIComponent(apartment.s)}/">월별 관리비 리포트</a>`
           : '<p class="report-unavailable">최근 관리비 공개 이력이 5개월 미만입니다.</p>'}
       `;
       detail.querySelector('[data-detail-compare]')?.addEventListener('click', () => toggleCompare(apartment.s));
@@ -1108,6 +1188,10 @@ const metrics = [
         text: `${apartment.n}의 공개 관리비와 단지 정보를 확인해 보세요.`,
         url: apartmentShareUrl(apartment.s)
       }));
+      detail.querySelector('[data-report-open]')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        openReport(apartment);
+      });
       detail.querySelector('[data-detail-close]')?.addEventListener('click', () => {
         selectedSlug = '';
         selectionNeedsCenter = false;
@@ -1201,6 +1285,7 @@ const metrics = [
       renderMobileSuggestions(navigated);
       updateMapNavigation();
       renderCompareTray();
+      renderReportDialog(selected || null);
       if (count && !apartmentMode) count.textContent = `${formatNumber(navigated.length)}개 단지`;
       if (searchFeedback) {
         searchFeedback.hidden = !hasQuery;
@@ -1275,7 +1360,9 @@ const metrics = [
       selectionNeedsCenter = false;
       compareSlugs = [];
       compareDialogOpen = false;
+      reportDialogOpen = false;
       document.body.classList.remove('compare-dialog-open');
+      document.body.classList.remove('report-dialog-open');
       app?.classList.remove('mobile-searching');
       activeMetric = 'tf';
       metricButtons.forEach((item) => item.classList.toggle('active', item.dataset.metric === 'tf'));
@@ -1318,8 +1405,46 @@ const metrics = [
         url: comparisonShareUrl()
       });
     });
+    reportFrame?.addEventListener('load', () => {
+      if (reportLoading) reportLoading.hidden = true;
+      reportFrame.hidden = false;
+      try {
+        const frameTitle = reportFrame.contentDocument?.querySelector('.report-head h1')?.textContent?.trim();
+        if (frameTitle && reportSubtitle) reportSubtitle.textContent = frameTitle;
+      } catch {}
+    });
+    window.addEventListener('message', (event) => {
+      if (event.origin !== window.location.origin || event.source !== reportFrame?.contentWindow) return;
+      if (event.data?.type !== 'danjipyo:report-loaded') return;
+      const apartment = apartments.find((item) => item.s === event.data.slug);
+      if (!apartment) return;
+      selectedSlug = apartment.s;
+      apartmentMode = true;
+      selectionNeedsCenter = true;
+      activeProvince = apartment.sd;
+      activeDistrict = districtKey(apartment.sd, apartment.sg);
+      activeDong = apartment.d;
+      if (region) region.value = apartment.sd;
+      if (reportSubtitle) reportSubtitle.textContent = `${event.data.title} · ${event.data.month}`;
+      const url = new URL(window.location.href);
+      url.searchParams.set('apt', apartment.s);
+      url.searchParams.set('report', '1');
+      history.replaceState({}, '', url);
+    });
+    reportShare?.addEventListener('click', () => {
+      const apartment = apartments.find((item) => item.s === selectedSlug);
+      if (!apartment) return;
+      shareLink({
+        title: `${apartment.n} 월별 관리비`,
+        text: `${apartment.n}의 최근 관리비 추이와 항목별 금액을 확인해 보세요.`,
+        url: reportShareUrl(apartment.s)
+      });
+    });
+    app?.querySelector('[data-report-close]')?.addEventListener('click', closeReport);
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && compareDialogOpen) closeComparison();
+      if (event.key !== 'Escape') return;
+      if (reportDialogOpen) closeReport();
+      else if (compareDialogOpen) closeComparison();
     });
 
     map.on('zoomend', () => {
@@ -1639,6 +1764,26 @@ const metrics = [
   .compare-table td.best-value { background: #eef7f3; color: #006c55; font-weight: 900; }
   .compare-table td.best-value > small { color: #08765c; font-weight: 850; }
   .compare-caption { margin-top: 14px; color: #6f7b75; font-size: .72rem; line-height: 1.55; }
+  .report-dialog { position: fixed; z-index: 2600; inset: 0; display: grid; place-items: stretch; background: #f7f9f8; }
+  .report-dialog[hidden] { display: none; }
+  .report-sheet { width: 100%; height: 100%; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; background: #f7f9f8; }
+  .report-sheet-head { min-height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid #ccd7d1; background: #fff; padding: 8px 16px; box-shadow: 0 3px 14px rgba(25, 46, 37, .08); }
+  .report-title-block { min-width: 0; display: flex; align-items: center; gap: 13px; }
+  .report-brand { flex: 0 0 auto; padding-right: 13px; border-right: 1px solid #d9e1dc; }
+  .report-title-copy { min-width: 0; }
+  .report-title-copy > span { color: #08765c; font-size: .62rem; font-weight: 850; }
+  .report-title-copy h2 { display: inline; margin: 0 8px 0 0; color: var(--ink); font-size: 1.05rem; letter-spacing: 0; }
+  .report-title-copy p { display: inline; margin: 0; color: #6d7872; font-size: .7rem; }
+  .report-sheet-actions { display: flex; align-items: center; gap: 7px; }
+  .report-sheet-actions button { min-height: 40px; border: 1px solid #08765c; border-radius: 7px; background: #fff; color: #08765c; padding: 0 13px; font-size: .72rem; font-weight: 850; cursor: pointer; }
+  .report-sheet-actions .report-sheet-close { width: 40px; border-color: #c8d5ce; color: #26352e; padding: 0; font-size: 1.2rem; }
+  .report-frame-wrap { position: relative; min-height: 0; overflow: hidden; background: #f7f9f8; }
+  .report-frame-wrap iframe { width: 100%; height: 100%; display: block; border: 0; background: #f7f9f8; }
+  .report-frame-wrap iframe[hidden] { display: none; }
+  .report-loading { position: absolute; inset: 0; display: grid; place-content: center; gap: 5px; color: #6d7872; text-align: center; }
+  .report-loading[hidden] { display: none; }
+  .report-loading strong { color: var(--ink); font-size: .92rem; }
+  .report-loading span { font-size: .72rem; }
   .map-toast { position: fixed; z-index: 3000; right: 18px; bottom: 18px; border-radius: 7px; background: #17211d; color: #fff; padding: 11px 14px; font-size: .74rem; font-weight: 800; box-shadow: 0 10px 28px rgba(10, 24, 18, .24); }
   .map-toast[hidden] { display: none; }
   @media (max-width: 1100px) {
@@ -1942,6 +2087,15 @@ const metrics = [
     .compare-table tbody th { position: sticky; left: 0; z-index: 2; width: 112px; }
     .compare-table thead th:first-child { z-index: 3; }
     .compare-table thead th { height: 124px; }
+    .report-sheet-head { min-height: 68px; gap: 10px; padding: 9px 10px; }
+    .report-title-block { gap: 8px; }
+    .report-brand { padding-right: 8px; }
+    .report-brand strong { display: none; }
+    .report-title-copy h2 { display: block; font-size: .98rem; line-height: 1.25; }
+    .report-title-copy p { display: block; max-width: 185px; overflow: hidden; margin-top: 2px; text-overflow: ellipsis; white-space: nowrap; }
+    .report-title-copy > span { display: none; }
+    .report-sheet-actions button:first-child { min-height: 36px; padding: 0 9px; font-size: .68rem; }
+    .report-sheet-actions .report-sheet-close { width: 36px; min-height: 36px; }
     .map-toast { right: 10px; bottom: 104px; left: 10px; text-align: center; }
   }
 </style>
