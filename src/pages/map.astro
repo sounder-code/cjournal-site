@@ -14,15 +14,16 @@ const metrics = [
 <BaseLayout
   title="전국 아파트 관리비 지도 | 바로계산"
   description="전국 공동주택을 검색하고 총 관리비, 공용관리비, 장기수선충당금을 지도에서 비교합니다."
-  canonical="/map/"
+  canonical="/"
   robots={manifest.stats.complexes > 0 ? 'index, follow' : 'noindex, nofollow'}
+  fullBleed
 >
   <section class="map-shell" data-map-app>
     <header class="product-header">
       <div>
-        <span>K-apt 전국 공개자료</span>
-        <h1>아파트 관리비 지도</h1>
-        <p>전국 단지를 찾고 공개 주소와 ㎡당 관리비를 한 화면에서 확인합니다.</p>
+        <span>K-apt</span>
+        <h1>전국 아파트 관리비 지도</h1>
+        <p>단지별 관리비 지도</p>
       </div>
       <a href="/apartments/">표로 자세히 보기</a>
     </header>
@@ -81,16 +82,16 @@ const metrics = [
         </div>
         <div id="apartment-map" class="map-canvas" aria-label="전국 아파트 관리비 지도"></div>
         <div class="result-area">
-          <div class="result-heading"><strong>검색 결과</strong><span>조건에 맞는 단지 중 최대 6개</span></div>
+          <div class="result-heading"><strong>단지 목록</strong><span>최대 6개 표시</span></div>
           <div class="result-list" data-results aria-live="polite"></div>
         </div>
       </section>
 
       <aside class="detail-pane" data-detail aria-label="선택 단지 정보">
         <div class="empty-detail">
-          <span>단지 선택</span>
-          <strong>지역을 고르거나 단지를 검색하세요</strong>
-          <p>시도 마커를 누르면 해당 지역으로 좁혀집니다. 검색 결과에서 단지를 선택하면 공개 주소 기준 위치와 관리비를 표시합니다.</p>
+          <span>단지 정보</span>
+          <strong>단지를 선택하세요</strong>
+          <p>관리비, 세대수, 난방방식과 지역 내 비교값을 확인합니다.</p>
         </div>
       </aside>
     </div>
@@ -155,6 +156,7 @@ const metrics = [
       if (count) count.textContent = '지도를 불러오지 못했습니다';
       throw new Error('NAVER Maps SDK를 불러오지 못했습니다.');
     }
+    const compactMap = window.matchMedia('(max-width: 720px)').matches;
 
     const toLatLng = (coordinate) => Array.isArray(coordinate)
       ? new naver.maps.LatLng(Number(coordinate[0]), Number(coordinate[1]))
@@ -164,8 +166,8 @@ const metrics = [
       zoom: 7,
       minZoom: 6,
       maxZoom: 19,
-      zoomControl: true,
-      zoomControlOptions: { position: naver.maps.Position.TOP_LEFT },
+      zoomControl: !compactMap,
+      zoomControlOptions: { position: naver.maps.Position.RIGHT_CENTER },
       scaleControl: false,
       logoControlOptions: { position: naver.maps.Position.BOTTOM_LEFT },
       mapDataControlOptions: { position: naver.maps.Position.BOTTOM_LEFT }
@@ -385,7 +387,7 @@ const metrics = [
     const addAreaMarker = ({ coordinate, name, items, kind, onClick, selected = false }) => {
       const value = representativeValue(items);
       const compactProvinceMarker = kind === 'province' && window.matchMedia('(max-width: 720px)').matches;
-      const provinceSize = compactProvinceMarker ? 54 : 64;
+      const provinceSize = compactProvinceMarker ? 48 : 64;
       const icon = L.divIcon({
         className: `${kind}-marker-wrap`,
         html: kind === 'province'
@@ -667,6 +669,7 @@ const metrics = [
       const percentile = percentileFor(comparison, apartment);
       const band = bandFor(percentile);
       detail.innerHTML = `
+        <button type="button" class="detail-close" data-detail-close aria-label="단지 정보 닫기">&#215;</button>
         <div class="detail-head">
           <span>${escapeHtml(apartment.sd)} ${escapeHtml(apartment.sg)} · ${escapeHtml(apartment.ht || '난방 미확인')}</span>
           <h2>${escapeHtml(apartment.n)}</h2>
@@ -690,8 +693,15 @@ const metrics = [
         </dl>
         ${apartment.q === 1
           ? `<a class="report-link" href="/apartments/${encodeURIComponent(apartment.s)}/">월별 관리비 리포트</a>`
-          : '<p class="report-unavailable">공개월이 부족해 상세 리포트는 제공하지 않습니다.</p>'}
+          : '<p class="report-unavailable">최근 관리비 공개 이력이 5개월 미만입니다.</p>'}
       `;
+      detail.querySelector('[data-detail-close]')?.addEventListener('click', () => {
+        selectedSlug = '';
+        const url = new URL(window.location.href);
+        url.searchParams.delete('apt');
+        history.replaceState({}, '', url);
+        render();
+      });
       locateApartment(apartment, comparison);
     };
 
@@ -753,7 +763,7 @@ const metrics = [
       renderResults(navigated);
       renderMobileSuggestions(navigated);
       updateMapNavigation();
-      if (count) count.textContent = `${formatNumber(navigated.length)}개 단지`;
+      if (count) count.textContent = selected ? selected.n : `${formatNumber(navigated.length)}개 단지`;
       if (searchFeedback) {
         searchFeedback.hidden = !hasQuery;
         searchFeedback.textContent = hasQuery ? `${formatNumber(filtered.length)}개 찾음` : '';
@@ -1042,10 +1052,210 @@ const metrics = [
     .legend { gap: 8px; }
     .map-pane { grid-template-rows: auto minmax(420px, 1fr) auto; }
     .map-canvas { min-height: 420px; }
-    .province-marker { width: 54px; height: 54px; border-width: 2px; box-shadow: 0 6px 15px rgba(15, 73, 58, .24); }
-    .province-marker strong { font-size: .76rem; }
-    .province-marker span { max-width: 48px; font-size: .52rem; }
+    .province-marker { width: 48px; height: 48px; border-width: 2px; box-shadow: 0 6px 15px rgba(15, 73, 58, .24); }
+    .province-marker strong { font-size: .7rem; }
+    .province-marker span { max-width: 43px; font-size: .48rem; }
     .result-list { grid-template-columns: 1fr; }
     .source-note { align-items: flex-start; flex-direction: column; gap: 4px; }
+  }
+
+  /* Map-first application layout */
+  body.full-bleed-page { overflow: hidden; background: #e8eeea; }
+  .main-content.main-content-full:has(.map-shell) { width: 100%; margin: 0; padding: 0; }
+  .map-shell {
+    position: relative;
+    display: block;
+    height: calc(100dvh - 61px);
+    min-height: 560px;
+    overflow: hidden;
+    background: #e8eeea;
+  }
+  .product-header {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .filter-bar {
+    position: absolute;
+    z-index: 40;
+    top: 14px;
+    left: 14px;
+    width: min(1060px, calc(100% - 28px));
+    grid-template-columns: minmax(300px, 1fr) 230px 155px 155px auto;
+    gap: 7px;
+    padding: 8px;
+    border-color: rgba(188, 201, 194, .92);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(25, 46, 37, .14);
+  }
+  .search-field,
+  .select-field { min-height: 42px; background: #fff; }
+  .search-field { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .search-field input { font-size: .86rem; }
+  .metric-control { min-width: 0; }
+  .metric-control button,
+  .reset-button { min-height: 42px; }
+  .reset-button { grid-column: auto; padding: 0 13px; }
+  .workspace {
+    position: absolute;
+    inset: 0;
+    display: block;
+    min-height: 0;
+  }
+  .map-pane {
+    position: absolute;
+    inset: 0;
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .map-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    background: #e8eeea;
+  }
+  .map-status {
+    position: absolute;
+    z-index: 28;
+    top: 78px;
+    left: 14px;
+    width: 360px;
+    min-height: 50px;
+    padding: 0 13px;
+    border: 1px solid #d6dfda;
+    border-radius: 8px 8px 0 0;
+    background: rgba(255, 255, 255, .97);
+    box-shadow: 0 8px 22px rgba(25, 46, 37, .11);
+    backdrop-filter: blur(12px);
+  }
+  .map-summary { min-width: 0; }
+  .map-status strong { font-size: .86rem; }
+  .map-status span,
+  .result-heading span { font-size: .66rem; }
+  .map-status .legend { display: none; }
+  .result-area {
+    position: absolute;
+    z-index: 27;
+    top: 127px;
+    left: 14px;
+    width: 360px;
+    max-height: calc(100% - 141px);
+    overflow: auto;
+    border: 1px solid #d6dfda;
+    border-top: 0;
+    border-radius: 0 0 8px 8px;
+    background: rgba(255, 255, 255, .97);
+    box-shadow: 0 14px 30px rgba(25, 46, 37, .13);
+    backdrop-filter: blur(12px);
+    scrollbar-width: thin;
+  }
+  .result-heading { position: sticky; top: 0; z-index: 2; min-height: 42px; background: #fff; }
+  .result-list { display: grid; grid-template-columns: 1fr; gap: 0; padding: 0; }
+  .result-card {
+    min-height: 78px;
+    border: 0;
+    border-top: 1px solid #e4e9e6;
+    border-radius: 0;
+    padding: 11px 13px;
+  }
+  .result-card:hover,
+  .result-card.selected { border-color: #d5e4de; background: #f2f8f5; box-shadow: inset 3px 0 0 #08765c; }
+  .detail-pane {
+    position: absolute;
+    z-index: 35;
+    top: 78px;
+    right: 14px;
+    bottom: 14px;
+    width: 380px;
+    min-height: 0;
+    overflow: auto;
+    border-color: #d6dfda;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .98);
+    box-shadow: 0 16px 38px rgba(25, 46, 37, .17);
+    backdrop-filter: blur(12px);
+  }
+  .detail-pane:has(.empty-detail) { display: none; }
+  .detail-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #d8e1dc;
+    border-radius: 50%;
+    background: #fff;
+    color: #45524b;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .detail-head { padding-right: 34px; }
+  .source-note { display: none; }
+
+  @media (min-width: 721px) and (max-width: 960px) {
+    .filter-bar { grid-template-columns: minmax(240px, 1fr) 210px 1fr 1fr; }
+    .reset-button { grid-column: 1 / -1; min-height: 34px; }
+    .map-status { top: 119px; }
+    .result-area { top: 168px; max-height: calc(100% - 182px); }
+    .detail-pane { top: 119px; width: 340px; }
+  }
+
+  @media (max-width: 720px) {
+    .main-content.main-content-full:has(.map-shell) { width: 100%; margin: 0; padding: 0; }
+    .map-shell { height: calc(100dvh - 94px); min-height: 520px; }
+    .filter-bar {
+      top: 8px;
+      left: 8px;
+      width: calc(100% - 16px);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 58px;
+      gap: 6px;
+      padding: 7px;
+      box-shadow: 0 7px 20px rgba(25, 46, 37, .14);
+    }
+    .search-field { position: static; z-index: auto; min-height: 46px; box-shadow: none; }
+    .metric-control { min-height: 34px; }
+    .metric-control button { min-height: 34px; }
+    .select-field { min-height: 40px; }
+    .reset-button { min-height: 40px; grid-column: auto; padding: 0 5px; font-size: .68rem; }
+    .mobile-suggestions:not([hidden]) { max-height: min(310px, calc(100dvh - 180px)); overflow: auto; }
+    .map-status {
+      top: 162px;
+      left: 8px;
+      width: calc(100% - 16px);
+      min-height: 44px;
+      align-items: center;
+      flex-direction: row;
+      padding: 0 11px;
+      border-radius: 7px;
+    }
+    .map-shell.mobile-searching .map-status { top: 70px; }
+    .map-status .legend { display: none; }
+    .result-area { display: none; }
+    .detail-pane {
+      top: auto;
+      right: 8px;
+      bottom: 8px;
+      left: 8px;
+      width: auto;
+      max-height: min(48%, 380px);
+      padding: 16px;
+      border-radius: 8px;
+    }
+    .detail-head h2 { font-size: 1.08rem; }
+    .score-box section { padding: 11px; }
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 </style>

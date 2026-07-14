@@ -12,9 +12,10 @@ interface Props {
   publishedTime?: string;
   updatedTime?: string;
   structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
+  fullBleed?: boolean;
 }
 
-const { title, description, canonical, robots, type, publishedTime, updatedTime, structuredData } = Astro.props;
+const { title, description, canonical, robots, type, publishedTime, updatedTime, structuredData, fullBleed = false } = Astro.props;
 const gtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-TXMPF75Z').trim();
 const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
 ---
@@ -25,6 +26,7 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="google-adsense-account" content="ca-pub-3605659204864367" />
+    <meta name="naver-site-verification" content="ab68804788772e990da247efccd5e08cdec6e581" />
     {
       gtmId && (
         <script
@@ -45,7 +47,7 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
     <SeoHead title={title} description={description} canonical={canonical} robots={robots} type={type} publishedTime={publishedTime} updatedTime={updatedTime} />
     {structuredData && <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData).replace(/</g, '\\u003c')} />}
   </head>
-  <body>
+  <body class:list={{ 'full-bleed-page': fullBleed }}>
     {
       gtmId && (
         <noscript>
@@ -59,10 +61,10 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
       )
     }
     <Header />
-    <main class="container main-content">
+    <main class:list={['container', 'main-content', { 'main-content-full': fullBleed }]}>
       <slot />
     </main>
-    <Footer />
+    {!fullBleed && <Footer />}
     <script is:inline>
       document.addEventListener('click', (event) => {
         const target = event.target;
@@ -133,6 +135,7 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
   }
   .container { width: min(1400px, calc(100vw - 40px)); margin: 0 auto; }
   .main-content { min-height: 72vh; padding: 24px 0 64px; }
+  .main-content-full { width: 100%; max-width: none; min-height: 0; padding: 0; }
   .site-footer {
     background: rgba(255, 255, 255, 0.96);
     border-top: 1px solid var(--line);
@@ -146,6 +149,7 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
   @media (max-width: 760px) {
     .container { width: calc(100vw - 24px); }
     .main-content { padding-top: 16px; }
+    .main-content-full { width: 100%; padding: 0; }
   }
   .header-inner { padding: 12px 0; }
   .logo {
