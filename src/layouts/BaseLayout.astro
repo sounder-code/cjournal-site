@@ -13,9 +13,10 @@ interface Props {
   updatedTime?: string;
   structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
   fullBleed?: boolean;
+  hideHeader?: boolean;
 }
 
-const { title, description, canonical, robots, type, publishedTime, updatedTime, structuredData, fullBleed = false } = Astro.props;
+const { title, description, canonical, robots, type, publishedTime, updatedTime, structuredData, fullBleed = false, hideHeader = false } = Astro.props;
 const gtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-TXMPF75Z').trim();
 const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
 ---
@@ -60,7 +61,7 @@ const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
         </noscript>
       )
     }
-    <Header />
+    {!hideHeader && <Header />}
     <main class:list={['container', 'main-content', { 'main-content-full': fullBleed }]}>
       <slot />
     </main>

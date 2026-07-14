@@ -17,21 +17,19 @@ const metrics = [
   canonical="/"
   robots={manifest.stats.complexes > 0 ? 'index, follow' : 'noindex, nofollow'}
   fullBleed
+  hideHeader
 >
   <section class="map-shell" data-map-app>
-    <header class="product-header">
-      <div>
-        <span>K-apt</span>
-        <h1>전국 아파트 관리비 지도</h1>
-        <p>단지별 관리비 지도</p>
-      </div>
-      <a href="/apartments/">표로 자세히 보기</a>
-    </header>
-
+    <h1 class="map-title">전국 아파트 관리비 지도</h1>
     <div class="filter-bar" aria-label="관리비 지도 필터">
+      <a href="/" class="map-brand" aria-label="바로계산 관리비 지도 홈">
+        <span aria-hidden="true"><i></i></span>
+        <strong>바로계산</strong>
+      </a>
+
       <label class="search-field">
-        <span>검색</span>
-        <input type="search" data-search placeholder="단지명, 주소, 동 검색" autocomplete="off" enterkeyhint="search" />
+        <span>단지 찾기</span>
+        <input type="search" data-search placeholder="아파트 단지명 또는 주소 검색" autocomplete="off" enterkeyhint="search" />
         <output data-search-feedback aria-live="polite" hidden></output>
       </label>
 
@@ -306,6 +304,8 @@ const metrics = [
     let activeDong = '';
     let mapCoordinateStatus = '';
     let inputTimer;
+    let suggestionsDismissed = Boolean(initialSlug);
+    let locatingSelection = false;
 
     const escapeHtml = (value) => String(value ?? '')
       .replaceAll('&', '&amp;')
@@ -589,6 +589,11 @@ const metrics = [
         iconAnchor: [14, 14]
       });
       L.marker([coordinate.latitude, coordinate.longitude], { icon, title: apartment.n, keyboard: true }).addTo(markerLayer);
+      locatingSelection = true;
+      const idleListener = naver.maps.Event.addListener(rawMap, 'idle', () => {
+        naver.maps.Event.removeListener(idleListener);
+        locatingSelection = false;
+      });
       map.setView([coordinate.latitude, coordinate.longitude], 16);
     };
 
@@ -623,9 +628,9 @@ const metrics = [
     const renderMobileSuggestions = (items) => {
       if (!mobileSuggestions) return;
       const query = (search?.value || '').trim().toLowerCase();
-      if (!query) {
+      if (!query || suggestionsDismissed) {
         mobileSuggestions.hidden = true;
-        mobileSuggestions.replaceChildren();
+        if (!query) mobileSuggestions.replaceChildren();
         app?.classList.remove('mobile-searching');
         return;
       }
@@ -657,6 +662,8 @@ const metrics = [
         });
       });
       mobileSuggestions.querySelector('[data-mobile-close]')?.addEventListener('click', () => {
+        suggestionsDismissed = true;
+        mobileSuggestions.hidden = true;
         app?.classList.remove('mobile-searching');
         search?.blur();
       });
@@ -705,6 +712,7 @@ const metrics = [
 
     const selectApartment = (slug) => {
       selectedSlug = slug;
+      suggestionsDismissed = true;
       const url = new URL(window.location.href);
       url.searchParams.set('apt', slug);
       history.replaceState({}, '', url);
@@ -753,6 +761,7 @@ const metrics = [
         && (!activeDong || item.d === activeDong));
       const hasQuery = Boolean((search?.value || '').trim());
       const selected = apartments.find((item) => item.s === selectedSlug);
+      app?.classList.toggle('has-detail', Boolean(selected));
       if (selected) renderDetail(selected, filtered.length ? filtered : apartments);
       else if (activeDong) renderApartmentMarkers(navigated, fitMap);
       else if (activeDistrict) renderDongMarkers(navigated, fitMap);
@@ -772,6 +781,7 @@ const metrics = [
 
     search?.addEventListener('input', () => {
       window.clearTimeout(inputTimer);
+      suggestionsDismissed = false;
       if ((search.value || '').trim()) app?.classList.add('mobile-searching');
       else app?.classList.remove('mobile-searching');
       if (searchFeedback) {
@@ -781,7 +791,11 @@ const metrics = [
       inputTimer = window.setTimeout(() => { selectedSlug = ''; activeDong = ''; render(); }, 120);
     });
     search?.addEventListener('focus', () => {
-      if ((search.value || '').trim()) app?.classList.add('mobile-searching');
+      if ((search.value || '').trim()) {
+        suggestionsDismissed = false;
+        app?.classList.add('mobile-searching');
+        render();
+      }
     });
     search?.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter') return;
@@ -840,7 +854,7 @@ const metrics = [
       const zoom = map.getZoom();
       updateComplexLabels();
       let changed = false;
-      if (selectedSlug && zoom < 14) {
+      if (selectedSlug && zoom < 14 && !locatingSelection) {
         selectedSlug = '';
         const url = new URL(window.location.href);
         url.searchParams.delete('apt');
@@ -906,12 +920,17 @@ const metrics = [
 <style is:global>
   .main-content:has(.map-shell) { width: min(1540px, calc(100vw - 28px)); padding-top: 14px; }
   .map-shell { --line: #dce4df; --ink: #17211d; --green: #08765c; display: grid; gap: 12px; }
+  .map-title { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .product-header { min-height: 66px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
   .product-header span { color: #08765c; font-size: .72rem; font-weight: 850; }
   .product-header h1 { margin: 3px 0 0; color: var(--ink); font-size: 1.65rem; line-height: 1.16; font-weight: 780; letter-spacing: 0; }
   .product-header p { margin: 5px 0 0; color: #68736e; font-size: .84rem; font-weight: 680; }
   .product-header > a, .report-link { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; background: var(--green); color: #fff; text-decoration: none; padding: 0 14px; font-size: .8rem; font-weight: 850; }
-  .filter-bar { display: grid; grid-template-columns: minmax(260px, 1fr) 230px 180px 170px auto; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 8px 24px rgba(23, 33, 29, .05); }
+  .filter-bar { display: grid; grid-template-columns: auto minmax(260px, 1fr) 230px 180px 170px auto; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 8px 24px rgba(23, 33, 29, .05); }
+  .map-brand { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; white-space: nowrap; }
+  .map-brand > span { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 7px; background: #08765c; }
+  .map-brand i { width: 12px; height: 12px; border: 3px solid #fff; border-radius: 50%; }
+  .map-brand strong { font-size: .88rem; font-weight: 850; }
   .search-field, .select-field { min-height: 44px; display: grid; align-items: center; gap: 10px; border: 1px solid #d9e1dc; border-radius: 7px; padding: 0 12px; }
   .search-field { grid-template-columns: auto minmax(0, 1fr) auto; }
   .select-field { grid-template-columns: auto minmax(0, 1fr); }
@@ -920,6 +939,17 @@ const metrics = [
   .search-field input, .select-field select { width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: .82rem; font-weight: 730; }
   .search-field output { border-radius: 5px; background: #e8f5f1; color: #006c55; padding: 5px 7px; font-size: .68rem; font-weight: 850; white-space: nowrap; }
   .mobile-suggestions { display: none; }
+  .mobile-suggestions:not([hidden]) { position: absolute; top: calc(100% + 6px); left: 112px; z-index: 4; width: min(460px, calc(100% - 126px)); display: grid; overflow: hidden; border: 1px solid #d5dfda; border-radius: 7px; background: #fff; box-shadow: 0 14px 34px rgba(25, 46, 37, .18); }
+  .suggestion-heading { min-height: 36px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 11px; background: #f5f8f6; }
+  .suggestion-heading strong { color: #4e5a54; font-size: .7rem; }
+  .suggestion-heading button { border: 0; background: transparent; color: #08765c; font-size: .68rem; font-weight: 850; cursor: pointer; }
+  .suggestion-row { min-width: 0; min-height: 58px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; border: 0; border-top: 1px solid #e7ece9; background: #fff; padding: 9px 11px; text-align: left; cursor: pointer; }
+  .suggestion-row:hover { background: #f1f7f4; }
+  .suggestion-row > span { min-width: 0; display: grid; gap: 4px; }
+  .suggestion-row strong { overflow: hidden; color: var(--ink); font-size: .8rem; text-overflow: ellipsis; white-space: nowrap; }
+  .suggestion-row small { overflow: hidden; color: #75807a; font-size: .65rem; font-weight: 720; text-overflow: ellipsis; white-space: nowrap; }
+  .suggestion-row em { color: #08765c; font-size: .7rem; font-style: normal; font-weight: 850; white-space: nowrap; }
+  .mobile-suggestions > p { margin: 0; padding: 18px 11px; color: #707b75; font-size: .75rem; }
   .metric-control { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
   .metric-control button, .reset-button { border: 1px solid #d9e1dc; border-radius: 7px; background: #fff; color: #45514b; font-size: .76rem; font-weight: 850; cursor: pointer; }
   .metric-control button.active { border-color: #8ac8b7; background: #e8f5f1; color: #006c55; }
@@ -1063,7 +1093,7 @@ const metrics = [
   .map-shell {
     position: relative;
     display: block;
-    height: calc(100dvh - 61px);
+    height: 100dvh;
     min-height: 560px;
     overflow: hidden;
     background: #e8eeea;
@@ -1079,11 +1109,11 @@ const metrics = [
   }
   .filter-bar {
     position: absolute;
-    z-index: 40;
+    z-index: 50;
     top: 14px;
     left: 14px;
-    width: min(1060px, calc(100% - 28px));
-    grid-template-columns: minmax(300px, 1fr) 230px 155px 155px auto;
+    width: min(1180px, calc(100% - 28px));
+    grid-template-columns: auto minmax(280px, 1fr) 220px 150px 150px auto;
     gap: 7px;
     padding: 8px;
     border-color: rgba(188, 201, 194, .92);
@@ -1171,20 +1201,21 @@ const metrics = [
   .result-card.selected { border-color: #d5e4de; background: #f2f8f5; box-shadow: inset 3px 0 0 #08765c; }
   .detail-pane {
     position: absolute;
-    z-index: 35;
-    top: 78px;
-    right: 14px;
-    bottom: 14px;
-    width: 380px;
+    z-index: 1000;
+    top: 76px;
+    right: 0;
+    bottom: 0;
+    width: 400px;
     min-height: 0;
     overflow: auto;
-    border-color: #d6dfda;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, .98);
-    box-shadow: 0 16px 38px rgba(25, 46, 37, .17);
-    backdrop-filter: blur(12px);
+    border: 0;
+    border-left: 1px solid #d6dfda;
+    border-radius: 0;
+    background: #fff;
+    box-shadow: -12px 0 30px rgba(25, 46, 37, .12);
   }
   .detail-pane:has(.empty-detail) { display: none; }
+  .map-shell:not(.has-detail) .detail-pane { display: none; }
   .detail-close {
     position: absolute;
     top: 10px;
@@ -1204,33 +1235,43 @@ const metrics = [
   .source-note { display: none; }
 
   @media (min-width: 721px) and (max-width: 960px) {
-    .filter-bar { grid-template-columns: minmax(240px, 1fr) 210px 1fr 1fr; }
-    .reset-button { grid-column: 1 / -1; min-height: 34px; }
+    .filter-bar { grid-template-columns: 180px minmax(0, 1fr) 1fr auto; }
+    .map-brand { grid-column: 1; }
+    .search-field { grid-column: 2 / -1; }
+    .metric-control { grid-column: 1; }
+    .reset-button { grid-column: 4; min-height: 42px; }
     .map-status { top: 119px; }
     .result-area { top: 168px; max-height: calc(100% - 182px); }
-    .detail-pane { top: 119px; width: 340px; }
+    .detail-pane { top: 114px; width: 360px; }
+    .mobile-suggestions:not([hidden]) { left: 196px; width: min(460px, calc(100% - 210px)); }
   }
 
   @media (max-width: 720px) {
     .main-content.main-content-full:has(.map-shell) { width: 100%; margin: 0; padding: 0; }
-    .map-shell { height: calc(100dvh - 94px); min-height: 520px; }
+    .map-shell { height: 100dvh; min-height: 520px; }
     .filter-bar {
       top: 8px;
       left: 8px;
       width: calc(100% - 16px);
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 58px;
+      grid-template-columns: 42px minmax(0, 1fr) minmax(0, 1fr) 56px;
       gap: 6px;
       padding: 7px;
       box-shadow: 0 7px 20px rgba(25, 46, 37, .14);
     }
-    .search-field { position: static; z-index: auto; min-height: 46px; box-shadow: none; }
-    .metric-control { min-height: 34px; }
+    .map-brand { grid-column: 1; grid-row: 1; min-height: 46px; justify-content: center; }
+    .map-brand strong { display: none; }
+    .search-field { position: static; z-index: auto; min-height: 46px; grid-column: 2 / -1; grid-row: 1; box-shadow: none; }
+    .metric-control { min-height: 34px; grid-column: 1 / 4; grid-row: 2; }
     .metric-control button { min-height: 34px; }
     .select-field { min-height: 40px; }
-    .reset-button { min-height: 40px; grid-column: auto; padding: 0 5px; font-size: .68rem; }
-    .mobile-suggestions:not([hidden]) { max-height: min(310px, calc(100dvh - 180px)); overflow: auto; }
+    .select-field:nth-of-type(2) { grid-column: 1 / 3; grid-row: 3; }
+    .select-field:nth-of-type(3) { grid-column: 3 / 5; grid-row: 3; }
+    .reset-button { min-height: 40px; grid-column: 4; grid-row: 2; padding: 0 5px; font-size: .68rem; }
+    .mobile-suggestions:not([hidden]) { top: calc(100% + 6px); left: 7px; width: calc(100% - 14px); max-height: min(310px, calc(100dvh - 90px)); overflow: auto; }
+    .map-shell.mobile-searching .map-brand { display: none; }
+    .map-shell.mobile-searching .search-field { grid-column: 1 / -1; }
     .map-status {
-      top: 162px;
+      top: 168px;
       left: 8px;
       width: calc(100% - 16px);
       min-height: 44px;
@@ -1243,14 +1284,14 @@ const metrics = [
     .map-status .legend { display: none; }
     .result-area { display: none; }
     .detail-pane {
-      top: auto;
-      right: 8px;
-      bottom: 8px;
-      left: 8px;
+      z-index: 1000;
+      inset: 0;
       width: auto;
-      max-height: min(48%, 380px);
-      padding: 16px;
-      border-radius: 8px;
+      max-height: none;
+      padding: 20px 18px 28px;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
     }
     .detail-head h2 { font-size: 1.08rem; }
     .score-box section { padding: 11px; }
