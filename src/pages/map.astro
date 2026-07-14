@@ -278,11 +278,17 @@ const metrics = [
       )
     };
 
+    const complexMarkerBySlug = new Map();
+    let complexMarkerEntries = [];
     const markerLayer = {
       markers: [],
-      clearLayers() {
+      mode: '',
+      clearLayers(nextMode = '') {
         this.markers.forEach((marker) => marker.raw.setMap(null));
         this.markers = [];
+        this.mode = nextMode;
+        complexMarkerBySlug.clear();
+        complexMarkerEntries = [];
       }
     };
 
@@ -342,8 +348,6 @@ const metrics = [
         return marker;
       }
     };
-    let complexMarkerEntries = [];
-
     const updateComplexLabels = () => {
       const zoom = map.getZoom();
       const container = map.getContainer();
@@ -861,7 +865,7 @@ const metrics = [
     };
 
     const renderProvinceMarkers = (items, fitMap = false) => {
-      markerLayer.clearLayers();
+      markerLayer.clearLayers('province');
       complexMarkerEntries = [];
       mapCoordinateStatus = '';
       const regionCounts = new Map();
@@ -886,7 +890,7 @@ const metrics = [
     };
 
     const renderDistrictMarkers = (items, fitMap = false) => {
-      markerLayer.clearLayers();
+      markerLayer.clearLayers('district');
       complexMarkerEntries = [];
       mapCoordinateStatus = '';
       const groups = new Map();
@@ -917,7 +921,7 @@ const metrics = [
     };
 
     const renderDongMarkers = (items, fitMap = false) => {
-      markerLayer.clearLayers();
+      markerLayer.clearLayers('dong');
       complexMarkerEntries = [];
       mapCoordinateStatus = '';
       const district = districtCenters.get(activeDistrict);
@@ -977,10 +981,11 @@ const metrics = [
     };
 
     const renderApartmentMarkers = (items, fitMap = false, selectedApartmentSlug = '') => {
-      markerLayer.clearLayers();
-      complexMarkerEntries = [];
+      if (markerLayer.mode !== 'apartments') markerLayer.clearLayers('apartments');
       const bounds = [];
       let missingCoordinates = 0;
+      const visibleSlugs = new Set();
+      const validItems = [];
       items.forEach((apartment) => {
         const latitude = Number(apartment.la);
         const longitude = Number(apartment.lo);
@@ -988,11 +993,57 @@ const metrics = [
           missingCoordinates += 1;
           return;
         }
+        visibleSlugs.add(apartment.s);
+        validItems.push(apartment);
+        bounds.push([latitude, longitude]);
+      });
+
+      for (const [slug, entry] of complexMarkerBySlug) {
+        if (visibleSlugs.has(slug)) continue;
+        entry.marker.raw.setMap(null);
+        complexMarkerBySlug.delete(slug);
+        markerLayer.markers = markerLayer.markers.filter((marker) => marker !== entry.marker);
+      }
+
+      validItems.forEach((apartment) => {
+        const latitude = Number(apartment.la);
+        const longitude = Number(apartment.lo);
         const percentile = percentileFor(items, apartment);
         const band = bandFor(percentile);
         const value = Number(apartment[activeMetric] || 0);
         const isSelected = apartment.s === selectedApartmentSlug;
         const isCompared = compareSlugs.includes(apartment.s);
+        const existing = complexMarkerBySlug.get(apartment.s);
+        if (existing) {
+          const changed = existing.band !== band
+            || existing.value !== value
+            || existing.selected !== isSelected
+            || existing.compared !== isCompared
+            || existing.apartment.n !== apartment.n;
+          if (changed) {
+            const element = existing.marker.getElement();
+            const keepVisible = element?.classList.contains('label-visible');
+            const keepHover = element?.classList.contains('label-hover');
+            if (element) {
+              element.className = `complex-marker-wrap${isSelected ? ' selected-complex' : ''}${isCompared ? ' compared-complex' : ''}${keepVisible ? ' label-visible' : ''}${keepHover ? ' label-hover' : ''}`;
+              const markerElement = element.querySelector('.complex-marker');
+              if (markerElement) markerElement.className = `complex-marker ${band}${isSelected ? ' selected' : ''}${isCompared ? ' compared' : ''}`;
+              const nameElement = markerElement?.querySelector('span');
+              const valueElement = markerElement?.querySelector('strong');
+              if (nameElement) nameElement.textContent = apartment.n;
+              if (valueElement) valueElement.textContent = value ? `${formatNumber(value)}원/㎡` : '관리비 미공개';
+              element.setAttribute('aria-label', `${apartment.n} · ${formatWon(value)}/㎡`);
+              element.title = `${apartment.n} · ${apartment.a}`;
+            }
+          }
+          existing.apartment = apartment;
+          existing.selected = isSelected;
+          existing.compared = isCompared;
+          existing.band = band;
+          existing.value = value;
+          existing.marker.raw.setZIndex?.(isSelected ? 1000 : 0);
+          return;
+        }
         const icon = L.divIcon({
           className: `complex-marker-wrap${isSelected ? ' selected-complex' : ''}${isCompared ? ' compared-complex' : ''}`,
           html: `<div class="complex-marker ${band}${isSelected ? ' selected' : ''}${isCompared ? ' compared' : ''}"><span>${escapeHtml(apartment.n)}</span><strong>${value ? `${formatNumber(value)}원/㎡` : '관리비 미공개'}</strong></div>`,
@@ -1015,8 +1066,9 @@ const metrics = [
           `<strong>${escapeHtml(apartment.n)}</strong><br>${escapeHtml(apartment.a)}`,
           { direction: 'top', offset: [0, -13], className: 'complex-tooltip' }
         );
-        bounds.push([latitude, longitude]);
+        complexMarkerBySlug.set(apartment.s, { marker, apartment, selected: isSelected, compared: isCompared, band, value });
       });
+      complexMarkerEntries = validItems.map((apartment) => complexMarkerBySlug.get(apartment.s)).filter(Boolean);
       if (fitMap && bounds.length > 1) map.fitBounds(bounds, { padding: [52, 52], maxZoom: 16, animate: true });
       else if (fitMap && bounds.length === 1) map.setView(bounds[0], 16, { animate: true });
       mapCoordinateStatus = missingCoordinates ? `지도 ${bounds.length}개 · 좌표 확인 ${missingCoordinates}개` : `지도 ${bounds.length}개`;
@@ -1592,7 +1644,7 @@ const metrics = [
   .area-marker.district strong { max-width: 54px; font-size: .66rem; }
   .area-marker.unmatched { border-color: #fff; background: #66736d; }
   .area-marker.selected { outline: 3px solid rgba(8, 118, 92, .2); transform: translateY(-2px); }
-  .complex-marker { position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; display: grid; place-items: center; border: 2px solid #fff; border-radius: 50%; background: var(--band); color: #fff; box-shadow: 0 4px 10px rgba(23, 33, 29, .28); transform: translate(-50%, -50%); transition: width .15s ease, height .15s ease, border-radius .15s ease, box-shadow .15s ease; }
+  .complex-marker { position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; display: grid; place-items: center; border: 2px solid #fff; border-radius: 50%; background: var(--band); color: #fff; box-shadow: 0 4px 10px rgba(23, 33, 29, .28); transform: translate(-50%, -50%); transition: box-shadow .15s ease; }
   .complex-marker.selected { outline: 4px solid rgba(8, 118, 92, .24); box-shadow: 0 8px 20px rgba(8, 87, 67, .32); }
   .complex-marker.compared::before { position: absolute; z-index: 3; top: -8px; right: -8px; width: 18px; height: 18px; display: grid; place-items: center; border: 2px solid #fff; border-radius: 50%; background: #08765c; color: #fff; content: '\2713'; font-size: .61rem; font-weight: 900; box-shadow: 0 3px 8px rgba(23, 33, 29, .24); }
   .complex-marker::after { display: none; position: absolute; bottom: -5px; left: 50%; width: 7px; height: 7px; border-right: 1px solid #cfd9d3; border-bottom: 1px solid #cfd9d3; background: #fff; content: ''; transform: translateX(-50%) rotate(45deg); }
