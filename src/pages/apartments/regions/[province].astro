@@ -1,0 +1,118 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { loadApartmentPageData, type ApartmentEntry } from '@/lib/apartmentBulk';
+import { apartmentMedian, districtHubPath, regionHubPath } from '@/lib/apartmentSeo';
+
+export const getStaticPaths = async () => {
+  const pages = await loadApartmentPageData();
+  const groups = new Map<string, ApartmentEntry[]>();
+  for (const { apartment } of pages) {
+    groups.set(apartment.sd, [...(groups.get(apartment.sd) ?? []), apartment]);
+  }
+  return [...groups].map(([province, apartments]) => ({
+    params: { province },
+    props: { province, apartments }
+  }));
+};
+
+const { province, apartments } = Astro.props as { province: string; apartments: ApartmentEntry[] };
+const districtGroups = new Map<string, ApartmentEntry[]>();
+for (const apartment of apartments) {
+  districtGroups.set(apartment.sg, [...(districtGroups.get(apartment.sg) ?? []), apartment]);
+}
+const districts = [...districtGroups]
+  .map(([district, entries]) => ({
+    district,
+    entries,
+    medianFee: apartmentMedian(entries),
+    households: entries.reduce((sum, item) => sum + item.h, 0)
+  }))
+  .sort((a, b) => b.entries.length - a.entries.length || a.district.localeCompare(b.district, 'ko'));
+const medianFee = apartmentMedian(apartments);
+const latestMonth = apartments.map((item) => item.lm).filter(Boolean).sort().at(-1) ?? '';
+const description = `${province} 관리비 공개 아파트 ${apartments.length.toLocaleString('ko-KR')}개를 시군구별로 찾고 최근 ㎡당 관리비 중앙값과 단지별 월별 내역을 확인하세요.`;
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: '전국 단지 찾기', item: 'https://cjournal.kr/apartments/' },
+    { '@type': 'ListItem', position: 2, name: province, item: `https://cjournal.kr${regionHubPath(province)}` }
+  ]
+};
+---
+<BaseLayout
+  title={`${province} 아파트 관리비 단지 찾기 | 단지표`}
+  description={description}
+  canonical={regionHubPath(province)}
+  robots="index, follow"
+  structuredData={structuredData}
+>
+  <main class="region-hub">
+    <nav class="breadcrumbs" aria-label="경로"><a href="/apartments/">전국 단지 찾기</a><span>/</span><span>{province}</span></nav>
+    <header class="hub-head">
+      <div><p>K-apt 월별 공개자료</p><h1>{province} 아파트 관리비</h1><span>시군구를 선택하면 공개 단지와 월별 관리비를 확인할 수 있습니다.</span></div>
+      <a href={`/?region=${encodeURIComponent(province)}`}>지도에서 보기</a>
+    </header>
+
+    <section class="summary" aria-label={`${province} 관리비 요약`}>
+      <div><span>공개 단지</span><strong>{apartments.length.toLocaleString('ko-KR')}</strong><small>개</small></div>
+      <div><span>시군구</span><strong>{districts.length.toLocaleString('ko-KR')}</strong><small>곳</small></div>
+      <div><span>㎡당 중앙값</span><strong>{medianFee.toLocaleString('ko-KR')}</strong><small>원</small></div>
+      <div><span>최근 기준월</span><strong>{latestMonth || '미확인'}</strong></div>
+    </section>
+
+    <section class="district-section">
+      <header><h2>시군구별 단지</h2><p>단지 수가 많은 지역부터 표시합니다.</p></header>
+      <div class="district-grid">
+        {districts.map(({ district, entries, medianFee: districtMedian, households }) => (
+          <a href={districtHubPath(province, district)}>
+            <span>{district || '세종시 전체'}</span>
+            <strong>{entries.length.toLocaleString('ko-KR')}개 단지</strong>
+            <small>㎡당 중앙값 {districtMedian.toLocaleString('ko-KR')}원 · {households.toLocaleString('ko-KR')}세대</small>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <p class="source">출처: 국토교통부 공동주택관리정보시스템(K-apt) 일괄 공개자료 · 중앙값은 각 단지의 최근 공개월 ㎡당 총 관리비 기준입니다.</p>
+  </main>
+</BaseLayout>
+
+<style>
+  :global(.main-content:has(.region-hub)) { width: min(1180px, calc(100vw - 40px)); }
+  .region-hub { display: grid; gap: 16px; }
+  .breadcrumbs { display: flex; gap: 7px; color: #77817c; font-size: .72rem; font-weight: 720; }
+  .breadcrumbs a { color: inherit; }
+  .hub-head { min-height: 92px; display: flex; align-items: end; justify-content: space-between; gap: 24px; }
+  .hub-head p { margin: 0 0 4px; color: #08765c; font-size: .72rem; font-weight: 850; }
+  .hub-head h1 { margin: 0; color: #17211d; font-size: 1.8rem; letter-spacing: 0; }
+  .hub-head span { display: block; margin-top: 7px; color: #68736e; font-size: .8rem; }
+  .hub-head > a { min-height: 38px; display: inline-flex; align-items: center; border: 1px solid #cddbd4; border-radius: 7px; color: #076e57; padding: 0 13px; font-size: .75rem; font-weight: 850; text-decoration: none; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #dce4df; border-radius: 7px; background: #fff; }
+  .summary div { min-height: 82px; display: flex; align-items: baseline; gap: 5px; padding: 17px; border-right: 1px solid #e7ece9; }
+  .summary div:last-child { border: 0; }
+  .summary span { margin-right: auto; color: #75807a; font-size: .7rem; font-weight: 760; }
+  .summary strong { color: #17211d; font-size: 1.25rem; }
+  .summary small { color: #75807a; font-size: .68rem; font-weight: 750; }
+  .district-section { border: 1px solid #dce4df; border-radius: 7px; background: #fff; padding: 18px; }
+  .district-section > header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 13px; }
+  .district-section h2 { margin: 0; font-size: 1rem; }
+  .district-section p { margin: 0; color: #78827d; font-size: .7rem; }
+  .district-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid #e4eae6; border-left: 1px solid #e4eae6; }
+  .district-grid a { min-width: 0; min-height: 92px; display: grid; align-content: center; gap: 5px; border-right: 1px solid #e4eae6; border-bottom: 1px solid #e4eae6; color: #17211d; padding: 13px 15px; text-decoration: none; }
+  .district-grid a:hover { background: #f2f8f5; }
+  .district-grid span { color: #08765c; font-size: .7rem; font-weight: 820; }
+  .district-grid strong { overflow: hidden; font-size: .9rem; text-overflow: ellipsis; white-space: nowrap; }
+  .district-grid small { overflow: hidden; color: #748079; font-size: .66rem; font-weight: 680; text-overflow: ellipsis; white-space: nowrap; }
+  .source { margin: 0; color: #747f79; font-size: .69rem; line-height: 1.6; }
+  @media (max-width: 760px) {
+    :global(.main-content:has(.region-hub)) { width: calc(100vw - 24px); }
+    .hub-head { align-items: flex-start; flex-direction: column; gap: 13px; }
+    .hub-head h1 { font-size: 1.45rem; }
+    .summary { grid-template-columns: repeat(2, 1fr); }
+    .summary div:nth-child(2) { border-right: 0; }
+    .summary div:nth-child(-n + 2) { border-bottom: 1px solid #e7ece9; }
+    .district-grid { grid-template-columns: 1fr; }
+    .district-section { padding: 14px; }
+  }
+</style>

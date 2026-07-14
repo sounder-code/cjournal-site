@@ -1,10 +1,16 @@
 import type { APIRoute } from 'astro';
 import { loadApartmentManifest, loadApartmentPageData } from '@/lib/apartmentBulk';
+import { districtHubPath, regionHubPath } from '@/lib/apartmentSeo';
 
 export const GET: APIRoute = async ({ site }) => {
   const base = site?.toString().replace(/\/$/, '') ?? '';
   const [manifest, apartmentPages] = await Promise.all([loadApartmentManifest(), loadApartmentPageData()]);
   const lastmod = `${manifest.sourceDate.slice(0, 4)}-${manifest.sourceDate.slice(4, 6)}-${manifest.sourceDate.slice(6, 8)}`;
+  const provinces = [...new Set(apartmentPages.map(({ apartment }) => apartment.sd))].sort((a, b) => a.localeCompare(b, 'ko'));
+  const districts = [...new Map(apartmentPages.map(({ apartment }) => [
+    `${apartment.sd}|${apartment.sg}`,
+    { province: apartment.sd, district: apartment.sg }
+  ])).values()].sort((a, b) => `${a.province}${a.district}`.localeCompare(`${b.province}${b.district}`, 'ko'));
 
   const urls = [
     { loc: '/', priority: '1.0', changefreq: 'daily' },
@@ -16,6 +22,8 @@ export const GET: APIRoute = async ({ site }) => {
     { loc: '/editorial-policy/', priority: '0.5', changefreq: 'monthly' },
     { loc: '/privacy/', priority: '0.3', changefreq: 'yearly' },
     { loc: '/terms/', priority: '0.3', changefreq: 'yearly' },
+    ...provinces.map((province) => ({ loc: regionHubPath(province), priority: '0.8', changefreq: 'monthly' })),
+    ...districts.map(({ province, district }) => ({ loc: districtHubPath(province, district), priority: '0.8', changefreq: 'monthly' })),
     ...apartmentPages.map(({ apartment }) => ({
       loc: `/apartments/${apartment.s}/`,
       priority: '0.7',

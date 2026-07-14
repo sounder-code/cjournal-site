@@ -6,6 +6,7 @@ import {
   type ApartmentPageData,
   type FeeTuple
 } from '@/lib/apartmentBulk';
+import { districtHubPath, regionHubPath } from '@/lib/apartmentSeo';
 
 export const getStaticPaths = async () =>
   (await loadApartmentPageData()).map((data) => ({ params: { slug: data.apartment.s }, props: { data } }));
@@ -76,8 +77,9 @@ const structuredData = [
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: '단지 찾기', item: 'https://cjournal.kr/apartments/' },
-      { '@type': 'ListItem', position: 2, name: apartment.sg, item: `https://cjournal.kr/apartments/?region=${encodeURIComponent(apartment.sd)}` },
-      { '@type': 'ListItem', position: 3, name: apartment.n }
+      { '@type': 'ListItem', position: 2, name: apartment.sd, item: `https://cjournal.kr${regionHubPath(apartment.sd)}` },
+      { '@type': 'ListItem', position: 3, name: apartment.sg || '세종시 전체', item: `https://cjournal.kr${districtHubPath(apartment.sd, apartment.sg)}` },
+      { '@type': 'ListItem', position: 4, name: apartment.n }
     ]
   },
   {
@@ -127,7 +129,7 @@ const structuredData = [
   <article class="report">
     <header class="report-head">
       <div>
-        <nav aria-label="경로"><a href="/apartments/">단지 찾기</a><span>/</span><span>{apartment.sd}</span><span>/</span><span>{apartment.sg}</span></nav>
+        <nav aria-label="경로"><a href="/apartments/">단지 찾기</a><span>/</span><a href={regionHubPath(apartment.sd)}>{apartment.sd}</a><span>/</span><a href={districtHubPath(apartment.sd, apartment.sg)}>{apartment.sg || '세종시 전체'}</a></nav>
         <h1>{apartment.n} 관리비</h1>
         <p>{apartment.a}</p>
       </div>

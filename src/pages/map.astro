@@ -80,7 +80,7 @@ const metrics = [
         </div>
         <div id="apartment-map" class="map-canvas" aria-label="전국 아파트 관리비 지도"></div>
         <div class="result-area">
-          <div class="result-heading"><strong>단지 목록</strong><span>최대 6개 표시</span></div>
+          <div class="result-heading"><strong>단지 목록</strong><a href="/apartments/">전국 목록</a></div>
           <div class="result-list" data-results aria-live="polite"></div>
         </div>
       </section>
@@ -205,6 +205,8 @@ const metrics = [
     const metricButtons = [...(app?.querySelectorAll('[data-metric]') || [])];
     const initialParams = new URLSearchParams(window.location.search);
     const initialSlug = initialParams.get('apt') || '';
+    const initialProvince = initialParams.get('region') || '';
+    const initialDistrict = initialParams.get('district') || '';
     const initialCompareSlugs = (initialParams.get('compare') || '').split(',').map((slug) => slug.trim()).filter(Boolean).slice(0, 4);
     const initialCompareOpen = initialParams.get('view') === 'compare';
     const initialReportOpen = initialParams.get('report') === '1';
@@ -1562,6 +1564,17 @@ const metrics = [
       })
       .then((data) => {
         apartments = Array.isArray(data) ? data : [];
+        if (!selectedSlug && initialProvince && apartments.some((item) => item.sd === initialProvince)) {
+          activeProvince = initialProvince;
+          region.value = initialProvince;
+          if (initialDistrict && apartments.some((item) => item.sd === initialProvince && item.sg === initialDistrict)) {
+            activeDistrict = districtKey(initialProvince, initialDistrict);
+            const center = districtCenters.get(activeDistrict);
+            if (center) map.setView([center.latitude, center.longitude], 13);
+          } else if (provinceCenters[initialProvince]) {
+            map.setView(provinceCenters[initialProvince], 11);
+          }
+        }
         compareSlugs = compareSlugs.filter((slug) => apartments.some((item) => item.s === slug)).slice(0, 4);
         if (compareSlugs.length < 2) compareDialogOpen = false;
         if (selectedSlug && !apartments.some((item) => item.s === selectedSlug)) {
@@ -1624,6 +1637,8 @@ const metrics = [
   .map-summary button::before { content: '\2190'; margin-right: 5px; }
   .map-status strong { color: var(--ink); font-size: .9rem; }
   .map-status span, .result-heading span { color: #6e7973; font-size: .7rem; font-weight: 750; }
+  .result-heading a { color: #08765c; font-size: .68rem; font-weight: 820; text-decoration: none; }
+  .result-heading a:hover { text-decoration: underline; }
   .legend { display: flex; gap: 10px; }
   .legend span { display: inline-flex; align-items: center; gap: 5px; }
   .legend i { width: 9px; height: 9px; border-radius: 50%; }

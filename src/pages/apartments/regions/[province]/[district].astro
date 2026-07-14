@@ -1,0 +1,117 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { loadApartmentPageData, type ApartmentEntry } from '@/lib/apartmentBulk';
+import { apartmentMedian, districtHubPath, districtSegment, latestTotal, regionHubPath } from '@/lib/apartmentSeo';
+
+export const getStaticPaths = async () => {
+  const pages = await loadApartmentPageData();
+  const groups = new Map<string, { province: string; district: string; apartments: ApartmentEntry[] }>();
+  for (const { apartment } of pages) {
+    const key = `${apartment.sd}|${apartment.sg}`;
+    const group = groups.get(key) ?? { province: apartment.sd, district: apartment.sg, apartments: [] };
+    group.apartments.push(apartment);
+    groups.set(key, group);
+  }
+  return [...groups.values()].map(({ province, district, apartments }) => ({
+    params: { province, district: districtSegment(district) },
+    props: { province, district, apartments }
+  }));
+};
+
+const { province, district, apartments } = Astro.props as { province: string; district: string; apartments: ApartmentEntry[] };
+const districtName = district || '세종시 전체';
+const sortedApartments = apartments.slice().sort((a, b) => a.n.localeCompare(b.n, 'ko'));
+const medianFee = apartmentMedian(apartments);
+const minFee = Math.min(...apartments.map(latestTotal).filter((value) => value > 0));
+const maxFee = Math.max(...apartments.map(latestTotal).filter((value) => value > 0));
+const latestMonth = apartments.map((item) => item.lm).filter(Boolean).sort().at(-1) ?? '';
+const description = `${province} ${districtName} 관리비 공개 아파트 ${apartments.length.toLocaleString('ko-KR')}개의 최근 ㎡당 관리비와 세대수, 난방방식, 월별 상세 내역을 확인하세요.`;
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: '전국 단지 찾기', item: 'https://cjournal.kr/apartments/' },
+    { '@type': 'ListItem', position: 2, name: province, item: `https://cjournal.kr${regionHubPath(province)}` },
+    { '@type': 'ListItem', position: 3, name: districtName, item: `https://cjournal.kr${districtHubPath(province, district)}` }
+  ]
+};
+---
+<BaseLayout
+  title={`${province} ${districtName} 아파트 관리비 | 단지표`}
+  description={description}
+  canonical={districtHubPath(province, district)}
+  robots="index, follow"
+  structuredData={structuredData}
+>
+  <main class="district-hub">
+    <nav class="breadcrumbs" aria-label="경로"><a href="/apartments/">전국</a><span>/</span><a href={regionHubPath(province)}>{province}</a><span>/</span><span>{districtName}</span></nav>
+    <header class="hub-head">
+      <div><p>K-apt 월별 공개자료</p><h1>{districtName} 아파트 관리비</h1><span>단지를 선택하면 월별 관리비 추이와 지역 내 비교값을 확인할 수 있습니다.</span></div>
+      <a href={`/?region=${encodeURIComponent(province)}&district=${encodeURIComponent(district)}`}>지도에서 보기</a>
+    </header>
+
+    <section class="summary" aria-label={`${districtName} 관리비 요약`}>
+      <div><span>공개 단지</span><strong>{apartments.length.toLocaleString('ko-KR')}</strong><small>개</small></div>
+      <div><span>㎡당 중앙값</span><strong>{medianFee.toLocaleString('ko-KR')}</strong><small>원</small></div>
+      <div><span>공개 범위</span><strong>{minFee.toLocaleString('ko-KR')}~{maxFee.toLocaleString('ko-KR')}</strong><small>원/㎡</small></div>
+      <div><span>최근 기준월</span><strong>{latestMonth || '미확인'}</strong></div>
+    </section>
+
+    <section class="complex-section">
+      <header><h2>{districtName} 공개 단지</h2><p>가나다순 · 금액은 단지별 최근 공개월 기준</p></header>
+      <div class="complex-grid">
+        {sortedApartments.map((apartment) => (
+          <a href={`/apartments/${apartment.s}/`}>
+            <span>{apartment.d || districtName}</span>
+            <strong>{apartment.n}</strong>
+            <small>{apartment.h.toLocaleString('ko-KR')}세대 · {apartment.y ? `${apartment.y}년` : '사용승인 미확인'} · {apartment.ht || '난방 미확인'}</small>
+            <b>{latestTotal(apartment).toLocaleString('ko-KR')}원/㎡</b>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <p class="source">출처: 국토교통부 공동주택관리정보시스템(K-apt) 일괄 공개자료 · 세대별 실제 청구액은 전용면적과 사용량에 따라 달라집니다.</p>
+  </main>
+</BaseLayout>
+
+<style>
+  :global(.main-content:has(.district-hub)) { width: min(1180px, calc(100vw - 40px)); }
+  .district-hub { display: grid; gap: 16px; }
+  .breadcrumbs { display: flex; gap: 7px; color: #77817c; font-size: .72rem; font-weight: 720; }
+  .breadcrumbs a { color: inherit; }
+  .hub-head { min-height: 92px; display: flex; align-items: end; justify-content: space-between; gap: 24px; }
+  .hub-head p { margin: 0 0 4px; color: #08765c; font-size: .72rem; font-weight: 850; }
+  .hub-head h1 { margin: 0; color: #17211d; font-size: 1.8rem; letter-spacing: 0; }
+  .hub-head span { display: block; margin-top: 7px; color: #68736e; font-size: .8rem; }
+  .hub-head > a { min-height: 38px; display: inline-flex; align-items: center; border: 1px solid #cddbd4; border-radius: 7px; color: #076e57; padding: 0 13px; font-size: .75rem; font-weight: 850; text-decoration: none; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #dce4df; border-radius: 7px; background: #fff; }
+  .summary div { min-width: 0; min-height: 82px; display: flex; align-items: baseline; gap: 5px; padding: 17px; border-right: 1px solid #e7ece9; }
+  .summary div:last-child { border: 0; }
+  .summary span { margin-right: auto; color: #75807a; font-size: .7rem; font-weight: 760; }
+  .summary strong { overflow: hidden; color: #17211d; font-size: 1.08rem; text-overflow: ellipsis; white-space: nowrap; }
+  .summary small { color: #75807a; font-size: .65rem; font-weight: 750; white-space: nowrap; }
+  .complex-section { border: 1px solid #dce4df; border-radius: 7px; background: #fff; padding: 18px; }
+  .complex-section > header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 13px; }
+  .complex-section h2 { margin: 0; font-size: 1rem; }
+  .complex-section p { margin: 0; color: #78827d; font-size: .7rem; }
+  .complex-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #e4eae6; border-left: 1px solid #e4eae6; }
+  .complex-grid a { position: relative; min-width: 0; min-height: 92px; display: grid; align-content: center; gap: 4px; border-right: 1px solid #e4eae6; border-bottom: 1px solid #e4eae6; color: #17211d; padding: 13px 112px 13px 15px; text-decoration: none; }
+  .complex-grid a:hover { background: #f2f8f5; }
+  .complex-grid span { color: #08765c; font-size: .64rem; font-weight: 820; }
+  .complex-grid strong { overflow: hidden; font-size: .84rem; text-overflow: ellipsis; white-space: nowrap; }
+  .complex-grid small { overflow: hidden; color: #748079; font-size: .64rem; font-weight: 680; text-overflow: ellipsis; white-space: nowrap; }
+  .complex-grid b { position: absolute; top: 50%; right: 14px; color: #2f3d36; font-size: .7rem; transform: translateY(-50%); }
+  .source { margin: 0; color: #747f79; font-size: .69rem; line-height: 1.6; }
+  @media (max-width: 760px) {
+    :global(.main-content:has(.district-hub)) { width: calc(100vw - 24px); }
+    .hub-head { align-items: flex-start; flex-direction: column; gap: 13px; }
+    .hub-head h1 { font-size: 1.45rem; }
+    .summary { grid-template-columns: repeat(2, 1fr); }
+    .summary div:nth-child(2) { border-right: 0; }
+    .summary div:nth-child(-n + 2) { border-bottom: 1px solid #e7ece9; }
+    .complex-grid { grid-template-columns: 1fr; }
+    .complex-section { padding: 14px; }
+    .complex-section > header { align-items: flex-start; flex-direction: column; gap: 4px; }
+  }
+</style>

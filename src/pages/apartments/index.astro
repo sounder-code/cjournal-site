@@ -2,6 +2,8 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { loadApartmentPageData } from '@/lib/apartmentBulk';
+import { apartmentMedian, regionHubPath } from '@/lib/apartmentSeo';
 
 interface BulkManifest {
   sourceDate: string;
@@ -17,8 +19,13 @@ interface BulkManifest {
 
 const manifestPath = resolve('public/data/apartments/manifest.json');
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as BulkManifest;
+const apartmentPages = await loadApartmentPageData();
 const sourceDate = `${manifest.sourceDate.slice(0, 4)}.${manifest.sourceDate.slice(4, 6)}.${manifest.sourceDate.slice(6, 8)}`;
 const latestMonth = manifest.latestMonth.replace('-', '.');
+const regionSummaries = manifest.regions.map((region) => {
+  const apartments = apartmentPages.map(({ apartment }) => apartment).filter((apartment) => apartment.sd === region.name);
+  return { ...region, published: apartments.length, medianFee: apartmentMedian(apartments) };
+});
 ---
 <BaseLayout
   title="전국 아파트 관리비 단지 찾기 | 단지표"
@@ -44,6 +51,19 @@ const latestMonth = manifest.latestMonth.replace('-', '.');
       <div><span>관리비 공개</span><strong>{manifest.stats.complexesWithFees.toLocaleString('ko-KR')}</strong><small>개</small></div>
       <div><span>관리비 내역</span><strong>{manifest.stats.publishedFeeRows.toLocaleString('ko-KR')}</strong><small>건</small></div>
       <div><span>데이터 범위</span><strong>{manifest.months.length}</strong><small>개월</small></div>
+    </section>
+
+    <section class="region-links" aria-labelledby="region-links-title">
+      <header><div><h2 id="region-links-title">지역별 관리비 단지</h2><p>시도를 선택해 시군구와 단지별 월별 관리비를 확인합니다.</p></div><span>{regionSummaries.length}개 시도</span></header>
+      <div>
+        {regionSummaries.map((region) => (
+          <a href={regionHubPath(region.name)}>
+            <strong>{region.name}</strong>
+            <span>{region.published.toLocaleString('ko-KR')}개 단지</span>
+            <small>㎡당 중앙값 {region.medianFee.toLocaleString('ko-KR')}원</small>
+          </a>
+        ))}
+      </div>
     </section>
 
     <section class="directory-panel">
@@ -242,6 +262,17 @@ const latestMonth = manifest.latestMonth.replace('-', '.');
   .summary-strip span { margin-right: auto; color: #737b77; font-size: 0.75rem; font-weight: 750; }
   .summary-strip strong { color: #171b19; font-size: 1.42rem; font-weight: 760; font-variant-numeric: tabular-nums; }
   .summary-strip small { color: #737b77; font-size: 0.7rem; font-weight: 750; }
+  .region-links { border: 1px solid #dde2df; border-radius: 7px; background: #fff; padding: 16px; }
+  .region-links > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 12px; }
+  .region-links h2 { margin: 0; font-size: 1rem; }
+  .region-links p { margin: 4px 0 0; color: #727c76; font-size: .7rem; }
+  .region-links > header > span { color: #08765c; font-size: .7rem; font-weight: 820; }
+  .region-links > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid #e5eae7; border-left: 1px solid #e5eae7; }
+  .region-links a { min-width: 0; min-height: 76px; display: grid; align-content: center; gap: 3px; border-right: 1px solid #e5eae7; border-bottom: 1px solid #e5eae7; color: #17211d; padding: 11px 13px; text-decoration: none; }
+  .region-links a:hover { background: #f2f8f5; }
+  .region-links a strong { font-size: .8rem; }
+  .region-links a span { color: #08765c; font-size: .66rem; font-weight: 800; }
+  .region-links a small { color: #77817c; font-size: .62rem; font-weight: 680; }
   .directory-panel { overflow: hidden; border: 1px solid #dde2df; border-radius: 7px; background: #fff; }
   .toolbar { display: grid; grid-template-columns: minmax(260px, 1fr) 230px 190px auto; gap: 8px; padding: 12px; border-bottom: 1px solid #e5e9e6; background: #fafbfa; }
   .toolbar label { min-height: 44px; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; border: 1px solid #dce1de; border-radius: 6px; background: #fff; padding: 0 12px; }
@@ -279,6 +310,7 @@ const latestMonth = manifest.latestMonth.replace('-', '.');
     .summary-strip { grid-template-columns: repeat(2, 1fr); }
     .summary-strip div:nth-child(2) { border-right: 0; }
     .summary-strip div:nth-child(-n + 2) { border-bottom: 1px solid #e9ecea; }
+    .region-links > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .toolbar { grid-template-columns: 1fr 1fr; }
     .search-field { grid-column: 1 / -1; }
     .toolbar button { min-height: 44px; }
