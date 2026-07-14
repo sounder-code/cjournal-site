@@ -567,7 +567,7 @@ const metrics = [
       window.requestAnimationFrame(updateComplexLabels);
     };
 
-    const locateApartment = async (apartment, comparison) => {
+    const locateApartment = async (apartment) => {
       markerLayer.clearLayers();
       complexMarkerEntries = [];
       const coordinate = Number.isFinite(Number(apartment.la)) && Number.isFinite(Number(apartment.lo))
@@ -582,13 +582,11 @@ const metrics = [
         return;
       }
       if (status) status.textContent = '공개 주소 기준 위치';
-      const percentile = percentileFor(comparison, apartment);
-      const band = bandFor(percentile);
       const icon = L.divIcon({
         className: 'apartment-marker-wrap',
-        html: `<div class="apartment-marker ${band}"><strong>${percentile}</strong><span>${escapeHtml(apartment.n)}</span></div>`,
-        iconSize: [42, 42],
-        iconAnchor: [21, 21]
+        html: `<div class="apartment-marker"><span>${escapeHtml(apartment.n)}</span></div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
       });
       L.marker([coordinate.latitude, coordinate.longitude], { icon, title: apartment.n, keyboard: true }).addTo(markerLayer);
       map.setView([coordinate.latitude, coordinate.longitude], 16);
@@ -702,7 +700,7 @@ const metrics = [
         history.replaceState({}, '', url);
         render();
       });
-      locateApartment(apartment, comparison);
+      locateApartment(apartment);
     };
 
     const selectApartment = (slug) => {
@@ -955,9 +953,9 @@ const metrics = [
   .area-marker.district strong { max-width: 54px; font-size: .66rem; }
   .area-marker.unmatched { border-color: #fff; background: #66736d; }
   .area-marker.selected { outline: 3px solid rgba(8, 118, 92, .2); transform: translateY(-2px); }
-  .apartment-marker { position: relative; width: 42px; height: 42px; display: grid; place-items: center; border: 3px solid #fff; border-radius: 50%; background: var(--band); color: #fff; box-shadow: 0 9px 22px rgba(23, 33, 29, .28); }
-  .apartment-marker strong { font-size: .78rem; }
-  .apartment-marker span { position: absolute; top: 46px; left: 50%; min-width: max-content; transform: translateX(-50%); border: 1px solid #d8e0dc; border-radius: 5px; background: #fff; color: #27332d; padding: 4px 7px; font-size: .68rem; font-weight: 800; }
+  .apartment-marker { position: relative; width: 28px; height: 28px; border: 3px solid #fff; border-radius: 50%; background: #08765c; box-shadow: 0 7px 18px rgba(23, 33, 29, .3); }
+  .apartment-marker::after { position: absolute; inset: 7px; border-radius: 50%; background: #fff; content: ''; }
+  .apartment-marker span { position: absolute; top: 32px; left: 50%; min-width: max-content; transform: translateX(-50%); border: 1px solid #d8e0dc; border-radius: 5px; background: #fff; color: #27332d; padding: 4px 7px; font-size: .68rem; font-weight: 800; box-shadow: 0 4px 12px rgba(23, 33, 29, .12); }
   .complex-marker { position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; display: grid; place-items: center; border: 2px solid #fff; border-radius: 50%; background: var(--band); color: #fff; box-shadow: 0 4px 10px rgba(23, 33, 29, .28); transform: translate(-50%, -50%); transition: width .15s ease, height .15s ease, border-radius .15s ease, box-shadow .15s ease; }
   .complex-marker::after { display: none; position: absolute; bottom: -5px; left: 50%; width: 7px; height: 7px; border-right: 1px solid #cfd9d3; border-bottom: 1px solid #cfd9d3; background: #fff; content: ''; transform: translateX(-50%) rotate(45deg); }
   .complex-marker span, .complex-marker strong { position: relative; z-index: 1; display: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
