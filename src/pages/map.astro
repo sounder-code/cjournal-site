@@ -1686,7 +1686,7 @@ const metrics = [
   .result-compare.active > i { border-color: #08765c; background: #08765c; }
   .result-compare.active > i::after { color: #fff; content: '\2713'; font-size: .58rem; font-weight: 900; line-height: 1; }
   .empty-result { grid-column: 1 / -1; margin: 8px 0; color: #707b75; font-size: .78rem; }
-  .detail-pane { min-width: 0; display: grid; align-content: start; gap: 16px; padding: 24px; }
+  .detail-pane { min-width: 0; display: grid; grid-auto-rows: max-content; align-content: start; gap: 16px; padding: 24px; }
   .empty-detail { min-height: 320px; display: grid; place-content: center; gap: 8px; text-align: center; }
   .empty-detail span { color: #08765c; font-size: .68rem; font-weight: 850; }
   .empty-detail strong { color: var(--ink); font-size: 1rem; }
@@ -1700,8 +1700,8 @@ const metrics = [
   .detail-actions button:hover { border-color: #71ad9c; background: #f2f8f5; }
   .detail-actions .detail-compare { border-color: #08765c; background: #08765c; color: #fff; }
   .detail-actions .detail-compare.active { border-color: #b9cec5; background: #edf5f1; color: #076e57; }
-  .score-box { display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; border: 1px solid #dce4df; border-radius: 7px; }
-  .score-box section { display: grid; gap: 6px; padding: 16px; }
+  .score-box { min-height: 126px; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; border: 1px solid #dce4df; border-radius: 7px; }
+  .score-box section { min-height: 124px; display: grid; align-content: center; gap: 6px; padding: 16px; }
   .score-box section + section { border-left: 1px solid #e2e8e4; }
   .score-box span, .score-box p { margin: 0; color: #707b75; font-size: .69rem; }
   .score-box strong { color: var(--band); font-size: 1.14rem; }
@@ -1749,10 +1749,10 @@ const metrics = [
   .compare-chip button:last-child { color: #7b8580; padding: 0; font-size: .98rem; }
   .compare-open { min-height: 40px; border: 0; border-radius: 7px; background: #08765c; color: #fff; padding: 0 14px; font-size: .74rem; font-weight: 850; white-space: nowrap; cursor: pointer; }
   .compare-open:disabled { background: #dfe7e3; color: #78837d; cursor: default; }
-  .compare-dialog { position: fixed; z-index: 2500; inset: 0; display: grid; place-items: stretch; padding: 0; background: #fff; }
+  .compare-dialog { position: fixed; z-index: 2500; inset: 0; display: grid; place-items: stretch end; padding: 0; background: transparent; }
   .compare-dialog[hidden] { display: none; }
-  .compare-backdrop { display: none; }
-  .compare-sheet { position: relative; width: 100%; height: 100%; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; border: 0; border-radius: 0; background: #f7f9f8; box-shadow: none; }
+  .compare-backdrop { position: absolute; inset: 0; display: block; border: 0; background: rgba(20, 31, 26, .08); padding: 0; cursor: default; }
+  .compare-sheet { position: relative; z-index: 1; width: clamp(700px, 54vw, 1120px); height: 100%; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; border: 0; border-left: 1px solid #cbd6d0; border-radius: 0; background: #f7f9f8; box-shadow: -12px 0 32px rgba(23, 45, 36, .16); }
   .compare-sheet-head { min-height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid #ccd7d1; background: #fff; padding: 8px 16px; box-shadow: 0 3px 14px rgba(25, 46, 37, .08); }
   .compare-title-block { min-width: 0; display: flex; align-items: center; gap: 13px; }
   .compare-brand { flex: 0 0 auto; padding-right: 13px; border-right: 1px solid #d9e1dc; }
