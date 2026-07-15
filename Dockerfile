@@ -15,8 +15,10 @@ FROM dependencies AS build
 COPY . .
 ARG PUBLIC_GA_ID=G-SE44ENS3KV
 ARG PUBLIC_GTM_ID=
+ARG PUBLIC_SITE_URL=https://cjournal.kr
 ENV PUBLIC_GA_ID=${PUBLIC_GA_ID}
 ENV PUBLIC_GTM_ID=${PUBLIC_GTM_ID}
+ENV PUBLIC_SITE_URL=${PUBLIC_SITE_URL}
 RUN npm run typecheck && npm run build
 
 FROM nginx:1.27-alpine AS production

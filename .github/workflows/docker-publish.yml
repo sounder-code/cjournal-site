@@ -44,6 +44,8 @@ jobs:
           context: .
           target: production
           push: true
+          build-args: |
+            PUBLIC_SITE_URL=${{ vars.PUBLIC_SITE_URL || 'https://cjournal.kr' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
