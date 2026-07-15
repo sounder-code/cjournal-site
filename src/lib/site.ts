@@ -1,4 +1,4 @@
-const fallbackOrigin = 'https://cjournal.kr';
+const fallbackOrigin = 'https://danjipyo.kr';
 
 export const siteOrigin = (import.meta.env.PUBLIC_SITE_URL || fallbackOrigin).replace(/\/+$/, '');
 

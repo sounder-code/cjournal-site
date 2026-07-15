@@ -1,9 +1,9 @@
 # cjournal-site
 
-`cjournal.kr` 전용 Astro 정적 콘텐츠 허브입니다.
+`danjipyo.kr` 전용 Astro 정적 콘텐츠 허브입니다.
 
 ## 핵심 원칙
-- 이 저장소는 `cjournal.kr`만 다룹니다.
+- 이 저장소는 `danjipyo.kr`만 다룹니다.
 - `kuru.co.kr`, `lizard`, `snack-human`, `linclassic` 관련 코드/자산은 포함하지 않습니다.
 
 ## 로컬 실행

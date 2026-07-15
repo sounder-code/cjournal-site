@@ -36,7 +36,7 @@ const main = async () => {
     url.searchParams.set('limit', '1');
     url.searchParams.set('countrycodes', 'kr');
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'CJOURNAL-Map-Geocoder/1.0 (+https://cjournal.kr/contact)' },
+      headers: { 'User-Agent': 'Danjipyo-Map-Geocoder/1.0 (+https://danjipyo.kr/contact)' },
       signal: AbortSignal.timeout(15_000)
     });
     if (!response.ok) throw new Error(`지오코딩 실패: HTTP ${response.status}`);
