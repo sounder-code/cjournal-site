@@ -120,9 +120,16 @@ const structuredData = [
       document.addEventListener('click', (event) => {
         const target = event.target;
         if (!(target instanceof Element)) return;
-        const link = target.closest('a[href^="/apartments/"]');
+        const link = target.closest('a[href]');
         if (!(link instanceof HTMLAnchorElement)) return;
         const url = new URL(link.href, window.location.origin);
+        if (url.origin !== window.location.origin) return;
+        if (url.pathname === '/management-fee-guide/') {
+          event.preventDefault();
+          window.parent.postMessage({ type: 'danjipyo:open-guide' }, window.location.origin);
+          return;
+        }
+        if (!url.pathname.startsWith('/apartments/')) return;
         url.searchParams.set('embed', 'map');
         link.href = url.toString();
       });

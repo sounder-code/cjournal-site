@@ -21,6 +21,35 @@ const articleJsonLd = {
   updatedTime="2026-07-13"
   structuredData={articleJsonLd}
 >
+  <script is:inline>
+    if (new URLSearchParams(window.location.search).get('embed') === 'map') {
+      document.documentElement.classList.add('content-embed');
+      window.parent.postMessage({
+        type: 'danjipyo:content-loaded',
+        kind: 'guide',
+        kicker: '관리비 도움말',
+        title: '관리비 읽는 법',
+        subtitle: '항목과 비교 기준'
+      }, window.location.origin);
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const link = target.closest('a[href]');
+        if (!(link instanceof HTMLAnchorElement)) return;
+        const url = new URL(link.href, window.location.origin);
+        if (url.origin !== window.location.origin) return;
+        if (link.matches('[data-map-return]')) {
+          event.preventDefault();
+          window.parent.postMessage({ type: 'danjipyo:close-content' }, window.location.origin);
+          return;
+        }
+        if (url.pathname === '/methodology/') {
+          url.searchParams.set('embed', 'map');
+          link.href = url.toString();
+        }
+      });
+    }
+  </script>
   <article class="fee-guide">
     <nav aria-label="현재 위치"><a href="/">홈</a><span>/</span><span>관리비 가이드</span></nav>
     <header>
@@ -67,10 +96,12 @@ const articleJsonLd = {
       </section>
     </div>
 
-    <section class="guide-actions"><div><h2>내 단지 확인하기</h2><p>단지명을 검색해 월별 항목과 같은 조건의 비교군을 확인할 수 있습니다.</p></div><a href="/apartments/">전국 단지 찾기</a><a href="/methodology/">산정식 보기</a></section>
+    <section class="guide-actions"><div><h2>내 단지 확인하기</h2><p>단지명을 검색해 월별 항목과 같은 조건의 비교군을 확인할 수 있습니다.</p></div><a href="/" data-map-return>지도로 돌아가기</a><a href="/methodology/">산정식 보기</a></section>
   </article>
 </BaseLayout>
 
 <style>
   :global(.main-content:has(.fee-guide)){width:min(1040px,calc(100vw - 40px))}.fee-guide{display:grid;gap:22px}.fee-guide>nav{display:flex;gap:8px;color:var(--subtle);font-size:.78rem;font-weight:750}.fee-guide>nav a{color:var(--green-strong);text-decoration:none}.fee-guide>header{max-width:900px;padding:28px 0 12px}.fee-guide>header>p:first-child{margin:0 0 10px;color:var(--green-strong);font-size:.78rem;font-weight:850}.fee-guide h1{margin:0;font-size:clamp(2.2rem,5vw,4.2rem);line-height:1.1;font-weight:820}.fee-guide>header>p:last-child{max-width:800px;margin:18px 0 0;color:var(--muted);font-size:1.05rem;line-height:1.8;font-weight:650}.summary{display:grid;grid-template-columns:220px 1fr;gap:28px;border-left:4px solid var(--green);background:#edf7f2;padding:22px}.summary strong{font-size:1rem}.summary ol{margin:0;padding-left:1.25rem}.summary li{font-weight:700;line-height:1.65}.summary li+li{margin-top:5px}.guide-body{display:grid;gap:0;border-top:1px solid var(--line)}.guide-body section{display:grid;grid-template-columns:270px 1fr;column-gap:42px;padding:30px 0;border-bottom:1px solid var(--line)}.guide-body h2{grid-row:1/span 4;margin:0;font-size:1.15rem;line-height:1.45}.guide-body p,.guide-body ol{margin:0;color:#47534d;font-size:.96rem;line-height:1.85;font-weight:620}.guide-body p+p,.guide-body ol+p{margin-top:12px}.guide-body ol{padding-left:1.3rem}.guide-body li+li{margin-top:6px}.guide-actions{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;background:#18221e;color:#fff;padding:24px}.guide-actions h2{margin:0;font-size:1.15rem}.guide-actions p{margin:4px 0 0;color:#cbd7d1;font-size:.8rem}.guide-actions a{border:1px solid #6b7d74;border-radius:5px;color:#fff;padding:10px 13px;text-decoration:none;font-size:.78rem;font-weight:800}.guide-actions a:first-of-type{border-color:#63c69a;background:#13795b}@media(max-width:760px){:global(.main-content:has(.fee-guide)){width:calc(100vw - 24px)}.summary,.guide-body section,.guide-actions{grid-template-columns:1fr}.summary{gap:12px}.guide-body h2{grid-row:auto;margin-bottom:12px}.guide-actions{align-items:stretch}.guide-actions a{text-align:center}}
+  :global(html.content-embed body){overflow:auto;background:#f7f9f8}:global(html.content-embed .site-header),:global(html.content-embed .site-footer){display:none}:global(html.content-embed .main-content:has(.fee-guide)){width:min(880px,calc(100vw - 32px));min-height:100%;padding:22px 0 36px}:global(html.content-embed) .fee-guide{gap:14px}:global(html.content-embed) .fee-guide>nav{display:none}:global(html.content-embed) .fee-guide>header{padding:6px 0 12px}:global(html.content-embed) .fee-guide h1{max-width:800px;font-size:clamp(1.9rem,3vw,2.35rem);line-height:1.18}:global(html.content-embed) .fee-guide>header>p:last-child{margin-top:13px;font-size:.9rem;line-height:1.7}:global(html.content-embed) .summary{grid-template-columns:180px 1fr;gap:18px;border:1px solid #d8e3dd;border-radius:7px;background:#fff;padding:18px}:global(html.content-embed) .summary strong{font-size:.86rem}:global(html.content-embed) .summary li{font-size:.82rem}:global(html.content-embed) .guide-body{border:1px solid #dfe5e2;border-radius:7px;background:#fff}:global(html.content-embed) .guide-body section{grid-template-columns:210px 1fr;column-gap:24px;padding:23px 20px}:global(html.content-embed) .guide-body h2{font-size:.98rem}:global(html.content-embed) .guide-body p,:global(html.content-embed) .guide-body ol{font-size:.84rem;line-height:1.75}:global(html.content-embed) .guide-actions{border-radius:7px;padding:18px 20px}
+  @media(max-width:760px){:global(html.content-embed .main-content:has(.fee-guide)){width:calc(100vw - 20px);padding:14px 0 24px}:global(html.content-embed) .fee-guide h1{font-size:1.75rem}:global(html.content-embed) .summary,:global(html.content-embed) .guide-body section{grid-template-columns:1fr}:global(html.content-embed) .guide-body h2{grid-row:auto}:global(html.content-embed) .guide-actions{grid-template-columns:1fr}}
 </style>

@@ -127,23 +127,24 @@ const metrics = [
       </div>
     </section>
 
-    <section class="report-dialog" data-report-dialog role="dialog" aria-modal="true" aria-labelledby="report-dialog-title" hidden>
+    <section class="report-dialog" data-report-dialog role="dialog" aria-labelledby="report-dialog-title" hidden>
       <div class="report-sheet">
         <header class="report-sheet-head">
           <div class="report-title-block">
+            <button type="button" class="report-back" data-report-back aria-label="이전 화면으로 돌아가기" hidden>&#8592;</button>
             <a href="/" class="map-brand report-brand" aria-label="단지표 아파트 관리비 지도 홈">
               <span aria-hidden="true"><i></i></span>
               <strong>단지표</strong>
             </a>
             <div class="report-title-copy">
-              <span>월별 공개 내역</span>
-              <h2 id="report-dialog-title">월별 관리비 리포트</h2>
+              <span data-report-kicker>월별 공개 내역</span>
+              <h2 id="report-dialog-title" data-report-title>월별 관리비 리포트</h2>
               <p data-report-subtitle></p>
             </div>
           </div>
           <div class="report-sheet-actions">
             <button type="button" data-report-share>리포트 공유</button>
-            <button type="button" class="report-sheet-close" data-report-close aria-label="월별 관리비 리포트 닫기">&#215;</button>
+            <button type="button" class="report-sheet-close" data-report-close aria-label="상세 패널 닫기">&#215;</button>
           </div>
         </header>
         <div class="report-frame-wrap" data-report-frame-wrap>
@@ -197,6 +198,9 @@ const metrics = [
     const compareContent = app?.querySelector('[data-compare-content]');
     const compareShare = app?.querySelector('[data-compare-share]');
     const reportDialog = app?.querySelector('[data-report-dialog]');
+    const reportBack = app?.querySelector('[data-report-back]');
+    const reportKicker = app?.querySelector('[data-report-kicker]');
+    const reportTitle = app?.querySelector('[data-report-title]');
     const reportSubtitle = app?.querySelector('[data-report-subtitle]');
     const reportFrame = app?.querySelector('[data-report-frame]');
     const reportLoading = app?.querySelector('[data-report-loading]');
@@ -401,6 +405,7 @@ const metrics = [
     let compareSlugs = [...new Set(initialCompareSlugs)];
     let compareDialogOpen = initialCompareOpen && compareSlugs.length >= 2;
     let reportDialogOpen = initialReportOpen && Boolean(initialSlug);
+    let reportContentMode = 'report';
     let toastTimer = 0;
 
     const escapeHtml = (value) => String(value ?? '')
@@ -784,9 +789,19 @@ const metrics = [
       reportDialog.hidden = !shouldOpen;
       document.body.classList.toggle('report-dialog-open', shouldOpen);
       if (!shouldOpen) return;
-      if (reportSubtitle) reportSubtitle.textContent = `${apartment.n} · ${apartment.lm || '최근 공개월'}`;
-      reportFrame.title = `${apartment.n} 월별 관리비 리포트`;
-      const source = `/apartments/${encodeURIComponent(apartment.s)}/?embed=map`;
+      const isReport = reportContentMode === 'report';
+      const isMethodology = reportContentMode === 'methodology';
+      if (reportBack) reportBack.hidden = isReport;
+      if (reportShare) reportShare.hidden = !isReport;
+      if (reportKicker) reportKicker.textContent = isReport ? '월별 공개 내역' : isMethodology ? '데이터 기준' : '관리비 도움말';
+      if (reportTitle) reportTitle.textContent = isReport ? '월별 관리비 리포트' : isMethodology ? '관리비 산정 기준' : '관리비 읽는 법';
+      if (reportSubtitle) reportSubtitle.textContent = isReport
+        ? `${apartment.n} · ${apartment.lm || '최근 공개월'}`
+        : isMethodology ? '원본 결합과 비교 방식' : '항목과 비교 기준';
+      reportFrame.title = isReport ? `${apartment.n} 월별 관리비 리포트` : isMethodology ? '관리비 산정 기준' : '아파트 관리비 읽는 법';
+      const source = isReport
+        ? `/apartments/${encodeURIComponent(apartment.s)}/?embed=map`
+        : isMethodology ? '/methodology/?embed=map' : '/management-fee-guide/?embed=map';
       if (reportFrame.dataset.source !== source) {
         reportFrame.dataset.source = source;
         if (reportLoading) reportLoading.hidden = false;
@@ -798,6 +813,7 @@ const metrics = [
     const openReport = (apartment) => {
       if (!apartment || apartment.q !== 1) return;
       reportDialogOpen = true;
+      reportContentMode = 'report';
       selectedSlug = apartment.s;
       const url = new URL(window.location.href);
       url.searchParams.set('apt', apartment.s);
@@ -808,6 +824,7 @@ const metrics = [
 
     const closeReport = () => {
       reportDialogOpen = false;
+      reportContentMode = 'report';
       syncReportUrl();
       render();
     };
@@ -1469,7 +1486,30 @@ const metrics = [
     });
     window.addEventListener('message', (event) => {
       if (event.origin !== window.location.origin || event.source !== reportFrame?.contentWindow) return;
+      if (event.data?.type === 'danjipyo:open-guide') {
+        reportContentMode = 'guide';
+        const apartment = apartments.find((item) => item.s === selectedSlug);
+        renderReportDialog(apartment || null);
+        return;
+      }
+      if (event.data?.type === 'danjipyo:content-loaded') {
+        reportContentMode = event.data.kind === 'methodology' ? 'methodology' : 'guide';
+        reportFrame.dataset.source = reportContentMode === 'methodology'
+          ? '/methodology/?embed=map'
+          : '/management-fee-guide/?embed=map';
+        if (reportBack) reportBack.hidden = false;
+        if (reportShare) reportShare.hidden = true;
+        if (reportKicker) reportKicker.textContent = event.data.kicker || '관리비 도움말';
+        if (reportTitle) reportTitle.textContent = event.data.title || '관리비 읽는 법';
+        if (reportSubtitle) reportSubtitle.textContent = event.data.subtitle || '';
+        return;
+      }
+      if (event.data?.type === 'danjipyo:close-content') {
+        closeReport();
+        return;
+      }
       if (event.data?.type !== 'danjipyo:report-loaded') return;
+      reportContentMode = 'report';
       const apartment = apartments.find((item) => item.s === event.data.slug);
       if (!apartment) return;
       selectedSlug = apartment.s;
@@ -1479,11 +1519,22 @@ const metrics = [
       activeDistrict = districtKey(apartment.sd, apartment.sg);
       activeDong = apartment.d;
       if (region) region.value = apartment.sd;
+      if (reportBack) reportBack.hidden = true;
+      if (reportShare) reportShare.hidden = false;
+      if (reportKicker) reportKicker.textContent = '월별 공개 내역';
+      if (reportTitle) reportTitle.textContent = '월별 관리비 리포트';
+      reportFrame.dataset.source = `/apartments/${encodeURIComponent(apartment.s)}/?embed=map`;
       if (reportSubtitle) reportSubtitle.textContent = `${event.data.title} · ${event.data.month}`;
       const url = new URL(window.location.href);
       url.searchParams.set('apt', apartment.s);
       url.searchParams.set('report', '1');
       history.replaceState({}, '', url);
+      render();
+    });
+    reportBack?.addEventListener('click', () => {
+      if (reportFrame?.contentWindow && reportContentMode !== 'report') {
+        reportFrame.contentWindow.history.back();
+      }
     });
     reportShare?.addEventListener('click', () => {
       const apartment = apartments.find((item) => item.s === selectedSlug);
@@ -1831,11 +1882,13 @@ const metrics = [
   .compare-table td.best-value { background: #eef7f3; color: #006c55; font-weight: 900; }
   .compare-table td.best-value > small { color: #08765c; font-weight: 850; }
   .compare-caption { margin-top: 14px; color: #6f7b75; font-size: .72rem; line-height: 1.55; }
-  .report-dialog { position: fixed; z-index: 2600; inset: 0; display: grid; place-items: stretch; background: #f7f9f8; }
+  .report-dialog { position: fixed; z-index: 2600; top: 0; right: 0; bottom: 0; width: clamp(700px, 58vw, 1160px); display: grid; place-items: stretch; background: transparent; }
   .report-dialog[hidden] { display: none; }
-  .report-sheet { width: 100%; height: 100%; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; background: #f7f9f8; }
+  .report-sheet { width: 100%; height: 100%; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; border-left: 1px solid #cbd6d0; background: #f7f9f8; box-shadow: -12px 0 32px rgba(23, 45, 36, .16); }
   .report-sheet-head { min-height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid #ccd7d1; background: #fff; padding: 8px 16px; box-shadow: 0 3px 14px rgba(25, 46, 37, .08); }
   .report-title-block { min-width: 0; display: flex; align-items: center; gap: 13px; }
+  .report-back { width: 40px; min-height: 40px; flex: 0 0 auto; border: 1px solid #c8d5ce; border-radius: 7px; background: #fff; color: #26352e; padding: 0; font-size: 1.15rem; font-weight: 850; cursor: pointer; }
+  .report-back[hidden] { display: none; }
   .report-brand { flex: 0 0 auto; padding-right: 13px; border-right: 1px solid #d9e1dc; }
   .report-title-copy { min-width: 0; }
   .report-title-copy > span { color: #08765c; font-size: .62rem; font-weight: 850; }
@@ -1858,6 +1911,9 @@ const metrics = [
     .reset-button { min-height: 40px; grid-column: 1 / -1; }
     .workspace { grid-template-columns: 1fr; }
     .detail-pane { min-height: 0; }
+  }
+  @media (max-width: 960px) {
+    .report-dialog { width: 100%; }
   }
   @media (max-width: 720px) {
     .main-content:has(.map-shell) { width: min(100% - 20px, 1540px); padding-top: 10px; }
@@ -2155,6 +2211,8 @@ const metrics = [
     .compare-table thead th:first-child { z-index: 3; }
     .compare-table thead th { height: 124px; }
     .report-sheet-head { min-height: 68px; gap: 10px; padding: 9px 10px; }
+    .report-dialog { width: 100%; }
+    .report-back { width: 36px; min-height: 36px; }
     .report-title-block { gap: 8px; }
     .report-brand { padding-right: 8px; }
     .report-brand strong { display: none; }

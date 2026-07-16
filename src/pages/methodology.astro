@@ -6,6 +6,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   description="K-apt 원본 결합, 관리비 ㎡당 단가, 비교군과 백분위 산정 및 검증 방식을 설명합니다."
   canonical="/methodology/"
 >
+  <script is:inline>
+    if (new URLSearchParams(window.location.search).get('embed') === 'map') {
+      document.documentElement.classList.add('content-embed');
+      window.parent.postMessage({
+        type: 'danjipyo:content-loaded',
+        kind: 'methodology',
+        kicker: '데이터 기준',
+        title: '관리비 산정 기준',
+        subtitle: '원본 결합과 비교 방식'
+      }, window.location.origin);
+    }
+  </script>
   <section class="method-page">
     <p class="kicker">Data Methodology</p>
     <h1>어떤 파일을 어떻게 계산했는지 공개합니다.</h1>
@@ -115,6 +127,42 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   @media (max-width: 820px) {
     .method-grid {
       grid-template-columns: 1fr;
+    }
+  }
+  :global(html.content-embed body) {
+    overflow: auto;
+    background: #f7f9f8;
+  }
+  :global(html.content-embed .site-header),
+  :global(html.content-embed .site-footer) {
+    display: none;
+  }
+  :global(html.content-embed .main-content:has(.method-page)) {
+    width: min(880px, calc(100vw - 32px));
+    min-height: 100%;
+    padding: 24px 0 36px;
+  }
+  :global(html.content-embed .method-page) {
+    max-width: none;
+    gap: 14px;
+  }
+  :global(html.content-embed .method-page h1) {
+    max-width: 720px;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+  }
+  :global(html.content-embed .method-page .lead),
+  :global(html.content-embed .method-page p),
+  :global(html.content-embed .method-page li) {
+    font-size: .86rem;
+    line-height: 1.7;
+  }
+  @media (max-width: 760px) {
+    :global(html.content-embed .main-content:has(.method-page)) {
+      width: calc(100vw - 20px);
+      padding: 16px 0 24px;
+    }
+    :global(html.content-embed .method-page h1) {
+      font-size: 1.8rem;
     }
   }
 </style>
