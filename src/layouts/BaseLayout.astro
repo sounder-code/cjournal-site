@@ -19,6 +19,7 @@ interface Props {
 const { title, description, canonical, robots, type, publishedTime, updatedTime, structuredData, fullBleed = false, hideHeader = false } = Astro.props;
 const gtmId = (import.meta.env.PUBLIC_GTM_ID || '').trim();
 const gaId = (import.meta.env.PUBLIC_GA_ID || 'G-SE44ENS3KV').trim();
+const naverAnalyticsId = (import.meta.env.PUBLIC_NAVER_ANALYTICS_ID || '24eb41c656c0500').trim();
 const useDirectGa = Boolean(gaId && !gtmId);
 ---
 <!doctype html>
@@ -85,6 +86,15 @@ const useDirectGa = Boolean(gaId && !gtmId);
         window['dataLayer'].push(payload);
       });
     </script>
+    {naverAnalyticsId && <script is:inline src="https://wcs.pstatic.net/wcslog.js"></script>}
+    {
+      naverAnalyticsId && (
+        <script
+          is:inline
+          set:html={`window.wcs_add=window.wcs_add||{};window.wcs_add.wa='${naverAnalyticsId}';if(window.wcs){window.wcs_do();}`}
+        />
+      )
+    }
   </body>
 </html>
 

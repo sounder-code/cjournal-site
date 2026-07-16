@@ -90,6 +90,7 @@ bash scripts/setup-gh-runner-macos.sh sounder-code/cjournal-site <RUNNER_TOKEN>
 - 사이트 코드에는 GTM 컨테이너(`PUBLIC_GTM_ID`)와 GA4 측정 태그(`PUBLIC_GA_ID`)를 삽입합니다.
 - 기본 GA4 측정 ID는 `G-SE44ENS3KV`입니다.
 - GTM은 제휴 클릭 등 이벤트 확장용으로 유지하고, 기본 페이지뷰는 GA4 직접 태그로 보냅니다.
+- 네이버 유입과 페이지 이용 분석에는 네이버 애널리틱스(`PUBLIC_NAVER_ANALYTICS_ID`)를 함께 사용합니다.
 
 ## 배포
 - `main` 브랜치가 CI를 통과하면 GitHub Actions가 `ghcr.io/sounder-code/cjournal-site:main` 이미지를 발행합니다.
