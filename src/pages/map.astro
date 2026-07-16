@@ -5,6 +5,7 @@ import adminCenters from '@/data/admin-centers.json';
 
 const manifest = await loadApartmentManifest();
 const naverMapClientId = import.meta.env.PUBLIC_NAVER_MAP_CLIENT_ID || '8qq4ptrbjt';
+const currentYear = new Date().getFullYear();
 const metrics = [
   { key: 'tf', label: '총 관리비', shortLabel: '총액' },
   { key: 'cf', label: '공용관리비', shortLabel: '공용' },
@@ -156,12 +157,14 @@ const metrics = [
 
     <output class="map-toast" data-map-toast aria-live="polite" hidden></output>
 
-    <footer class="source-note">
-      <strong>데이터 기준</strong>
-      <div>
-        <p>국토교통부 공동주택관리정보시스템(K-apt) 일괄 공개자료 · 원본 {manifest.sourceDate} · 최신 관리비 {manifest.latestMonth} · K-apt 지도 좌표 · 행정경계 {adminCenters.sourceDate}</p>
-        <small>배경지도는 네이버 Dynamic Map을 사용합니다. 행정경계는 <a href="https://sgis.kostat.go.kr" target="_blank" rel="noopener noreferrer">통계청 SGIS</a> 공공누리 제1유형 자료를 <a href="https://github.com/vuski/admdongkor" target="_blank" rel="noopener noreferrer">vuski/admdongkor</a>가 가공한 CC BY 4.0 데이터입니다.</small>
-      </div>
+    <footer class="map-meta-footer">
+      <span>&copy; {currentYear} 단지표</span>
+      <nav aria-label="사이트 정보">
+        <a href="/about/">서비스 정보</a>
+        <a href="/methodology/">산정 기준</a>
+        <a href="/privacy/">개인정보</a>
+        <a href="/contact/">문의</a>
+      </nav>
     </footer>
   </section>
 
@@ -1680,7 +1683,7 @@ const metrics = [
   .metric-control button.active { border-color: #8ac8b7; background: #e8f5f1; color: #006c55; }
   .reset-button { padding: 0 14px; }
   .workspace { min-height: 680px; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 12px; }
-  .map-pane, .detail-pane, .source-note { border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 10px 28px rgba(23, 33, 29, .06); }
+  .map-pane, .detail-pane { border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 10px 28px rgba(23, 33, 29, .06); }
   .map-pane { min-width: 0; display: grid; grid-template-rows: auto minmax(500px, 1fr) auto; overflow: hidden; }
   .map-status { min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 14px; border-bottom: 1px solid #e4e9e6; }
   .map-status > div:first-child { display: flex; align-items: center; gap: 9px; }
@@ -1777,12 +1780,6 @@ const metrics = [
   .facts dt { color: #7b8580; font-size: .64rem; font-weight: 760; }
   .facts dd { overflow: hidden; margin: 4px 0 0; color: var(--ink); font-size: .8rem; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
   .report-unavailable { margin: 0; color: #777f7b; font-size: .72rem; line-height: 1.5; }
-  .source-note { display: flex; align-items: center; gap: 12px; padding: 12px 15px; }
-  .source-note strong { color: var(--ink); font-size: .75rem; }
-  .source-note p { margin: 0; color: #6e7973; font-size: .7rem; }
-  .source-note > div { display: grid; gap: 3px; }
-  .source-note small { color: #88918d; font-size: .62rem; line-height: 1.45; }
-  .source-note small a { color: #53635c; text-underline-offset: 2px; }
   .compare-tray {
     position: absolute;
     z-index: 900;
@@ -1949,7 +1946,6 @@ const metrics = [
     .province-marker strong { font-size: .7rem; }
     .province-marker span { max-width: 43px; font-size: .48rem; }
     .result-list { grid-template-columns: 1fr; }
-    .source-note { align-items: flex-start; flex-direction: column; gap: 4px; }
   }
 
   /* Map-first application layout */
@@ -2106,7 +2102,27 @@ const metrics = [
     cursor: pointer;
   }
   .detail-head { padding-right: 34px; }
-  .source-note { display: none; }
+  .map-meta-footer {
+    position: absolute;
+    z-index: 1001;
+    right: 12px;
+    bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, .7);
+    color: rgba(54, 68, 62, .58);
+    padding: 5px 7px;
+    font-size: .58rem;
+    line-height: 1;
+    backdrop-filter: blur(5px);
+  }
+  .map-meta-footer span { white-space: nowrap; }
+  .map-meta-footer nav { display: flex; align-items: center; gap: 7px; }
+  .map-meta-footer a { color: inherit; font-size: inherit; font-weight: 700; text-decoration: none; white-space: nowrap; }
+  .map-meta-footer a:hover { color: #33433c; text-decoration: underline; text-underline-offset: 2px; }
 
   @media (min-width: 961px) and (max-width: 1200px) {
     .filter-bar { grid-template-columns: auto minmax(250px, 1fr) 190px 132px 132px auto; padding-right: 12px; padding-left: 12px; }
@@ -2174,6 +2190,8 @@ const metrics = [
       border-radius: 0;
       box-shadow: none;
     }
+    .map-meta-footer { right: 8px; bottom: 6px; gap: 6px; padding: 4px 6px; font-size: .54rem; }
+    .map-meta-footer nav { gap: 6px; }
     .detail-head h2 { font-size: 1.08rem; }
     .score-box section { padding: 11px; }
     .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
