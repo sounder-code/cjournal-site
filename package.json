@@ -27,6 +27,7 @@
     "data:kapt:refresh:check": "tsx scripts/check-kapt-refresh.ts",
     "data:admin-centers": "tsx scripts/generate-admin-centers.ts",
     "quality:apartments": "tsx scripts/audit-apartment-pages.ts",
+    "seo:indexnow": "node scripts/submit-indexnow.mjs",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up --build -d",
     "docker:down": "docker compose down",

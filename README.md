@@ -92,6 +92,11 @@ bash scripts/setup-gh-runner-macos.sh sounder-code/cjournal-site <RUNNER_TOKEN>
 - GTM은 제휴 클릭 등 이벤트 확장용으로 유지하고, 기본 페이지뷰는 GA4 직접 태그로 보냅니다.
 - 네이버 유입과 페이지 이용 분석에는 네이버 애널리틱스(`PUBLIC_NAVER_ANALYTICS_ID`)를 함께 사용합니다.
 
+## 검색엔진 갱신 알림
+- 운영 사이트는 루트에 IndexNow 소유 키를 공개합니다.
+- 단지 데이터, 단지 페이지, 사이트맵이 바뀐 배포는 운영 반영 후 네이버 IndexNow에 URL을 최대 10,000개씩 나누어 알립니다.
+- 수동 실행: `npm run seo:indexnow`
+
 ## 배포
 - `main` 브랜치가 CI를 통과하면 GitHub Actions가 `ghcr.io/sounder-code/cjournal-site:main` 이미지를 발행합니다.
 - Docker 서버에서는 `compose.prod.yaml`로 이미지 전체를 교체합니다.

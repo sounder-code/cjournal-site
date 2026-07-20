@@ -51,3 +51,32 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Check whether search documents changed
+        id: search-documents
+        shell: bash
+        run: |
+          if git diff-tree --no-commit-id --name-only -r HEAD | grep -Eq '^(public/dd31d55254614118988122a86e38eb19\.txt|public/data/apartments/|src/pages/apartments/|src/pages/sitemap\.xml\.ts|src/lib/apartment|src/layouts/BaseLayout\.astro)'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Wait for production release
+        if: steps.search-documents.outputs.changed == 'true'
+        shell: bash
+        run: |
+          for attempt in {1..60}; do
+            if [ "$(curl --silent --show-error --fail https://danjipyo.kr/dd31d55254614118988122a86e38eb19.txt || true)" = "dd31d55254614118988122a86e38eb19" ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Production did not expose the IndexNow key within 10 minutes" >&2
+          exit 1
+
+      - name: Notify Naver IndexNow
+        if: steps.search-documents.outputs.changed == 'true'
+        env:
+          PUBLIC_SITE_URL: https://danjipyo.kr
+        run: node scripts/submit-indexnow.mjs
