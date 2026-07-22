@@ -23,10 +23,13 @@ const naverAnalyticsId = (import.meta.env.PUBLIC_NAVER_ANALYTICS_ID || '24eb41c6
 const useDirectGa = Boolean(gaId && !gtmId);
 ---
 <!doctype html>
-<html lang="ko">
+<html lang="ko" data-direct-ga={String(useDirectGa)}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin="anonymous" />
+    <link rel="preconnect" href="https://wcs.pstatic.net" crossorigin="anonymous" />
+    <link rel="preconnect" href="https://oapi.map.naver.com" crossorigin="anonymous" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="google-adsense-account" content="ca-pub-3605659204864367" />
     {
@@ -46,6 +49,11 @@ const useDirectGa = Boolean(gaId && !gtmId);
         />
       )
     }
+    <script>
+      import { initializeAnalytics } from '@/lib/analytics/client';
+
+      initializeAnalytics(document.documentElement.dataset.directGa === 'true');
+    </script>
     <SeoHead title={title} description={description} canonical={canonical} robots={robots} type={type} publishedTime={publishedTime} updatedTime={updatedTime} />
     {structuredData && <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData).replace(/</g, '\\u003c')} />}
   </head>
@@ -75,15 +83,13 @@ const useDirectGa = Boolean(gaId && !gtmId);
         if (!(link instanceof HTMLAnchorElement)) return;
 
         const payload = {
-          event: 'affiliate_click',
           offer_id: link.dataset.offerId || '',
           offer_title: link.dataset.offerTitle || '',
           post_slug: link.dataset.postSlug || '',
           href: link.href
         };
 
-        window['dataLayer'] = window['dataLayer'] || [];
-        window['dataLayer'].push(payload);
+        window.danjipyoTrack('affiliate_click', payload);
       });
     </script>
     {naverAnalyticsId && <script is:inline src="https://wcs.pstatic.net/wcslog.js"></script>}

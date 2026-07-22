@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { loadApartmentPageData, type ApartmentEntry } from '@/lib/apartmentBulk';
-import { apartmentMedian, districtHubPath, regionHubPath } from '@/lib/apartmentSeo';
+import { displayDistrictName, districtHubPath, regionHubPath, regionalFeeInsights } from '@/lib/apartmentSeo';
 import { siteUrl } from '@/lib/site';
 
 export const getStaticPaths = async () => {
@@ -22,15 +22,28 @@ for (const apartment of apartments) {
   districtGroups.set(apartment.sg, [...(districtGroups.get(apartment.sg) ?? []), apartment]);
 }
 const districts = [...districtGroups]
-  .map(([district, entries]) => ({
-    district,
-    entries,
-    medianFee: apartmentMedian(entries),
-    households: entries.reduce((sum, item) => sum + item.h, 0)
-  }))
+  .map(([district, entries]) => {
+    const insights = regionalFeeInsights(entries);
+    return {
+      district,
+      entries,
+      medianFee: insights.medianFee,
+      referenceMonth: insights.referenceMonth,
+      households: entries.reduce((sum, item) => sum + item.h, 0)
+    };
+  })
   .sort((a, b) => b.entries.length - a.entries.length || a.district.localeCompare(b.district, 'ko'));
-const medianFee = apartmentMedian(apartments);
-const latestMonth = apartments.map((item) => item.lm).filter(Boolean).sort().at(-1) ?? '';
+const insights = regionalFeeInsights(apartments);
+const insightGroups = [
+  { title: '전월 대비 상승 단지', note: '㎡당 총 관리비 증가액 순', rows: insights.rising, change: true },
+  { title: '전월 대비 하락 단지', note: '㎡당 총 관리비 감소액 순', rows: insights.falling, change: true },
+  { title: '공개 단가가 낮은 단지', note: '기준월 ㎡당 총 관리비 순', rows: insights.low, change: false },
+  { title: '공개 단가가 높은 단지', note: '기준월 ㎡당 총 관리비 순', rows: insights.high, change: false }
+];
+const fee = (value: number) => `${value.toLocaleString('ko-KR')}원/㎡`;
+const deltaFee = (value: number | null) => value === null
+  ? '비교값 없음'
+  : `${value > 0 ? '+' : ''}${value.toLocaleString('ko-KR')}원/㎡`;
 const description = `${province} 관리비 공개 아파트 ${apartments.length.toLocaleString('ko-KR')}개를 시군구별로 찾고 최근 ㎡당 관리비 중앙값과 단지별 월별 내역을 확인하세요.`;
 const structuredData = {
   '@context': 'https://schema.org',
@@ -58,24 +71,55 @@ const structuredData = {
     <section class="summary" aria-label={`${province} 관리비 요약`}>
       <div><span>공개 단지</span><strong>{apartments.length.toLocaleString('ko-KR')}</strong><small>개</small></div>
       <div><span>시군구</span><strong>{districts.length.toLocaleString('ko-KR')}</strong><small>곳</small></div>
-      <div><span>㎡당 중앙값</span><strong>{medianFee.toLocaleString('ko-KR')}</strong><small>원</small></div>
-      <div><span>최근 기준월</span><strong>{latestMonth || '미확인'}</strong></div>
+      <div><span>㎡당 중앙값</span><strong>{insights.medianFee ? insights.medianFee.toLocaleString('ko-KR') : '미공개'}</strong>{insights.medianFee > 0 && <small>원</small>}</div>
+      <div><span>비교 기준월</span><strong>{insights.referenceMonth || '미확인'}</strong><small>{insights.coverageCount ? `${insights.coverageCount.toLocaleString('ko-KR')}개 단지` : ''}</small></div>
+    </section>
+
+    <section class="insight-section" aria-labelledby="fee-insights-title">
+      <header>
+        <div><h2 id="fee-insights-title">{province} 관리비 공개 단가 요약</h2><p>{insights.referenceMonth ? `${insights.referenceMonth} 공개값을 같은 기준월끼리 비교했습니다.` : '비교 가능한 월별 공개값이 없습니다.'}</p></div>
+        <span>단가 차이는 관리 서비스나 주거 품질을 뜻하지 않습니다.</span>
+      </header>
+      <div class="insight-grid">
+        {insightGroups.map((group) => (
+          <article>
+            <header><h3>{group.title}</h3><span>{group.note}</span></header>
+            {group.rows.length ? (
+              <ol>
+                {group.rows.map((row) => (
+                  <li>
+                    <a href={`/apartments/${row.apartment.s}/`}>
+                      <span><strong>{row.apartment.n}</strong><small>{row.apartment.sg} {row.apartment.d}</small></span>
+                      <b class={group.change ? (Number(row.delta) > 0 ? 'up' : 'down') : ''}>
+                        {group.change ? deltaFee(row.delta) : fee(row.total)}
+                        {group.change && <small>현재 {fee(row.total)}</small>}
+                      </b>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            ) : <p class="empty">표시할 수 있는 공개값이 없습니다.</p>}
+          </article>
+        ))}
+      </div>
     </section>
 
     <section class="district-section">
       <header><h2>시군구별 단지</h2><p>단지 수가 많은 지역부터 표시합니다.</p></header>
       <div class="district-grid">
-        {districts.map(({ district, entries, medianFee: districtMedian, households }) => (
+        {districts.map(({ district, entries, medianFee: districtMedian, referenceMonth, households }) => (
           <a href={districtHubPath(province, district)}>
-            <span>{district || '세종시 전체'}</span>
+            <span>{displayDistrictName(province, district)}</span>
             <strong>{entries.length.toLocaleString('ko-KR')}개 단지</strong>
-            <small>㎡당 중앙값 {districtMedian.toLocaleString('ko-KR')}원 · {households.toLocaleString('ko-KR')}세대</small>
+            <small>{districtMedian ? `${referenceMonth} 중앙값 ${districtMedian.toLocaleString('ko-KR')}원/㎡` : '관리비 미공개'} · {households.toLocaleString('ko-KR')}세대</small>
           </a>
         ))}
       </div>
     </section>
 
-    <p class="source">출처: 국토교통부 공동주택관리정보시스템(K-apt) 일괄 공개자료 · 중앙값은 각 단지의 최근 공개월 ㎡당 총 관리비 기준입니다.</p>
+    <a class="map-cta" href={`/?region=${encodeURIComponent(province)}`}><span><strong>{province} 단지를 지도에서 비교</strong><small>위치와 주변 단지를 함께 확인합니다.</small></span><b>지도 열기</b></a>
+
+    <p class="source">출처: 국토교통부 공동주택관리정보시스템(K-apt) 일괄 공개자료 · 비교 기준월은 가장 많이 공개된 월의 단지 수 대비 90% 이상이 포함된 가장 최근 월입니다. 중앙값과 순위는 해당 월의 ㎡당 총 관리비 공개 단가를 기준으로 하며, 세대별 실제 청구액은 전용면적과 사용량에 따라 달라집니다.{insights.excludedCount ? ` 중앙값의 25% 미만 또는 400% 초과인 ${insights.excludedCount.toLocaleString('ko-KR')}개 공개값은 요약 순위에서 제외했으며 단지 상세에는 그대로 표시됩니다.` : ''}{insights.latestAvailableMonth && insights.latestAvailableMonth !== insights.referenceMonth ? ` 일부 단지는 ${insights.latestAvailableMonth} 자료까지 공개되어 있습니다.` : ''}</p>
   </main>
 </BaseLayout>
 
@@ -95,6 +139,28 @@ const structuredData = {
   .summary span { margin-right: auto; color: #75807a; font-size: .7rem; font-weight: 760; }
   .summary strong { color: #17211d; font-size: 1.25rem; }
   .summary small { color: #75807a; font-size: .68rem; font-weight: 750; }
+  .insight-section { display: grid; gap: 13px; padding: 18px 0 2px; }
+  .insight-section > header { display: flex; align-items: end; justify-content: space-between; gap: 18px; }
+  .insight-section > header h2 { margin: 0; color: #17211d; font-size: 1rem; }
+  .insight-section > header p { margin: 5px 0 0; color: #75807a; font-size: .7rem; }
+  .insight-section > header > span { color: #7a847f; font-size: .67rem; }
+  .insight-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #dce4df; border-left: 1px solid #dce4df; background: #fff; }
+  .insight-grid article { min-width: 0; border-right: 1px solid #dce4df; border-bottom: 1px solid #dce4df; padding: 15px; }
+  .insight-grid article > header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .insight-grid h3 { margin: 0; color: #26332d; font-size: .8rem; }
+  .insight-grid article > header span { color: #7a847f; font-size: .62rem; white-space: nowrap; }
+  .insight-grid ol { margin: 0; padding: 0; list-style: none; }
+  .insight-grid li + li { border-top: 1px solid #edf1ef; }
+  .insight-grid a { min-height: 55px; display: flex; align-items: center; justify-content: space-between; gap: 14px; color: #17211d; text-decoration: none; }
+  .insight-grid a:hover strong { color: #08765c; }
+  .insight-grid a > span { min-width: 0; display: grid; gap: 3px; }
+  .insight-grid a strong { overflow: hidden; font-size: .75rem; text-overflow: ellipsis; white-space: nowrap; }
+  .insight-grid a small { overflow: hidden; color: #7a847f; font-size: .62rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+  .insight-grid b { flex: 0 0 auto; display: grid; gap: 2px; color: #26332d; font-size: .72rem; text-align: right; }
+  .insight-grid b.up { color: #b4493f; }
+  .insight-grid b.down { color: #08765c; }
+  .insight-grid b small { color: #7a847f; font-size: .58rem; }
+  .empty { min-height: 55px; display: flex; align-items: center; margin: 0; color: #87908c; font-size: .68rem; }
   .district-section { border: 1px solid #dce4df; border-radius: 7px; background: #fff; padding: 18px; }
   .district-section > header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 13px; }
   .district-section h2 { margin: 0; font-size: 1rem; }
@@ -105,14 +171,25 @@ const structuredData = {
   .district-grid span { color: #08765c; font-size: .7rem; font-weight: 820; }
   .district-grid strong { overflow: hidden; font-size: .9rem; text-overflow: ellipsis; white-space: nowrap; }
   .district-grid small { overflow: hidden; color: #748079; font-size: .66rem; font-weight: 680; text-overflow: ellipsis; white-space: nowrap; }
+  .map-cta { min-height: 66px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid #cddbd4; border-radius: 7px; color: #17211d; padding: 12px 16px; text-decoration: none; }
+  .map-cta > span { display: grid; gap: 4px; }
+  .map-cta strong { font-size: .8rem; }
+  .map-cta small { color: #748079; font-size: .65rem; }
+  .map-cta b { color: #08765c; font-size: .72rem; }
   .source { margin: 0; color: #747f79; font-size: .69rem; line-height: 1.6; }
   @media (max-width: 760px) {
     :global(.main-content:has(.region-hub)) { width: calc(100vw - 24px); }
     .hub-head { align-items: flex-start; flex-direction: column; gap: 13px; }
     .hub-head h1 { font-size: 1.45rem; }
     .summary { grid-template-columns: repeat(2, 1fr); }
+    .summary div { min-height: 92px; align-items: flex-start; justify-content: center; flex-direction: column; gap: 4px; padding: 14px; }
+    .summary span { margin-right: 0; }
+    .summary strong { max-width: 100%; font-size: 1.05rem; }
     .summary div:nth-child(2) { border-right: 0; }
     .summary div:nth-child(-n + 2) { border-bottom: 1px solid #e7ece9; }
+    .insight-section > header { align-items: flex-start; flex-direction: column; gap: 5px; }
+    .insight-grid { grid-template-columns: 1fr; }
+    .insight-grid article > header { align-items: flex-start; flex-direction: column; gap: 3px; }
     .district-grid { grid-template-columns: 1fr; }
     .district-section { padding: 14px; }
   }

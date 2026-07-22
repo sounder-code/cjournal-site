@@ -1,44 +1,20 @@
 import type { APIRoute } from 'astro';
-import { loadApartmentManifest, loadApartmentPageData } from '@/lib/apartmentBulk';
-import { districtHubPath, regionHubPath } from '@/lib/apartmentSeo';
+import {
+  apartmentSitemapChunks,
+  loadSitemapInventory,
+  renderSitemapIndex,
+  xmlResponse
+} from './sitemaps/_shared';
 
 export const GET: APIRoute = async ({ site }) => {
-  const base = site?.toString().replace(/\/$/, '') ?? '';
-  const [manifest, apartmentPages] = await Promise.all([loadApartmentManifest(), loadApartmentPageData()]);
-  const lastmod = `${manifest.sourceDate.slice(0, 4)}-${manifest.sourceDate.slice(4, 6)}-${manifest.sourceDate.slice(6, 8)}`;
-  const provinces = [...new Set(apartmentPages.map(({ apartment }) => apartment.sd))].sort((a, b) => a.localeCompare(b, 'ko'));
-  const districts = [...new Map(apartmentPages.map(({ apartment }) => [
-    `${apartment.sd}|${apartment.sg}`,
-    { province: apartment.sd, district: apartment.sg }
-  ])).values()].sort((a, b) => `${a.province}${a.district}`.localeCompare(`${b.province}${b.district}`, 'ko'));
+  const inventory = await loadSitemapInventory();
+  const apartmentMaps = apartmentSitemapChunks(inventory.apartments).map(
+    (_, index) => `/sitemaps/apartments/${index + 1}.xml`
+  );
 
-  const urls = [
-    { loc: '/', priority: '1.0', changefreq: 'daily' },
-    { loc: '/apartments/', priority: '1.0', changefreq: 'weekly' },
-    { loc: '/about/', priority: '0.5', changefreq: 'monthly' },
-    { loc: '/contact/', priority: '0.4', changefreq: 'monthly' },
-    { loc: '/methodology/', priority: '0.6', changefreq: 'monthly' },
-    { loc: '/management-fee-guide/', priority: '0.8', changefreq: 'monthly' },
-    { loc: '/editorial-policy/', priority: '0.5', changefreq: 'monthly' },
-    { loc: '/privacy/', priority: '0.3', changefreq: 'yearly' },
-    { loc: '/terms/', priority: '0.3', changefreq: 'yearly' },
-    ...provinces.map((province) => ({ loc: regionHubPath(province), priority: '0.8', changefreq: 'monthly' })),
-    ...districts.map(({ province, district }) => ({ loc: districtHubPath(province, district), priority: '0.8', changefreq: 'monthly' })),
-    ...apartmentPages.map(({ apartment }) => ({
-      loc: `/apartments/${apartment.s}/`,
-      priority: '0.7',
-      changefreq: 'weekly'
-    }))
-  ];
-
-  const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
-    .map(
-      (url) =>
-        `  <url><loc>${encodeURI(`${base}${url.loc}`)}</loc><lastmod>${lastmod}</lastmod><changefreq>${url.changefreq}</changefreq><priority>${url.priority}</priority></url>`
-    )
-    .join('\n')}\n</urlset>`;
-
-  return new Response(body, {
-    headers: { 'Content-Type': 'application/xml; charset=utf-8' }
-  });
+  return xmlResponse(renderSitemapIndex([
+    '/sitemaps/core.xml',
+    '/sitemaps/regions.xml',
+    ...apartmentMaps
+  ], inventory.lastmod, site));
 };

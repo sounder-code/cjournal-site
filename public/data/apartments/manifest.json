@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "generatedAt": "2026-07-13T13:06:38.096Z",
+  "version": 2,
+  "generatedAt": "2026-07-22T01:27:59.052Z",
   "sourceDate": "20260710",
   "source": "K-apt 주간 일괄 공개자료",
   "units": {
@@ -41,14 +41,40 @@
     "complexesWithFees": 21279,
     "duplicateComplexes": 0,
     "duplicateFeeRows": 0,
+    "supersededFeeRows": 0,
+    "feeSourceFiles": 1,
     "areaConflicts": 0,
     "feeRowsWithoutArea": 1118,
     "feeRowsWithoutComplex": 2,
+    "invalidFeeMonths": 0,
     "publishedFeeRows": 103089,
     "publishableComplexes": 18021,
-    "negativeAdjustmentValues": 1005
+    "negativeAdjustmentValues": 1005,
+    "districtFiles": 253
   },
   "index": "/data/apartments/index.json",
+  "search": "/data/apartments/search.json",
+  "searchMeta": {
+    "file": "/data/apartments/search.json",
+    "count": 21651,
+    "withCoordinates": 21617,
+    "fields": [
+      "c",
+      "s",
+      "n",
+      "sd",
+      "sg",
+      "d",
+      "a",
+      "h",
+      "tf",
+      "cf",
+      "rf",
+      "q",
+      "la?",
+      "lo?"
+    ]
+  },
   "regions": [
     {
       "key": "강원",
@@ -169,5 +195,4337 @@
       "withFees": 769,
       "file": "/data/apartments/regions/충청북.json"
     }
-  ]
+  ],
+  "districts": [
+    {
+      "key": "강원/강릉시",
+      "province": "강원특별자치도",
+      "district": "강릉시",
+      "label": "강릉시",
+      "count": 126,
+      "withFees": 125,
+      "withCoordinates": 125,
+      "householdBands": {
+        "under-300": 58,
+        "300-499": 39,
+        "500-999": 22,
+        "1000-1499": 6,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/강원/강릉시.json"
+    },
+    {
+      "key": "강원/고성군",
+      "province": "강원특별자치도",
+      "district": "고성군",
+      "label": "고성군",
+      "count": 11,
+      "withFees": 11,
+      "withCoordinates": 11,
+      "householdBands": {
+        "under-300": 7,
+        "300-499": 2,
+        "500-999": 2,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/강원/고성군.json"
+    },
+    {
+      "key": "강원/동해시",
+      "province": "강원특별자치도",
+      "district": "동해시",
+      "label": "동해시",
+      "count": 59,
+      "withFees": 59,
+      "withCoordinates": 59,
+      "householdBands": {
+        "under-300": 31,
+        "300-499": 14,
+        "500-999": 11,
+        "1000-1499": 2,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/강원/동해시.json"
+    },
+    {
+      "key": "강원/삼척시",
+      "province": "강원특별자치도",
+      "district": "삼척시",
+      "label": "삼척시",
+      "count": 30,
+      "withFees": 28,
+      "withCoordinates": 30,
+      "householdBands": {
+        "under-300": 10,
+        "300-499": 12,
+        "500-999": 8,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/강원/삼척시.json"
+    },
+    {
+      "key": "강원/속초시",
+      "province": "강원특별자치도",
+      "district": "속초시",
+      "label": "속초시",
+      "count": 71,
+      "withFees": 70,
+      "withCoordinates": 71,
+      "householdBands": {
+        "under-300": 36,
+        "300-499": 18,
+        "500-999": 14,
+        "1000-1499": 2,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/강원/속초시.json"
+    },
+    {
+      "key": "강원/양구군",
+      "province": "강원특별자치도",
+      "district": "양구군",
+      "label": "양구군",
+      "count": 5,
+      "withFees": 5,
+      "withCoordinates": 5,
+      "householdBands": {
+        "under-300": 4,
+        "300-499": 1,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/강원/양구군.json"
+    },
+    {
+      "key": "강원/양양군",
+      "province": "강원특별자치도",
+      "district": "양양군",
+      "label": "양양군",
+      "count": 17,
+      "withFees": 17,
+      "withCoordinates": 17,
+      "householdBands": {
+        "under-300": 12,
+        "300-499": 4,
+        "500-999": 1,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/강원/양양군.json"
+    },
+    {
+      "key": "강원/영월군",
+      "province": "강원특별자치도",
+      "district": "영월군",
+      "label": "영월군",
+      "count": 15,
+      "withFees": 14,
+      "withCoordinates": 15,
+      "householdBands": {
+        "under-300": 10,
+        "300-499": 5,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/강원/영월군.json"
+    },
+    {
+      "key": "강원/원주시",
+      "province": "강원특별자치도",
+      "district": "원주시",
+      "label": "원주시",
+      "count": 229,
+      "withFees": 225,
+      "withCoordinates": 229,
+      "householdBands": {
+        "under-300": 57,
+        "300-499": 63,
+        "500-999": 98,
+        "1000-1499": 9,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/강원/원주시.json"
+    },
+    {
+      "key": "강원/인제군",
+      "province": "강원특별자치도",
+      "district": "인제군",
+      "label": "인제군",
+      "count": 5,
+      "withFees": 5,
+      "withCoordinates": 5,
+      "householdBands": {
+        "under-300": 4,
+        "300-499": 1,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/강원/인제군.json"
+    },
+    {
+      "key": "강원/정선군",
+      "province": "강원특별자치도",
+      "district": "정선군",
+      "label": "정선군",
+      "count": 14,
+      "withFees": 14,
+      "withCoordinates": 14,
+      "householdBands": {
+        "under-300": 11,
+        "300-499": 3,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/강원/정선군.json"
+    },
+    {
+      "key": "강원/철원군",
+      "province": "강원특별자치도",
+      "district": "철원군",
+      "label": "철원군",
+      "count": 13,
+      "withFees": 13,
+      "withCoordinates": 13,
+      "householdBands": {
+        "under-300": 10,
+        "300-499": 3,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/강원/철원군.json"
+    },
+    {
+      "key": "강원/춘천시",
+      "province": "강원특별자치도",
+      "district": "춘천시",
+      "label": "춘천시",
+      "count": 142,
+      "withFees": 141,
+      "withCoordinates": 141,
+      "householdBands": {
+        "under-300": 37,
+        "300-499": 43,
+        "500-999": 45,
+        "1000-1499": 13,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/강원/춘천시.json"
+    },
+    {
+      "key": "강원/태백시",
+      "province": "강원특별자치도",
+      "district": "태백시",
+      "label": "태백시",
+      "count": 34,
+      "withFees": 34,
+      "withCoordinates": 34,
+      "householdBands": {
+        "under-300": 20,
+        "300-499": 10,
+        "500-999": 3,
+        "1000-1499": 1,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/강원/태백시.json"
+    },
+    {
+      "key": "강원/평창군",
+      "province": "강원특별자치도",
+      "district": "평창군",
+      "label": "평창군",
+      "count": 19,
+      "withFees": 19,
+      "withCoordinates": 19,
+      "householdBands": {
+        "under-300": 15,
+        "300-499": 1,
+        "500-999": 3,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/강원/평창군.json"
+    },
+    {
+      "key": "강원/홍천군",
+      "province": "강원특별자치도",
+      "district": "홍천군",
+      "label": "홍천군",
+      "count": 18,
+      "withFees": 17,
+      "withCoordinates": 18,
+      "householdBands": {
+        "under-300": 8,
+        "300-499": 5,
+        "500-999": 5,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/강원/홍천군.json"
+    },
+    {
+      "key": "강원/화천군",
+      "province": "강원특별자치도",
+      "district": "화천군",
+      "label": "화천군",
+      "count": 4,
+      "withFees": 4,
+      "withCoordinates": 4,
+      "householdBands": {
+        "under-300": 4,
+        "300-499": 0,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/강원/화천군.json"
+    },
+    {
+      "key": "강원/횡성군",
+      "province": "강원특별자치도",
+      "district": "횡성군",
+      "label": "횡성군",
+      "count": 18,
+      "withFees": 18,
+      "withCoordinates": 18,
+      "householdBands": {
+        "under-300": 13,
+        "300-499": 5,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/강원/횡성군.json"
+    },
+    {
+      "key": "경기/가평군",
+      "province": "경기도",
+      "district": "가평군",
+      "label": "가평군",
+      "count": 20,
+      "withFees": 20,
+      "withCoordinates": 20,
+      "householdBands": {
+        "under-300": 12,
+        "300-499": 7,
+        "500-999": 1,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경기/가평군.json"
+    },
+    {
+      "key": "경기/고양덕양구",
+      "province": "경기도",
+      "district": "고양덕양구",
+      "label": "고양덕양구",
+      "count": 190,
+      "withFees": 188,
+      "withCoordinates": 190,
+      "householdBands": {
+        "under-300": 40,
+        "300-499": 44,
+        "500-999": 66,
+        "1000-1499": 29,
+        "over-1500": 11
+      },
+      "file": "/data/apartments/maps/경기/고양덕양구.json"
+    },
+    {
+      "key": "경기/고양일산동구",
+      "province": "경기도",
+      "district": "고양일산동구",
+      "label": "고양일산동구",
+      "count": 114,
+      "withFees": 114,
+      "withCoordinates": 114,
+      "householdBands": {
+        "under-300": 33,
+        "300-499": 18,
+        "500-999": 44,
+        "1000-1499": 15,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/경기/고양일산동구.json"
+    },
+    {
+      "key": "경기/고양일산서구",
+      "province": "경기도",
+      "district": "고양일산서구",
+      "label": "고양일산서구",
+      "count": 148,
+      "withFees": 148,
+      "withCoordinates": 148,
+      "householdBands": {
+        "under-300": 34,
+        "300-499": 39,
+        "500-999": 66,
+        "1000-1499": 4,
+        "over-1500": 5
+      },
+      "file": "/data/apartments/maps/경기/고양일산서구.json"
+    },
+    {
+      "key": "경기/과천시",
+      "province": "경기도",
+      "district": "과천시",
+      "label": "과천시",
+      "count": 21,
+      "withFees": 19,
+      "withCoordinates": 21,
+      "householdBands": {
+        "under-300": 2,
+        "300-499": 2,
+        "500-999": 12,
+        "1000-1499": 1,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/경기/과천시.json"
+    },
+    {
+      "key": "경기/광명시",
+      "province": "경기도",
+      "district": "광명시",
+      "label": "광명시",
+      "count": 87,
+      "withFees": 81,
+      "withCoordinates": 87,
+      "householdBands": {
+        "under-300": 19,
+        "300-499": 9,
+        "500-999": 21,
+        "1000-1499": 17,
+        "over-1500": 21
+      },
+      "file": "/data/apartments/maps/경기/광명시.json"
+    },
+    {
+      "key": "경기/광주시",
+      "province": "경기도",
+      "district": "광주시",
+      "label": "광주시",
+      "count": 127,
+      "withFees": 126,
+      "withCoordinates": 126,
+      "householdBands": {
+        "under-300": 32,
+        "300-499": 53,
+        "500-999": 30,
+        "1000-1499": 11,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/경기/광주시.json"
+    },
+    {
+      "key": "경기/구리시",
+      "province": "경기도",
+      "district": "구리시",
+      "label": "구리시",
+      "count": 84,
+      "withFees": 82,
+      "withCoordinates": 84,
+      "householdBands": {
+        "under-300": 25,
+        "300-499": 21,
+        "500-999": 27,
+        "1000-1499": 10,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/경기/구리시.json"
+    },
+    {
+      "key": "경기/군포시",
+      "province": "경기도",
+      "district": "군포시",
+      "label": "군포시",
+      "count": 93,
+      "withFees": 93,
+      "withCoordinates": 93,
+      "householdBands": {
+        "under-300": 15,
+        "300-499": 20,
+        "500-999": 38,
+        "1000-1499": 13,
+        "over-1500": 7
+      },
+      "file": "/data/apartments/maps/경기/군포시.json"
+    },
+    {
+      "key": "경기/김포시",
+      "province": "경기도",
+      "district": "김포시",
+      "label": "김포시",
+      "count": 199,
+      "withFees": 198,
+      "withCoordinates": 199,
+      "householdBands": {
+        "under-300": 40,
+        "300-499": 48,
+        "500-999": 63,
+        "1000-1499": 30,
+        "over-1500": 18
+      },
+      "file": "/data/apartments/maps/경기/김포시.json"
+    },
+    {
+      "key": "경기/남양주시",
+      "province": "경기도",
+      "district": "남양주시",
+      "label": "남양주시",
+      "count": 325,
+      "withFees": 324,
+      "withCoordinates": 325,
+      "householdBands": {
+        "under-300": 57,
+        "300-499": 111,
+        "500-999": 105,
+        "1000-1499": 42,
+        "over-1500": 10
+      },
+      "file": "/data/apartments/maps/경기/남양주시.json"
+    },
+    {
+      "key": "경기/동두천시",
+      "province": "경기도",
+      "district": "동두천시",
+      "label": "동두천시",
+      "count": 47,
+      "withFees": 47,
+      "withCoordinates": 47,
+      "householdBands": {
+        "under-300": 17,
+        "300-499": 17,
+        "500-999": 10,
+        "1000-1499": 2,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/경기/동두천시.json"
+    },
+    {
+      "key": "경기/부천소사구",
+      "province": "경기도",
+      "district": "부천소사구",
+      "label": "부천소사구",
+      "count": 82,
+      "withFees": 80,
+      "withCoordinates": 82,
+      "householdBands": {
+        "under-300": 32,
+        "300-499": 13,
+        "500-999": 24,
+        "1000-1499": 12,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/경기/부천소사구.json"
+    },
+    {
+      "key": "경기/부천오정구",
+      "province": "경기도",
+      "district": "부천오정구",
+      "label": "부천오정구",
+      "count": 44,
+      "withFees": 38,
+      "withCoordinates": 44,
+      "householdBands": {
+        "under-300": 28,
+        "300-499": 9,
+        "500-999": 6,
+        "1000-1499": 1,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경기/부천오정구.json"
+    },
+    {
+      "key": "경기/부천원미구",
+      "province": "경기도",
+      "district": "부천원미구",
+      "label": "부천원미구",
+      "count": 133,
+      "withFees": 133,
+      "withCoordinates": 133,
+      "householdBands": {
+        "under-300": 37,
+        "300-499": 30,
+        "500-999": 51,
+        "1000-1499": 10,
+        "over-1500": 5
+      },
+      "file": "/data/apartments/maps/경기/부천원미구.json"
+    },
+    {
+      "key": "경기/성남분당구",
+      "province": "경기도",
+      "district": "성남분당구",
+      "label": "성남분당구",
+      "count": 211,
+      "withFees": 210,
+      "withCoordinates": 211,
+      "householdBands": {
+        "under-300": 72,
+        "300-499": 36,
+        "500-999": 66,
+        "1000-1499": 22,
+        "over-1500": 15
+      },
+      "file": "/data/apartments/maps/경기/성남분당구.json"
+    },
+    {
+      "key": "경기/성남수정구",
+      "province": "경기도",
+      "district": "성남수정구",
+      "label": "성남수정구",
+      "count": 57,
+      "withFees": 53,
+      "withCoordinates": 57,
+      "householdBands": {
+        "under-300": 20,
+        "300-499": 10,
+        "500-999": 16,
+        "1000-1499": 5,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/경기/성남수정구.json"
+    },
+    {
+      "key": "경기/성남중원구",
+      "province": "경기도",
+      "district": "성남중원구",
+      "label": "성남중원구",
+      "count": 53,
+      "withFees": 53,
+      "withCoordinates": 53,
+      "householdBands": {
+        "under-300": 14,
+        "300-499": 13,
+        "500-999": 15,
+        "1000-1499": 8,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/경기/성남중원구.json"
+    },
+    {
+      "key": "경기/수원권선구",
+      "province": "경기도",
+      "district": "수원권선구",
+      "label": "수원권선구",
+      "count": 142,
+      "withFees": 140,
+      "withCoordinates": 142,
+      "householdBands": {
+        "under-300": 39,
+        "300-499": 36,
+        "500-999": 40,
+        "1000-1499": 19,
+        "over-1500": 8
+      },
+      "file": "/data/apartments/maps/경기/수원권선구.json"
+    },
+    {
+      "key": "경기/수원영통구",
+      "province": "경기도",
+      "district": "수원영통구",
+      "label": "수원영통구",
+      "count": 138,
+      "withFees": 137,
+      "withCoordinates": 138,
+      "householdBands": {
+        "under-300": 29,
+        "300-499": 25,
+        "500-999": 56,
+        "1000-1499": 12,
+        "over-1500": 16
+      },
+      "file": "/data/apartments/maps/경기/수원영통구.json"
+    },
+    {
+      "key": "경기/수원장안구",
+      "province": "경기도",
+      "district": "수원장안구",
+      "label": "수원장안구",
+      "count": 91,
+      "withFees": 89,
+      "withCoordinates": 91,
+      "householdBands": {
+        "under-300": 36,
+        "300-499": 16,
+        "500-999": 26,
+        "1000-1499": 5,
+        "over-1500": 8
+      },
+      "file": "/data/apartments/maps/경기/수원장안구.json"
+    },
+    {
+      "key": "경기/수원팔달구",
+      "province": "경기도",
+      "district": "수원팔달구",
+      "label": "수원팔달구",
+      "count": 70,
+      "withFees": 68,
+      "withCoordinates": 70,
+      "householdBands": {
+        "under-300": 37,
+        "300-499": 9,
+        "500-999": 12,
+        "1000-1499": 6,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/경기/수원팔달구.json"
+    },
+    {
+      "key": "경기/시흥시",
+      "province": "경기도",
+      "district": "시흥시",
+      "label": "시흥시",
+      "count": 253,
+      "withFees": 251,
+      "withCoordinates": 253,
+      "householdBands": {
+        "under-300": 60,
+        "300-499": 60,
+        "500-999": 104,
+        "1000-1499": 21,
+        "over-1500": 8
+      },
+      "file": "/data/apartments/maps/경기/시흥시.json"
+    },
+    {
+      "key": "경기/안산단원구",
+      "province": "경기도",
+      "district": "안산단원구",
+      "label": "안산단원구",
+      "count": 86,
+      "withFees": 85,
+      "withCoordinates": 86,
+      "householdBands": {
+        "under-300": 16,
+        "300-499": 12,
+        "500-999": 25,
+        "1000-1499": 21,
+        "over-1500": 12
+      },
+      "file": "/data/apartments/maps/경기/안산단원구.json"
+    },
+    {
+      "key": "경기/안산상록구",
+      "province": "경기도",
+      "district": "안산상록구",
+      "label": "안산상록구",
+      "count": 56,
+      "withFees": 54,
+      "withCoordinates": 56,
+      "householdBands": {
+        "under-300": 9,
+        "300-499": 8,
+        "500-999": 22,
+        "1000-1499": 9,
+        "over-1500": 8
+      },
+      "file": "/data/apartments/maps/경기/안산상록구.json"
+    },
+    {
+      "key": "경기/안성시",
+      "province": "경기도",
+      "district": "안성시",
+      "label": "안성시",
+      "count": 83,
+      "withFees": 81,
+      "withCoordinates": 82,
+      "householdBands": {
+        "under-300": 14,
+        "300-499": 23,
+        "500-999": 34,
+        "1000-1499": 6,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/경기/안성시.json"
+    },
+    {
+      "key": "경기/안양동안구",
+      "province": "경기도",
+      "district": "안양동안구",
+      "label": "안양동안구",
+      "count": 129,
+      "withFees": 123,
+      "withCoordinates": 129,
+      "householdBands": {
+        "under-300": 33,
+        "300-499": 28,
+        "500-999": 42,
+        "1000-1499": 12,
+        "over-1500": 14
+      },
+      "file": "/data/apartments/maps/경기/안양동안구.json"
+    },
+    {
+      "key": "경기/안양만안구",
+      "province": "경기도",
+      "district": "안양만안구",
+      "label": "안양만안구",
+      "count": 85,
+      "withFees": 77,
+      "withCoordinates": 85,
+      "householdBands": {
+        "under-300": 41,
+        "300-499": 20,
+        "500-999": 11,
+        "1000-1499": 7,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/경기/안양만안구.json"
+    },
+    {
+      "key": "경기/양주시",
+      "province": "경기도",
+      "district": "양주시",
+      "label": "양주시",
+      "count": 145,
+      "withFees": 144,
+      "withCoordinates": 145,
+      "householdBands": {
+        "under-300": 28,
+        "300-499": 37,
+        "500-999": 57,
+        "1000-1499": 13,
+        "over-1500": 10
+      },
+      "file": "/data/apartments/maps/경기/양주시.json"
+    },
+    {
+      "key": "경기/양평군",
+      "province": "경기도",
+      "district": "양평군",
+      "label": "양평군",
+      "count": 31,
+      "withFees": 28,
+      "withCoordinates": 31,
+      "householdBands": {
+        "under-300": 18,
+        "300-499": 11,
+        "500-999": 1,
+        "1000-1499": 0,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/경기/양평군.json"
+    },
+    {
+      "key": "경기/여주시",
+      "province": "경기도",
+      "district": "여주시",
+      "label": "여주시",
+      "count": 38,
+      "withFees": 37,
+      "withCoordinates": 37,
+      "householdBands": {
+        "under-300": 10,
+        "300-499": 13,
+        "500-999": 14,
+        "1000-1499": 1,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경기/여주시.json"
+    },
+    {
+      "key": "경기/연천군",
+      "province": "경기도",
+      "district": "연천군",
+      "label": "연천군",
+      "count": 12,
+      "withFees": 12,
+      "withCoordinates": 12,
+      "householdBands": {
+        "under-300": 7,
+        "300-499": 4,
+        "500-999": 1,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경기/연천군.json"
+    },
+    {
+      "key": "경기/오산시",
+      "province": "경기도",
+      "district": "오산시",
+      "label": "오산시",
+      "count": 110,
+      "withFees": 108,
+      "withCoordinates": 110,
+      "householdBands": {
+        "under-300": 19,
+        "300-499": 21,
+        "500-999": 41,
+        "1000-1499": 22,
+        "over-1500": 7
+      },
+      "file": "/data/apartments/maps/경기/오산시.json"
+    },
+    {
+      "key": "경기/용인기흥구",
+      "province": "경기도",
+      "district": "용인기흥구",
+      "label": "용인기흥구",
+      "count": 222,
+      "withFees": 221,
+      "withCoordinates": 222,
+      "householdBands": {
+        "under-300": 55,
+        "300-499": 63,
+        "500-999": 83,
+        "1000-1499": 14,
+        "over-1500": 7
+      },
+      "file": "/data/apartments/maps/경기/용인기흥구.json"
+    },
+    {
+      "key": "경기/용인수지구",
+      "province": "경기도",
+      "district": "용인수지구",
+      "label": "용인수지구",
+      "count": 206,
+      "withFees": 206,
+      "withCoordinates": 206,
+      "householdBands": {
+        "under-300": 62,
+        "300-499": 61,
+        "500-999": 60,
+        "1000-1499": 16,
+        "over-1500": 7
+      },
+      "file": "/data/apartments/maps/경기/용인수지구.json"
+    },
+    {
+      "key": "경기/용인처인구",
+      "province": "경기도",
+      "district": "용인처인구",
+      "label": "용인처인구",
+      "count": 88,
+      "withFees": 87,
+      "withCoordinates": 88,
+      "householdBands": {
+        "under-300": 22,
+        "300-499": 31,
+        "500-999": 19,
+        "1000-1499": 10,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/경기/용인처인구.json"
+    },
+    {
+      "key": "경기/의왕시",
+      "province": "경기도",
+      "district": "의왕시",
+      "label": "의왕시",
+      "count": 87,
+      "withFees": 84,
+      "withCoordinates": 87,
+      "householdBands": {
+        "under-300": 22,
+        "300-499": 28,
+        "500-999": 28,
+        "1000-1499": 1,
+        "over-1500": 8
+      },
+      "file": "/data/apartments/maps/경기/의왕시.json"
+    },
+    {
+      "key": "경기/의정부시",
+      "province": "경기도",
+      "district": "의정부시",
+      "label": "의정부시",
+      "count": 245,
+      "withFees": 242,
+      "withCoordinates": 245,
+      "householdBands": {
+        "under-300": 89,
+        "300-499": 51,
+        "500-999": 79,
+        "1000-1499": 15,
+        "over-1500": 11
+      },
+      "file": "/data/apartments/maps/경기/의정부시.json"
+    },
+    {
+      "key": "경기/이천시",
+      "province": "경기도",
+      "district": "이천시",
+      "label": "이천시",
+      "count": 108,
+      "withFees": 103,
+      "withCoordinates": 108,
+      "householdBands": {
+        "under-300": 46,
+        "300-499": 34,
+        "500-999": 25,
+        "1000-1499": 3,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경기/이천시.json"
+    },
+    {
+      "key": "경기/파주시",
+      "province": "경기도",
+      "district": "파주시",
+      "label": "파주시",
+      "count": 203,
+      "withFees": 198,
+      "withCoordinates": 203,
+      "householdBands": {
+        "under-300": 49,
+        "300-499": 38,
+        "500-999": 57,
+        "1000-1499": 42,
+        "over-1500": 17
+      },
+      "file": "/data/apartments/maps/경기/파주시.json"
+    },
+    {
+      "key": "경기/평택시",
+      "province": "경기도",
+      "district": "평택시",
+      "label": "평택시",
+      "count": 305,
+      "withFees": 303,
+      "withCoordinates": 305,
+      "householdBands": {
+        "under-300": 84,
+        "300-499": 56,
+        "500-999": 124,
+        "1000-1499": 27,
+        "over-1500": 14
+      },
+      "file": "/data/apartments/maps/경기/평택시.json"
+    },
+    {
+      "key": "경기/포천시",
+      "province": "경기도",
+      "district": "포천시",
+      "label": "포천시",
+      "count": 43,
+      "withFees": 43,
+      "withCoordinates": 43,
+      "householdBands": {
+        "under-300": 17,
+        "300-499": 13,
+        "500-999": 9,
+        "1000-1499": 1,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/경기/포천시.json"
+    },
+    {
+      "key": "경기/하남시",
+      "province": "경기도",
+      "district": "하남시",
+      "label": "하남시",
+      "count": 121,
+      "withFees": 121,
+      "withCoordinates": 121,
+      "householdBands": {
+        "under-300": 15,
+        "300-499": 20,
+        "500-999": 64,
+        "1000-1499": 15,
+        "over-1500": 7
+      },
+      "file": "/data/apartments/maps/경기/하남시.json"
+    },
+    {
+      "key": "경기/화성동탄구",
+      "province": "경기도",
+      "district": "화성동탄구",
+      "label": "화성동탄구",
+      "count": 185,
+      "withFees": 182,
+      "withCoordinates": 185,
+      "householdBands": {
+        "under-300": 17,
+        "300-499": 29,
+        "500-999": 103,
+        "1000-1499": 25,
+        "over-1500": 11
+      },
+      "file": "/data/apartments/maps/경기/화성동탄구.json"
+    },
+    {
+      "key": "경기/화성만세구",
+      "province": "경기도",
+      "district": "화성만세구",
+      "label": "화성만세구",
+      "count": 90,
+      "withFees": 89,
+      "withCoordinates": 90,
+      "householdBands": {
+        "under-300": 13,
+        "300-499": 20,
+        "500-999": 44,
+        "1000-1499": 10,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/경기/화성만세구.json"
+    },
+    {
+      "key": "경기/화성병점구",
+      "province": "경기도",
+      "district": "화성병점구",
+      "label": "화성병점구",
+      "count": 75,
+      "withFees": 74,
+      "withCoordinates": 75,
+      "householdBands": {
+        "under-300": 10,
+        "300-499": 12,
+        "500-999": 38,
+        "1000-1499": 13,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/경기/화성병점구.json"
+    },
+    {
+      "key": "경기/화성효행구",
+      "province": "경기도",
+      "district": "화성효행구",
+      "label": "화성효행구",
+      "count": 71,
+      "withFees": 71,
+      "withCoordinates": 71,
+      "householdBands": {
+        "under-300": 8,
+        "300-499": 12,
+        "500-999": 40,
+        "1000-1499": 9,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/경기/화성효행구.json"
+    },
+    {
+      "key": "경상남/거제시",
+      "province": "경상남도",
+      "district": "거제시",
+      "label": "거제시",
+      "count": 147,
+      "withFees": 146,
+      "withCoordinates": 147,
+      "householdBands": {
+        "under-300": 63,
+        "300-499": 41,
+        "500-999": 32,
+        "1000-1499": 8,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/경상남/거제시.json"
+    },
+    {
+      "key": "경상남/거창군",
+      "province": "경상남도",
+      "district": "거창군",
+      "label": "거창군",
+      "count": 16,
+      "withFees": 16,
+      "withCoordinates": 16,
+      "householdBands": {
+        "under-300": 5,
+        "300-499": 9,
+        "500-999": 2,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상남/거창군.json"
+    },
+    {
+      "key": "경상남/고성군",
+      "province": "경상남도",
+      "district": "고성군",
+      "label": "고성군",
+      "count": 13,
+      "withFees": 13,
+      "withCoordinates": 13,
+      "householdBands": {
+        "under-300": 7,
+        "300-499": 6,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상남/고성군.json"
+    },
+    {
+      "key": "경상남/김해시",
+      "province": "경상남도",
+      "district": "김해시",
+      "label": "김해시",
+      "count": 243,
+      "withFees": 239,
+      "withCoordinates": 241,
+      "householdBands": {
+        "under-300": 49,
+        "300-499": 60,
+        "500-999": 97,
+        "1000-1499": 25,
+        "over-1500": 12
+      },
+      "file": "/data/apartments/maps/경상남/김해시.json"
+    },
+    {
+      "key": "경상남/남해군",
+      "province": "경상남도",
+      "district": "남해군",
+      "label": "남해군",
+      "count": 4,
+      "withFees": 4,
+      "withCoordinates": 4,
+      "householdBands": {
+        "under-300": 3,
+        "300-499": 1,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상남/남해군.json"
+    },
+    {
+      "key": "경상남/밀양시",
+      "province": "경상남도",
+      "district": "밀양시",
+      "label": "밀양시",
+      "count": 43,
+      "withFees": 43,
+      "withCoordinates": 43,
+      "householdBands": {
+        "under-300": 20,
+        "300-499": 16,
+        "500-999": 7,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상남/밀양시.json"
+    },
+    {
+      "key": "경상남/사천시",
+      "province": "경상남도",
+      "district": "사천시",
+      "label": "사천시",
+      "count": 54,
+      "withFees": 53,
+      "withCoordinates": 54,
+      "householdBands": {
+        "under-300": 24,
+        "300-499": 14,
+        "500-999": 13,
+        "1000-1499": 2,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/경상남/사천시.json"
+    },
+    {
+      "key": "경상남/산청군",
+      "province": "경상남도",
+      "district": "산청군",
+      "label": "산청군",
+      "count": 4,
+      "withFees": 4,
+      "withCoordinates": 4,
+      "householdBands": {
+        "under-300": 3,
+        "300-499": 1,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상남/산청군.json"
+    },
+    {
+      "key": "경상남/양산시",
+      "province": "경상남도",
+      "district": "양산시",
+      "label": "양산시",
+      "count": 191,
+      "withFees": 190,
+      "withCoordinates": 190,
+      "householdBands": {
+        "under-300": 36,
+        "300-499": 44,
+        "500-999": 78,
+        "1000-1499": 26,
+        "over-1500": 7
+      },
+      "file": "/data/apartments/maps/경상남/양산시.json"
+    },
+    {
+      "key": "경상남/의령군",
+      "province": "경상남도",
+      "district": "의령군",
+      "label": "의령군",
+      "count": 4,
+      "withFees": 4,
+      "withCoordinates": 4,
+      "householdBands": {
+        "under-300": 3,
+        "300-499": 1,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상남/의령군.json"
+    },
+    {
+      "key": "경상남/진주시",
+      "province": "경상남도",
+      "district": "진주시",
+      "label": "진주시",
+      "count": 166,
+      "withFees": 165,
+      "withCoordinates": 166,
+      "householdBands": {
+        "under-300": 67,
+        "300-499": 34,
+        "500-999": 50,
+        "1000-1499": 12,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/경상남/진주시.json"
+    },
+    {
+      "key": "경상남/창녕군",
+      "province": "경상남도",
+      "district": "창녕군",
+      "label": "창녕군",
+      "count": 14,
+      "withFees": 14,
+      "withCoordinates": 14,
+      "householdBands": {
+        "under-300": 10,
+        "300-499": 4,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상남/창녕군.json"
+    },
+    {
+      "key": "경상남/창원마산합포구",
+      "province": "경상남도",
+      "district": "창원마산합포구",
+      "label": "창원마산합포구",
+      "count": 89,
+      "withFees": 88,
+      "withCoordinates": 89,
+      "householdBands": {
+        "under-300": 43,
+        "300-499": 16,
+        "500-999": 25,
+        "1000-1499": 3,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/경상남/창원마산합포구.json"
+    },
+    {
+      "key": "경상남/창원마산회원구",
+      "province": "경상남도",
+      "district": "창원마산회원구",
+      "label": "창원마산회원구",
+      "count": 73,
+      "withFees": 73,
+      "withCoordinates": 72,
+      "householdBands": {
+        "under-300": 29,
+        "300-499": 14,
+        "500-999": 21,
+        "1000-1499": 3,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/경상남/창원마산회원구.json"
+    },
+    {
+      "key": "경상남/창원성산구",
+      "province": "경상남도",
+      "district": "창원성산구",
+      "label": "창원성산구",
+      "count": 97,
+      "withFees": 97,
+      "withCoordinates": 96,
+      "householdBands": {
+        "under-300": 24,
+        "300-499": 14,
+        "500-999": 30,
+        "1000-1499": 16,
+        "over-1500": 13
+      },
+      "file": "/data/apartments/maps/경상남/창원성산구.json"
+    },
+    {
+      "key": "경상남/창원의창구",
+      "province": "경상남도",
+      "district": "창원의창구",
+      "label": "창원의창구",
+      "count": 72,
+      "withFees": 70,
+      "withCoordinates": 72,
+      "householdBands": {
+        "under-300": 29,
+        "300-499": 8,
+        "500-999": 21,
+        "1000-1499": 9,
+        "over-1500": 5
+      },
+      "file": "/data/apartments/maps/경상남/창원의창구.json"
+    },
+    {
+      "key": "경상남/창원진해구",
+      "province": "경상남도",
+      "district": "창원진해구",
+      "label": "창원진해구",
+      "count": 88,
+      "withFees": 88,
+      "withCoordinates": 88,
+      "householdBands": {
+        "under-300": 24,
+        "300-499": 27,
+        "500-999": 27,
+        "1000-1499": 8,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/경상남/창원진해구.json"
+    },
+    {
+      "key": "경상남/통영시",
+      "province": "경상남도",
+      "district": "통영시",
+      "label": "통영시",
+      "count": 83,
+      "withFees": 83,
+      "withCoordinates": 83,
+      "householdBands": {
+        "under-300": 58,
+        "300-499": 13,
+        "500-999": 10,
+        "1000-1499": 2,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상남/통영시.json"
+    },
+    {
+      "key": "경상남/하동군",
+      "province": "경상남도",
+      "district": "하동군",
+      "label": "하동군",
+      "count": 7,
+      "withFees": 7,
+      "withCoordinates": 7,
+      "householdBands": {
+        "under-300": 5,
+        "300-499": 2,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상남/하동군.json"
+    },
+    {
+      "key": "경상남/함안군",
+      "province": "경상남도",
+      "district": "함안군",
+      "label": "함안군",
+      "count": 21,
+      "withFees": 21,
+      "withCoordinates": 21,
+      "householdBands": {
+        "under-300": 10,
+        "300-499": 6,
+        "500-999": 3,
+        "1000-1499": 1,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/경상남/함안군.json"
+    },
+    {
+      "key": "경상남/함양군",
+      "province": "경상남도",
+      "district": "함양군",
+      "label": "함양군",
+      "count": 8,
+      "withFees": 8,
+      "withCoordinates": 8,
+      "householdBands": {
+        "under-300": 4,
+        "300-499": 4,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상남/함양군.json"
+    },
+    {
+      "key": "경상남/합천군",
+      "province": "경상남도",
+      "district": "합천군",
+      "label": "합천군",
+      "count": 3,
+      "withFees": 3,
+      "withCoordinates": 3,
+      "householdBands": {
+        "under-300": 3,
+        "300-499": 0,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상남/합천군.json"
+    },
+    {
+      "key": "경상북/경산시",
+      "province": "경상북도",
+      "district": "경산시",
+      "label": "경산시",
+      "count": 141,
+      "withFees": 141,
+      "withCoordinates": 141,
+      "householdBands": {
+        "under-300": 39,
+        "300-499": 32,
+        "500-999": 55,
+        "1000-1499": 14,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/경상북/경산시.json"
+    },
+    {
+      "key": "경상북/경주시",
+      "province": "경상북도",
+      "district": "경주시",
+      "label": "경주시",
+      "count": 103,
+      "withFees": 103,
+      "withCoordinates": 102,
+      "householdBands": {
+        "under-300": 43,
+        "300-499": 27,
+        "500-999": 26,
+        "1000-1499": 4,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/경상북/경주시.json"
+    },
+    {
+      "key": "경상북/고령군",
+      "province": "경상북도",
+      "district": "고령군",
+      "label": "고령군",
+      "count": 9,
+      "withFees": 9,
+      "withCoordinates": 9,
+      "householdBands": {
+        "under-300": 3,
+        "300-499": 4,
+        "500-999": 2,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상북/고령군.json"
+    },
+    {
+      "key": "경상북/구미시",
+      "province": "경상북도",
+      "district": "구미시",
+      "label": "구미시",
+      "count": 199,
+      "withFees": 198,
+      "withCoordinates": 199,
+      "householdBands": {
+        "under-300": 64,
+        "300-499": 41,
+        "500-999": 72,
+        "1000-1499": 15,
+        "over-1500": 7
+      },
+      "file": "/data/apartments/maps/경상북/구미시.json"
+    },
+    {
+      "key": "경상북/김천시",
+      "province": "경상북도",
+      "district": "김천시",
+      "label": "김천시",
+      "count": 65,
+      "withFees": 63,
+      "withCoordinates": 65,
+      "householdBands": {
+        "under-300": 25,
+        "300-499": 19,
+        "500-999": 19,
+        "1000-1499": 2,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상북/김천시.json"
+    },
+    {
+      "key": "경상북/문경시",
+      "province": "경상북도",
+      "district": "문경시",
+      "label": "문경시",
+      "count": 21,
+      "withFees": 19,
+      "withCoordinates": 21,
+      "householdBands": {
+        "under-300": 14,
+        "300-499": 5,
+        "500-999": 2,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상북/문경시.json"
+    },
+    {
+      "key": "경상북/상주시",
+      "province": "경상북도",
+      "district": "상주시",
+      "label": "상주시",
+      "count": 31,
+      "withFees": 31,
+      "withCoordinates": 31,
+      "householdBands": {
+        "under-300": 17,
+        "300-499": 11,
+        "500-999": 3,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상북/상주시.json"
+    },
+    {
+      "key": "경상북/성주군",
+      "province": "경상북도",
+      "district": "성주군",
+      "label": "성주군",
+      "count": 8,
+      "withFees": 8,
+      "withCoordinates": 8,
+      "householdBands": {
+        "under-300": 8,
+        "300-499": 0,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상북/성주군.json"
+    },
+    {
+      "key": "경상북/안동시",
+      "province": "경상북도",
+      "district": "안동시",
+      "label": "안동시",
+      "count": 80,
+      "withFees": 80,
+      "withCoordinates": 80,
+      "householdBands": {
+        "under-300": 33,
+        "300-499": 27,
+        "500-999": 17,
+        "1000-1499": 2,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/경상북/안동시.json"
+    },
+    {
+      "key": "경상북/영덕군",
+      "province": "경상북도",
+      "district": "영덕군",
+      "label": "영덕군",
+      "count": 1,
+      "withFees": 1,
+      "withCoordinates": 1,
+      "householdBands": {
+        "under-300": 1,
+        "300-499": 0,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상북/영덕군.json"
+    },
+    {
+      "key": "경상북/영양군",
+      "province": "경상북도",
+      "district": "영양군",
+      "label": "영양군",
+      "count": 1,
+      "withFees": 1,
+      "withCoordinates": 1,
+      "householdBands": {
+        "under-300": 1,
+        "300-499": 0,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상북/영양군.json"
+    },
+    {
+      "key": "경상북/영주시",
+      "province": "경상북도",
+      "district": "영주시",
+      "label": "영주시",
+      "count": 35,
+      "withFees": 34,
+      "withCoordinates": 35,
+      "householdBands": {
+        "under-300": 15,
+        "300-499": 11,
+        "500-999": 7,
+        "1000-1499": 1,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/경상북/영주시.json"
+    },
+    {
+      "key": "경상북/영천시",
+      "province": "경상북도",
+      "district": "영천시",
+      "label": "영천시",
+      "count": 40,
+      "withFees": 40,
+      "withCoordinates": 40,
+      "householdBands": {
+        "under-300": 13,
+        "300-499": 14,
+        "500-999": 10,
+        "1000-1499": 2,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/경상북/영천시.json"
+    },
+    {
+      "key": "경상북/예천군",
+      "province": "경상북도",
+      "district": "예천군",
+      "label": "예천군",
+      "count": 14,
+      "withFees": 14,
+      "withCoordinates": 14,
+      "householdBands": {
+        "under-300": 3,
+        "300-499": 4,
+        "500-999": 4,
+        "1000-1499": 3,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상북/예천군.json"
+    },
+    {
+      "key": "경상북/울진군",
+      "province": "경상북도",
+      "district": "울진군",
+      "label": "울진군",
+      "count": 7,
+      "withFees": 7,
+      "withCoordinates": 7,
+      "householdBands": {
+        "under-300": 5,
+        "300-499": 1,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/경상북/울진군.json"
+    },
+    {
+      "key": "경상북/의성군",
+      "province": "경상북도",
+      "district": "의성군",
+      "label": "의성군",
+      "count": 5,
+      "withFees": 5,
+      "withCoordinates": 4,
+      "householdBands": {
+        "under-300": 4,
+        "300-499": 1,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상북/의성군.json"
+    },
+    {
+      "key": "경상북/청도군",
+      "province": "경상북도",
+      "district": "청도군",
+      "label": "청도군",
+      "count": 4,
+      "withFees": 4,
+      "withCoordinates": 4,
+      "householdBands": {
+        "under-300": 3,
+        "300-499": 1,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상북/청도군.json"
+    },
+    {
+      "key": "경상북/청송군",
+      "province": "경상북도",
+      "district": "청송군",
+      "label": "청송군",
+      "count": 1,
+      "withFees": 1,
+      "withCoordinates": 1,
+      "householdBands": {
+        "under-300": 1,
+        "300-499": 0,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/경상북/청송군.json"
+    },
+    {
+      "key": "경상북/칠곡군",
+      "province": "경상북도",
+      "district": "칠곡군",
+      "label": "칠곡군",
+      "count": 51,
+      "withFees": 51,
+      "withCoordinates": 51,
+      "householdBands": {
+        "under-300": 19,
+        "300-499": 14,
+        "500-999": 16,
+        "1000-1499": 0,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/경상북/칠곡군.json"
+    },
+    {
+      "key": "경상북/포항남구",
+      "province": "경상북도",
+      "district": "포항남구",
+      "label": "포항남구",
+      "count": 84,
+      "withFees": 84,
+      "withCoordinates": 84,
+      "householdBands": {
+        "under-300": 35,
+        "300-499": 22,
+        "500-999": 18,
+        "1000-1499": 5,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/경상북/포항남구.json"
+    },
+    {
+      "key": "경상북/포항북구",
+      "province": "경상북도",
+      "district": "포항북구",
+      "label": "포항북구",
+      "count": 145,
+      "withFees": 142,
+      "withCoordinates": 143,
+      "householdBands": {
+        "under-300": 54,
+        "300-499": 25,
+        "500-999": 44,
+        "1000-1499": 8,
+        "over-1500": 14
+      },
+      "file": "/data/apartments/maps/경상북/포항북구.json"
+    },
+    {
+      "key": "광주/광산구",
+      "province": "광주광역시",
+      "district": "광산구",
+      "label": "광산구",
+      "count": 262,
+      "withFees": 261,
+      "withCoordinates": 262,
+      "householdBands": {
+        "under-300": 90,
+        "300-499": 78,
+        "500-999": 69,
+        "1000-1499": 19,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/광주/광산구.json"
+    },
+    {
+      "key": "광주/남구",
+      "province": "광주광역시",
+      "district": "남구",
+      "label": "남구",
+      "count": 164,
+      "withFees": 162,
+      "withCoordinates": 163,
+      "householdBands": {
+        "under-300": 69,
+        "300-499": 53,
+        "500-999": 38,
+        "1000-1499": 4,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/광주/남구.json"
+    },
+    {
+      "key": "광주/동구",
+      "province": "광주광역시",
+      "district": "동구",
+      "label": "동구",
+      "count": 58,
+      "withFees": 57,
+      "withCoordinates": 58,
+      "householdBands": {
+        "under-300": 28,
+        "300-499": 10,
+        "500-999": 16,
+        "1000-1499": 2,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/광주/동구.json"
+    },
+    {
+      "key": "광주/북구",
+      "province": "광주광역시",
+      "district": "북구",
+      "label": "북구",
+      "count": 266,
+      "withFees": 260,
+      "withCoordinates": 266,
+      "householdBands": {
+        "under-300": 80,
+        "300-499": 82,
+        "500-999": 79,
+        "1000-1499": 15,
+        "over-1500": 10
+      },
+      "file": "/data/apartments/maps/광주/북구.json"
+    },
+    {
+      "key": "광주/서구",
+      "province": "광주광역시",
+      "district": "서구",
+      "label": "서구",
+      "count": 180,
+      "withFees": 179,
+      "withCoordinates": 180,
+      "householdBands": {
+        "under-300": 57,
+        "300-499": 60,
+        "500-999": 47,
+        "1000-1499": 12,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/광주/서구.json"
+    },
+    {
+      "key": "대구/군위군",
+      "province": "대구광역시",
+      "district": "군위군",
+      "label": "군위군",
+      "count": 1,
+      "withFees": 1,
+      "withCoordinates": 1,
+      "householdBands": {
+        "under-300": 1,
+        "300-499": 0,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/대구/군위군.json"
+    },
+    {
+      "key": "대구/남구",
+      "province": "대구광역시",
+      "district": "남구",
+      "label": "남구",
+      "count": 50,
+      "withFees": 46,
+      "withCoordinates": 50,
+      "householdBands": {
+        "under-300": 14,
+        "300-499": 21,
+        "500-999": 11,
+        "1000-1499": 2,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/대구/남구.json"
+    },
+    {
+      "key": "대구/달서구",
+      "province": "대구광역시",
+      "district": "달서구",
+      "label": "달서구",
+      "count": 244,
+      "withFees": 240,
+      "withCoordinates": 244,
+      "householdBands": {
+        "under-300": 55,
+        "300-499": 65,
+        "500-999": 80,
+        "1000-1499": 27,
+        "over-1500": 17
+      },
+      "file": "/data/apartments/maps/대구/달서구.json"
+    },
+    {
+      "key": "대구/달성군",
+      "province": "대구광역시",
+      "district": "달성군",
+      "label": "달성군",
+      "count": 137,
+      "withFees": 137,
+      "withCoordinates": 137,
+      "householdBands": {
+        "under-300": 23,
+        "300-499": 29,
+        "500-999": 67,
+        "1000-1499": 17,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/대구/달성군.json"
+    },
+    {
+      "key": "대구/동구",
+      "province": "대구광역시",
+      "district": "동구",
+      "label": "동구",
+      "count": 167,
+      "withFees": 160,
+      "withCoordinates": 167,
+      "householdBands": {
+        "under-300": 41,
+        "300-499": 51,
+        "500-999": 62,
+        "1000-1499": 9,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/대구/동구.json"
+    },
+    {
+      "key": "대구/북구",
+      "province": "대구광역시",
+      "district": "북구",
+      "label": "북구",
+      "count": 212,
+      "withFees": 207,
+      "withCoordinates": 212,
+      "householdBands": {
+        "under-300": 40,
+        "300-499": 66,
+        "500-999": 81,
+        "1000-1499": 21,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/대구/북구.json"
+    },
+    {
+      "key": "대구/서구",
+      "province": "대구광역시",
+      "district": "서구",
+      "label": "서구",
+      "count": 36,
+      "withFees": 34,
+      "withCoordinates": 36,
+      "householdBands": {
+        "under-300": 13,
+        "300-499": 5,
+        "500-999": 8,
+        "1000-1499": 4,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/대구/서구.json"
+    },
+    {
+      "key": "대구/수성구",
+      "province": "대구광역시",
+      "district": "수성구",
+      "label": "수성구",
+      "count": 267,
+      "withFees": 263,
+      "withCoordinates": 267,
+      "householdBands": {
+        "under-300": 121,
+        "300-499": 69,
+        "500-999": 64,
+        "1000-1499": 11,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/대구/수성구.json"
+    },
+    {
+      "key": "대구/중구",
+      "province": "대구광역시",
+      "district": "중구",
+      "label": "중구",
+      "count": 61,
+      "withFees": 58,
+      "withCoordinates": 61,
+      "householdBands": {
+        "under-300": 20,
+        "300-499": 19,
+        "500-999": 17,
+        "1000-1499": 4,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/대구/중구.json"
+    },
+    {
+      "key": "대전/대덕구",
+      "province": "대전광역시",
+      "district": "대덕구",
+      "label": "대덕구",
+      "count": 60,
+      "withFees": 60,
+      "withCoordinates": 60,
+      "householdBands": {
+        "under-300": 18,
+        "300-499": 12,
+        "500-999": 16,
+        "1000-1499": 7,
+        "over-1500": 7
+      },
+      "file": "/data/apartments/maps/대전/대덕구.json"
+    },
+    {
+      "key": "대전/동구",
+      "province": "대전광역시",
+      "district": "동구",
+      "label": "동구",
+      "count": 89,
+      "withFees": 88,
+      "withCoordinates": 87,
+      "householdBands": {
+        "under-300": 30,
+        "300-499": 15,
+        "500-999": 27,
+        "1000-1499": 12,
+        "over-1500": 5
+      },
+      "file": "/data/apartments/maps/대전/동구.json"
+    },
+    {
+      "key": "대전/서구",
+      "province": "대전광역시",
+      "district": "서구",
+      "label": "서구",
+      "count": 169,
+      "withFees": 161,
+      "withCoordinates": 169,
+      "householdBands": {
+        "under-300": 48,
+        "300-499": 20,
+        "500-999": 54,
+        "1000-1499": 28,
+        "over-1500": 19
+      },
+      "file": "/data/apartments/maps/대전/서구.json"
+    },
+    {
+      "key": "대전/유성구",
+      "province": "대전광역시",
+      "district": "유성구",
+      "label": "유성구",
+      "count": 171,
+      "withFees": 169,
+      "withCoordinates": 171,
+      "householdBands": {
+        "under-300": 45,
+        "300-499": 24,
+        "500-999": 76,
+        "1000-1499": 18,
+        "over-1500": 8
+      },
+      "file": "/data/apartments/maps/대전/유성구.json"
+    },
+    {
+      "key": "대전/중구",
+      "province": "대전광역시",
+      "district": "중구",
+      "label": "중구",
+      "count": 99,
+      "withFees": 96,
+      "withCoordinates": 99,
+      "householdBands": {
+        "under-300": 45,
+        "300-499": 13,
+        "500-999": 31,
+        "1000-1499": 7,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/대전/중구.json"
+    },
+    {
+      "key": "부산/강서구",
+      "province": "부산광역시",
+      "district": "강서구",
+      "label": "강서구",
+      "count": 51,
+      "withFees": 51,
+      "withCoordinates": 51,
+      "householdBands": {
+        "under-300": 5,
+        "300-499": 5,
+        "500-999": 21,
+        "1000-1499": 17,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/부산/강서구.json"
+    },
+    {
+      "key": "부산/금정구",
+      "province": "부산광역시",
+      "district": "금정구",
+      "label": "금정구",
+      "count": 86,
+      "withFees": 85,
+      "withCoordinates": 86,
+      "householdBands": {
+        "under-300": 50,
+        "300-499": 14,
+        "500-999": 13,
+        "1000-1499": 5,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/부산/금정구.json"
+    },
+    {
+      "key": "부산/기장군",
+      "province": "부산광역시",
+      "district": "기장군",
+      "label": "기장군",
+      "count": 81,
+      "withFees": 80,
+      "withCoordinates": 81,
+      "householdBands": {
+        "under-300": 23,
+        "300-499": 15,
+        "500-999": 27,
+        "1000-1499": 11,
+        "over-1500": 5
+      },
+      "file": "/data/apartments/maps/부산/기장군.json"
+    },
+    {
+      "key": "부산/남구",
+      "province": "부산광역시",
+      "district": "남구",
+      "label": "남구",
+      "count": 98,
+      "withFees": 95,
+      "withCoordinates": 98,
+      "householdBands": {
+        "under-300": 33,
+        "300-499": 31,
+        "500-999": 23,
+        "1000-1499": 5,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/부산/남구.json"
+    },
+    {
+      "key": "부산/동구",
+      "province": "부산광역시",
+      "district": "동구",
+      "label": "동구",
+      "count": 25,
+      "withFees": 24,
+      "withCoordinates": 25,
+      "householdBands": {
+        "under-300": 14,
+        "300-499": 3,
+        "500-999": 7,
+        "1000-1499": 0,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/부산/동구.json"
+    },
+    {
+      "key": "부산/동래구",
+      "province": "부산광역시",
+      "district": "동래구",
+      "label": "동래구",
+      "count": 125,
+      "withFees": 125,
+      "withCoordinates": 125,
+      "householdBands": {
+        "under-300": 58,
+        "300-499": 28,
+        "500-999": 28,
+        "1000-1499": 5,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/부산/동래구.json"
+    },
+    {
+      "key": "부산/부산진구",
+      "province": "부산광역시",
+      "district": "부산진구",
+      "label": "부산진구",
+      "count": 169,
+      "withFees": 161,
+      "withCoordinates": 169,
+      "householdBands": {
+        "under-300": 74,
+        "300-499": 29,
+        "500-999": 41,
+        "1000-1499": 13,
+        "over-1500": 12
+      },
+      "file": "/data/apartments/maps/부산/부산진구.json"
+    },
+    {
+      "key": "부산/북구",
+      "province": "부산광역시",
+      "district": "북구",
+      "label": "북구",
+      "count": 113,
+      "withFees": 110,
+      "withCoordinates": 112,
+      "householdBands": {
+        "under-300": 32,
+        "300-499": 18,
+        "500-999": 37,
+        "1000-1499": 14,
+        "over-1500": 12
+      },
+      "file": "/data/apartments/maps/부산/북구.json"
+    },
+    {
+      "key": "부산/사상구",
+      "province": "부산광역시",
+      "district": "사상구",
+      "label": "사상구",
+      "count": 97,
+      "withFees": 97,
+      "withCoordinates": 97,
+      "householdBands": {
+        "under-300": 34,
+        "300-499": 23,
+        "500-999": 27,
+        "1000-1499": 7,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/부산/사상구.json"
+    },
+    {
+      "key": "부산/사하구",
+      "province": "부산광역시",
+      "district": "사하구",
+      "label": "사하구",
+      "count": 139,
+      "withFees": 138,
+      "withCoordinates": 139,
+      "householdBands": {
+        "under-300": 73,
+        "300-499": 24,
+        "500-999": 28,
+        "1000-1499": 3,
+        "over-1500": 11
+      },
+      "file": "/data/apartments/maps/부산/사하구.json"
+    },
+    {
+      "key": "부산/서구",
+      "province": "부산광역시",
+      "district": "서구",
+      "label": "서구",
+      "count": 41,
+      "withFees": 40,
+      "withCoordinates": 41,
+      "householdBands": {
+        "under-300": 23,
+        "300-499": 6,
+        "500-999": 10,
+        "1000-1499": 2,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/부산/서구.json"
+    },
+    {
+      "key": "부산/수영구",
+      "province": "부산광역시",
+      "district": "수영구",
+      "label": "수영구",
+      "count": 60,
+      "withFees": 58,
+      "withCoordinates": 60,
+      "householdBands": {
+        "under-300": 26,
+        "300-499": 14,
+        "500-999": 13,
+        "1000-1499": 6,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/부산/수영구.json"
+    },
+    {
+      "key": "부산/연제구",
+      "province": "부산광역시",
+      "district": "연제구",
+      "label": "연제구",
+      "count": 104,
+      "withFees": 103,
+      "withCoordinates": 104,
+      "householdBands": {
+        "under-300": 45,
+        "300-499": 30,
+        "500-999": 15,
+        "1000-1499": 8,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/부산/연제구.json"
+    },
+    {
+      "key": "부산/영도구",
+      "province": "부산광역시",
+      "district": "영도구",
+      "label": "영도구",
+      "count": 43,
+      "withFees": 40,
+      "withCoordinates": 43,
+      "householdBands": {
+        "under-300": 15,
+        "300-499": 13,
+        "500-999": 8,
+        "1000-1499": 5,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/부산/영도구.json"
+    },
+    {
+      "key": "부산/중구",
+      "province": "부산광역시",
+      "district": "중구",
+      "label": "중구",
+      "count": 11,
+      "withFees": 10,
+      "withCoordinates": 10,
+      "householdBands": {
+        "under-300": 9,
+        "300-499": 2,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/부산/중구.json"
+    },
+    {
+      "key": "부산/해운대구",
+      "province": "부산광역시",
+      "district": "해운대구",
+      "label": "해운대구",
+      "count": 197,
+      "withFees": 193,
+      "withCoordinates": 197,
+      "householdBands": {
+        "under-300": 74,
+        "300-499": 40,
+        "500-999": 57,
+        "1000-1499": 15,
+        "over-1500": 11
+      },
+      "file": "/data/apartments/maps/부산/해운대구.json"
+    },
+    {
+      "key": "서울/강남구",
+      "province": "서울특별시",
+      "district": "강남구",
+      "label": "강남구",
+      "count": 211,
+      "withFees": 206,
+      "withCoordinates": 211,
+      "householdBands": {
+        "under-300": 87,
+        "300-499": 44,
+        "500-999": 45,
+        "1000-1499": 18,
+        "over-1500": 17
+      },
+      "file": "/data/apartments/maps/서울/강남구.json"
+    },
+    {
+      "key": "서울/강동구",
+      "province": "서울특별시",
+      "district": "강동구",
+      "label": "강동구",
+      "count": 142,
+      "withFees": 135,
+      "withCoordinates": 142,
+      "householdBands": {
+        "under-300": 63,
+        "300-499": 21,
+        "500-999": 37,
+        "1000-1499": 8,
+        "over-1500": 13
+      },
+      "file": "/data/apartments/maps/서울/강동구.json"
+    },
+    {
+      "key": "서울/강북구",
+      "province": "서울특별시",
+      "district": "강북구",
+      "label": "강북구",
+      "count": 53,
+      "withFees": 52,
+      "withCoordinates": 53,
+      "householdBands": {
+        "under-300": 24,
+        "300-499": 8,
+        "500-999": 7,
+        "1000-1499": 10,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/서울/강북구.json"
+    },
+    {
+      "key": "서울/강서구",
+      "province": "서울특별시",
+      "district": "강서구",
+      "label": "강서구",
+      "count": 200,
+      "withFees": 199,
+      "withCoordinates": 200,
+      "householdBands": {
+        "under-300": 100,
+        "300-499": 39,
+        "500-999": 30,
+        "1000-1499": 17,
+        "over-1500": 14
+      },
+      "file": "/data/apartments/maps/서울/강서구.json"
+    },
+    {
+      "key": "서울/관악구",
+      "province": "서울특별시",
+      "district": "관악구",
+      "label": "관악구",
+      "count": 87,
+      "withFees": 84,
+      "withCoordinates": 87,
+      "householdBands": {
+        "under-300": 46,
+        "300-499": 13,
+        "500-999": 14,
+        "1000-1499": 5,
+        "over-1500": 9
+      },
+      "file": "/data/apartments/maps/서울/관악구.json"
+    },
+    {
+      "key": "서울/광진구",
+      "province": "서울특별시",
+      "district": "광진구",
+      "label": "광진구",
+      "count": 87,
+      "withFees": 82,
+      "withCoordinates": 87,
+      "householdBands": {
+        "under-300": 49,
+        "300-499": 22,
+        "500-999": 10,
+        "1000-1499": 4,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/서울/광진구.json"
+    },
+    {
+      "key": "서울/구로구",
+      "province": "서울특별시",
+      "district": "구로구",
+      "label": "구로구",
+      "count": 166,
+      "withFees": 164,
+      "withCoordinates": 166,
+      "householdBands": {
+        "under-300": 78,
+        "300-499": 38,
+        "500-999": 36,
+        "1000-1499": 10,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/서울/구로구.json"
+    },
+    {
+      "key": "서울/금천구",
+      "province": "서울특별시",
+      "district": "금천구",
+      "label": "금천구",
+      "count": 50,
+      "withFees": 48,
+      "withCoordinates": 50,
+      "householdBands": {
+        "under-300": 28,
+        "300-499": 3,
+        "500-999": 10,
+        "1000-1499": 5,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/서울/금천구.json"
+    },
+    {
+      "key": "서울/노원구",
+      "province": "서울특별시",
+      "district": "노원구",
+      "label": "노원구",
+      "count": 224,
+      "withFees": 222,
+      "withCoordinates": 223,
+      "householdBands": {
+        "under-300": 78,
+        "300-499": 48,
+        "500-999": 54,
+        "1000-1499": 13,
+        "over-1500": 31
+      },
+      "file": "/data/apartments/maps/서울/노원구.json"
+    },
+    {
+      "key": "서울/도봉구",
+      "province": "서울특별시",
+      "district": "도봉구",
+      "label": "도봉구",
+      "count": 116,
+      "withFees": 114,
+      "withCoordinates": 116,
+      "householdBands": {
+        "under-300": 61,
+        "300-499": 20,
+        "500-999": 21,
+        "1000-1499": 2,
+        "over-1500": 12
+      },
+      "file": "/data/apartments/maps/서울/도봉구.json"
+    },
+    {
+      "key": "서울/동대문구",
+      "province": "서울특별시",
+      "district": "동대문구",
+      "label": "동대문구",
+      "count": 126,
+      "withFees": 120,
+      "withCoordinates": 126,
+      "householdBands": {
+        "under-300": 55,
+        "300-499": 28,
+        "500-999": 24,
+        "1000-1499": 10,
+        "over-1500": 9
+      },
+      "file": "/data/apartments/maps/서울/동대문구.json"
+    },
+    {
+      "key": "서울/동작구",
+      "province": "서울특별시",
+      "district": "동작구",
+      "label": "동작구",
+      "count": 131,
+      "withFees": 128,
+      "withCoordinates": 131,
+      "householdBands": {
+        "under-300": 61,
+        "300-499": 22,
+        "500-999": 37,
+        "1000-1499": 5,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/서울/동작구.json"
+    },
+    {
+      "key": "서울/마포구",
+      "province": "서울특별시",
+      "district": "마포구",
+      "label": "마포구",
+      "count": 137,
+      "withFees": 134,
+      "withCoordinates": 137,
+      "householdBands": {
+        "under-300": 60,
+        "300-499": 29,
+        "500-999": 36,
+        "1000-1499": 8,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/서울/마포구.json"
+    },
+    {
+      "key": "서울/서대문구",
+      "province": "서울특별시",
+      "district": "서대문구",
+      "label": "서대문구",
+      "count": 92,
+      "withFees": 89,
+      "withCoordinates": 92,
+      "householdBands": {
+        "under-300": 40,
+        "300-499": 15,
+        "500-999": 25,
+        "1000-1499": 8,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/서울/서대문구.json"
+    },
+    {
+      "key": "서울/서초구",
+      "province": "서울특별시",
+      "district": "서초구",
+      "label": "서초구",
+      "count": 171,
+      "withFees": 166,
+      "withCoordinates": 170,
+      "householdBands": {
+        "under-300": 76,
+        "300-499": 47,
+        "500-999": 30,
+        "1000-1499": 11,
+        "over-1500": 7
+      },
+      "file": "/data/apartments/maps/서울/서초구.json"
+    },
+    {
+      "key": "서울/성동구",
+      "province": "서울특별시",
+      "district": "성동구",
+      "label": "성동구",
+      "count": 124,
+      "withFees": 122,
+      "withCoordinates": 123,
+      "householdBands": {
+        "under-300": 47,
+        "300-499": 29,
+        "500-999": 30,
+        "1000-1499": 12,
+        "over-1500": 6
+      },
+      "file": "/data/apartments/maps/서울/성동구.json"
+    },
+    {
+      "key": "서울/성북구",
+      "province": "서울특별시",
+      "district": "성북구",
+      "label": "성북구",
+      "count": 138,
+      "withFees": 135,
+      "withCoordinates": 138,
+      "householdBands": {
+        "under-300": 53,
+        "300-499": 32,
+        "500-999": 31,
+        "1000-1499": 11,
+        "over-1500": 11
+      },
+      "file": "/data/apartments/maps/서울/성북구.json"
+    },
+    {
+      "key": "서울/송파구",
+      "province": "서울특별시",
+      "district": "송파구",
+      "label": "송파구",
+      "count": 166,
+      "withFees": 159,
+      "withCoordinates": 166,
+      "householdBands": {
+        "under-300": 69,
+        "300-499": 30,
+        "500-999": 41,
+        "1000-1499": 8,
+        "over-1500": 18
+      },
+      "file": "/data/apartments/maps/서울/송파구.json"
+    },
+    {
+      "key": "서울/양천구",
+      "province": "서울특별시",
+      "district": "양천구",
+      "label": "양천구",
+      "count": 139,
+      "withFees": 138,
+      "withCoordinates": 138,
+      "householdBands": {
+        "under-300": 68,
+        "300-499": 27,
+        "500-999": 20,
+        "1000-1499": 9,
+        "over-1500": 15
+      },
+      "file": "/data/apartments/maps/서울/양천구.json"
+    },
+    {
+      "key": "서울/영등포구",
+      "province": "서울특별시",
+      "district": "영등포구",
+      "label": "영등포구",
+      "count": 178,
+      "withFees": 174,
+      "withCoordinates": 178,
+      "householdBands": {
+        "under-300": 92,
+        "300-499": 43,
+        "500-999": 31,
+        "1000-1499": 8,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/서울/영등포구.json"
+    },
+    {
+      "key": "서울/용산구",
+      "province": "서울특별시",
+      "district": "용산구",
+      "label": "용산구",
+      "count": 81,
+      "withFees": 80,
+      "withCoordinates": 81,
+      "householdBands": {
+        "under-300": 46,
+        "300-499": 15,
+        "500-999": 13,
+        "1000-1499": 6,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/서울/용산구.json"
+    },
+    {
+      "key": "서울/은평구",
+      "province": "서울특별시",
+      "district": "은평구",
+      "label": "은평구",
+      "count": 149,
+      "withFees": 143,
+      "withCoordinates": 149,
+      "householdBands": {
+        "under-300": 75,
+        "300-499": 37,
+        "500-999": 25,
+        "1000-1499": 11,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/서울/은평구.json"
+    },
+    {
+      "key": "서울/종로구",
+      "province": "서울특별시",
+      "district": "종로구",
+      "label": "종로구",
+      "count": 35,
+      "withFees": 35,
+      "withCoordinates": 35,
+      "householdBands": {
+        "under-300": 23,
+        "300-499": 3,
+        "500-999": 8,
+        "1000-1499": 1,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/서울/종로구.json"
+    },
+    {
+      "key": "서울/중구",
+      "province": "서울특별시",
+      "district": "중구",
+      "label": "중구",
+      "count": 47,
+      "withFees": 46,
+      "withCoordinates": 47,
+      "householdBands": {
+        "under-300": 27,
+        "300-499": 6,
+        "500-999": 9,
+        "1000-1499": 1,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/서울/중구.json"
+    },
+    {
+      "key": "서울/중랑구",
+      "province": "서울특별시",
+      "district": "중랑구",
+      "label": "중랑구",
+      "count": 124,
+      "withFees": 122,
+      "withCoordinates": 124,
+      "householdBands": {
+        "under-300": 70,
+        "300-499": 18,
+        "500-999": 20,
+        "1000-1499": 11,
+        "over-1500": 5
+      },
+      "file": "/data/apartments/maps/서울/중랑구.json"
+    },
+    {
+      "key": "세종/세종시",
+      "province": "세종특별자치시",
+      "district": "",
+      "label": "세종시",
+      "count": 216,
+      "withFees": 213,
+      "withCoordinates": 216,
+      "householdBands": {
+        "under-300": 52,
+        "300-499": 46,
+        "500-999": 80,
+        "1000-1499": 28,
+        "over-1500": 10
+      },
+      "file": "/data/apartments/maps/세종/세종시.json"
+    },
+    {
+      "key": "울산/남구",
+      "province": "울산광역시",
+      "district": "남구",
+      "label": "남구",
+      "count": 169,
+      "withFees": 167,
+      "withCoordinates": 168,
+      "householdBands": {
+        "under-300": 89,
+        "300-499": 32,
+        "500-999": 37,
+        "1000-1499": 9,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/울산/남구.json"
+    },
+    {
+      "key": "울산/동구",
+      "province": "울산광역시",
+      "district": "동구",
+      "label": "동구",
+      "count": 63,
+      "withFees": 62,
+      "withCoordinates": 63,
+      "householdBands": {
+        "under-300": 33,
+        "300-499": 10,
+        "500-999": 11,
+        "1000-1499": 5,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/울산/동구.json"
+    },
+    {
+      "key": "울산/북구",
+      "province": "울산광역시",
+      "district": "북구",
+      "label": "북구",
+      "count": 113,
+      "withFees": 111,
+      "withCoordinates": 113,
+      "householdBands": {
+        "under-300": 26,
+        "300-499": 29,
+        "500-999": 45,
+        "1000-1499": 9,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/울산/북구.json"
+    },
+    {
+      "key": "울산/울주군",
+      "province": "울산광역시",
+      "district": "울주군",
+      "label": "울주군",
+      "count": 103,
+      "withFees": 102,
+      "withCoordinates": 103,
+      "householdBands": {
+        "under-300": 31,
+        "300-499": 30,
+        "500-999": 36,
+        "1000-1499": 3,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/울산/울주군.json"
+    },
+    {
+      "key": "울산/중구",
+      "province": "울산광역시",
+      "district": "중구",
+      "label": "중구",
+      "count": 94,
+      "withFees": 93,
+      "withCoordinates": 94,
+      "householdBands": {
+        "under-300": 43,
+        "300-499": 24,
+        "500-999": 24,
+        "1000-1499": 2,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/울산/중구.json"
+    },
+    {
+      "key": "인천/강화군",
+      "province": "인천광역시",
+      "district": "강화군",
+      "label": "강화군",
+      "count": 6,
+      "withFees": 6,
+      "withCoordinates": 6,
+      "householdBands": {
+        "under-300": 3,
+        "300-499": 1,
+        "500-999": 1,
+        "1000-1499": 1,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/인천/강화군.json"
+    },
+    {
+      "key": "인천/검단구",
+      "province": "인천광역시",
+      "district": "검단구",
+      "label": "검단구",
+      "count": 125,
+      "withFees": 121,
+      "withCoordinates": 125,
+      "householdBands": {
+        "under-300": 20,
+        "300-499": 35,
+        "500-999": 40,
+        "1000-1499": 20,
+        "over-1500": 10
+      },
+      "file": "/data/apartments/maps/인천/검단구.json"
+    },
+    {
+      "key": "인천/계양구",
+      "province": "인천광역시",
+      "district": "계양구",
+      "label": "계양구",
+      "count": 136,
+      "withFees": 136,
+      "withCoordinates": 135,
+      "householdBands": {
+        "under-300": 48,
+        "300-499": 43,
+        "500-999": 30,
+        "1000-1499": 10,
+        "over-1500": 5
+      },
+      "file": "/data/apartments/maps/인천/계양구.json"
+    },
+    {
+      "key": "인천/남동구",
+      "province": "인천광역시",
+      "district": "남동구",
+      "label": "남동구",
+      "count": 164,
+      "withFees": 160,
+      "withCoordinates": 164,
+      "householdBands": {
+        "under-300": 39,
+        "300-499": 22,
+        "500-999": 72,
+        "1000-1499": 15,
+        "over-1500": 16
+      },
+      "file": "/data/apartments/maps/인천/남동구.json"
+    },
+    {
+      "key": "인천/미추홀구",
+      "province": "인천광역시",
+      "district": "미추홀구",
+      "label": "미추홀구",
+      "count": 111,
+      "withFees": 106,
+      "withCoordinates": 110,
+      "householdBands": {
+        "under-300": 31,
+        "300-499": 32,
+        "500-999": 29,
+        "1000-1499": 9,
+        "over-1500": 10
+      },
+      "file": "/data/apartments/maps/인천/미추홀구.json"
+    },
+    {
+      "key": "인천/부평구",
+      "province": "인천광역시",
+      "district": "부평구",
+      "label": "부평구",
+      "count": 159,
+      "withFees": 158,
+      "withCoordinates": 157,
+      "householdBands": {
+        "under-300": 43,
+        "300-499": 36,
+        "500-999": 44,
+        "1000-1499": 16,
+        "over-1500": 20
+      },
+      "file": "/data/apartments/maps/인천/부평구.json"
+    },
+    {
+      "key": "인천/서해구",
+      "province": "인천광역시",
+      "district": "서해구",
+      "label": "서해구",
+      "count": 134,
+      "withFees": 131,
+      "withCoordinates": 134,
+      "householdBands": {
+        "under-300": 46,
+        "300-499": 24,
+        "500-999": 41,
+        "1000-1499": 12,
+        "over-1500": 11
+      },
+      "file": "/data/apartments/maps/인천/서해구.json"
+    },
+    {
+      "key": "인천/연수구",
+      "province": "인천광역시",
+      "district": "연수구",
+      "label": "연수구",
+      "count": 177,
+      "withFees": 173,
+      "withCoordinates": 177,
+      "householdBands": {
+        "under-300": 26,
+        "300-499": 45,
+        "500-999": 60,
+        "1000-1499": 30,
+        "over-1500": 16
+      },
+      "file": "/data/apartments/maps/인천/연수구.json"
+    },
+    {
+      "key": "인천/영종구",
+      "province": "인천광역시",
+      "district": "영종구",
+      "label": "영종구",
+      "count": 60,
+      "withFees": 58,
+      "withCoordinates": 60,
+      "householdBands": {
+        "under-300": 11,
+        "300-499": 14,
+        "500-999": 20,
+        "1000-1499": 11,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/인천/영종구.json"
+    },
+    {
+      "key": "인천/옹진군",
+      "province": "인천광역시",
+      "district": "옹진군",
+      "label": "옹진군",
+      "count": 1,
+      "withFees": 1,
+      "withCoordinates": 1,
+      "householdBands": {
+        "under-300": 1,
+        "300-499": 0,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/인천/옹진군.json"
+    },
+    {
+      "key": "인천/제물포구",
+      "province": "인천광역시",
+      "district": "제물포구",
+      "label": "제물포구",
+      "count": 42,
+      "withFees": 39,
+      "withCoordinates": 42,
+      "householdBands": {
+        "under-300": 13,
+        "300-499": 10,
+        "500-999": 11,
+        "1000-1499": 6,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/인천/제물포구.json"
+    },
+    {
+      "key": "전라남/강진군",
+      "province": "전라남도",
+      "district": "강진군",
+      "label": "강진군",
+      "count": 8,
+      "withFees": 8,
+      "withCoordinates": 8,
+      "householdBands": {
+        "under-300": 8,
+        "300-499": 0,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/강진군.json"
+    },
+    {
+      "key": "전라남/고흥군",
+      "province": "전라남도",
+      "district": "고흥군",
+      "label": "고흥군",
+      "count": 10,
+      "withFees": 9,
+      "withCoordinates": 10,
+      "householdBands": {
+        "under-300": 7,
+        "300-499": 3,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/고흥군.json"
+    },
+    {
+      "key": "전라남/곡성군",
+      "province": "전라남도",
+      "district": "곡성군",
+      "label": "곡성군",
+      "count": 1,
+      "withFees": 1,
+      "withCoordinates": 1,
+      "householdBands": {
+        "under-300": 1,
+        "300-499": 0,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/곡성군.json"
+    },
+    {
+      "key": "전라남/광양시",
+      "province": "전라남도",
+      "district": "광양시",
+      "label": "광양시",
+      "count": 101,
+      "withFees": 99,
+      "withCoordinates": 100,
+      "householdBands": {
+        "under-300": 23,
+        "300-499": 27,
+        "500-999": 41,
+        "1000-1499": 8,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/전라남/광양시.json"
+    },
+    {
+      "key": "전라남/구례군",
+      "province": "전라남도",
+      "district": "구례군",
+      "label": "구례군",
+      "count": 5,
+      "withFees": 5,
+      "withCoordinates": 5,
+      "householdBands": {
+        "under-300": 5,
+        "300-499": 0,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/구례군.json"
+    },
+    {
+      "key": "전라남/나주시",
+      "province": "전라남도",
+      "district": "나주시",
+      "label": "나주시",
+      "count": 45,
+      "withFees": 45,
+      "withCoordinates": 45,
+      "householdBands": {
+        "under-300": 10,
+        "300-499": 9,
+        "500-999": 18,
+        "1000-1499": 6,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/전라남/나주시.json"
+    },
+    {
+      "key": "전라남/담양군",
+      "province": "전라남도",
+      "district": "담양군",
+      "label": "담양군",
+      "count": 8,
+      "withFees": 8,
+      "withCoordinates": 8,
+      "householdBands": {
+        "under-300": 5,
+        "300-499": 2,
+        "500-999": 1,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/담양군.json"
+    },
+    {
+      "key": "전라남/목포시",
+      "province": "전라남도",
+      "district": "목포시",
+      "label": "목포시",
+      "count": 149,
+      "withFees": 146,
+      "withCoordinates": 149,
+      "householdBands": {
+        "under-300": 47,
+        "300-499": 56,
+        "500-999": 38,
+        "1000-1499": 8,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/목포시.json"
+    },
+    {
+      "key": "전라남/무안군",
+      "province": "전라남도",
+      "district": "무안군",
+      "label": "무안군",
+      "count": 48,
+      "withFees": 48,
+      "withCoordinates": 48,
+      "householdBands": {
+        "under-300": 16,
+        "300-499": 18,
+        "500-999": 13,
+        "1000-1499": 1,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/무안군.json"
+    },
+    {
+      "key": "전라남/보성군",
+      "province": "전라남도",
+      "district": "보성군",
+      "label": "보성군",
+      "count": 7,
+      "withFees": 7,
+      "withCoordinates": 7,
+      "householdBands": {
+        "under-300": 5,
+        "300-499": 1,
+        "500-999": 1,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/보성군.json"
+    },
+    {
+      "key": "전라남/순천시",
+      "province": "전라남도",
+      "district": "순천시",
+      "label": "순천시",
+      "count": 147,
+      "withFees": 146,
+      "withCoordinates": 147,
+      "householdBands": {
+        "under-300": 23,
+        "300-499": 59,
+        "500-999": 50,
+        "1000-1499": 12,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/전라남/순천시.json"
+    },
+    {
+      "key": "전라남/여수시",
+      "province": "전라남도",
+      "district": "여수시",
+      "label": "여수시",
+      "count": 127,
+      "withFees": 124,
+      "withCoordinates": 127,
+      "householdBands": {
+        "under-300": 40,
+        "300-499": 32,
+        "500-999": 37,
+        "1000-1499": 15,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/전라남/여수시.json"
+    },
+    {
+      "key": "전라남/영광군",
+      "province": "전라남도",
+      "district": "영광군",
+      "label": "영광군",
+      "count": 20,
+      "withFees": 20,
+      "withCoordinates": 20,
+      "householdBands": {
+        "under-300": 17,
+        "300-499": 2,
+        "500-999": 1,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/영광군.json"
+    },
+    {
+      "key": "전라남/영암군",
+      "province": "전라남도",
+      "district": "영암군",
+      "label": "영암군",
+      "count": 23,
+      "withFees": 23,
+      "withCoordinates": 23,
+      "householdBands": {
+        "under-300": 12,
+        "300-499": 4,
+        "500-999": 4,
+        "1000-1499": 3,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/영암군.json"
+    },
+    {
+      "key": "전라남/완도군",
+      "province": "전라남도",
+      "district": "완도군",
+      "label": "완도군",
+      "count": 6,
+      "withFees": 6,
+      "withCoordinates": 6,
+      "householdBands": {
+        "under-300": 4,
+        "300-499": 2,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/완도군.json"
+    },
+    {
+      "key": "전라남/장성군",
+      "province": "전라남도",
+      "district": "장성군",
+      "label": "장성군",
+      "count": 13,
+      "withFees": 13,
+      "withCoordinates": 13,
+      "householdBands": {
+        "under-300": 9,
+        "300-499": 3,
+        "500-999": 1,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/장성군.json"
+    },
+    {
+      "key": "전라남/장흥군",
+      "province": "전라남도",
+      "district": "장흥군",
+      "label": "장흥군",
+      "count": 8,
+      "withFees": 8,
+      "withCoordinates": 8,
+      "householdBands": {
+        "under-300": 6,
+        "300-499": 2,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/장흥군.json"
+    },
+    {
+      "key": "전라남/진도군",
+      "province": "전라남도",
+      "district": "진도군",
+      "label": "진도군",
+      "count": 1,
+      "withFees": 1,
+      "withCoordinates": 1,
+      "householdBands": {
+        "under-300": 1,
+        "300-499": 0,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/진도군.json"
+    },
+    {
+      "key": "전라남/함평군",
+      "province": "전라남도",
+      "district": "함평군",
+      "label": "함평군",
+      "count": 6,
+      "withFees": 4,
+      "withCoordinates": 5,
+      "householdBands": {
+        "under-300": 5,
+        "300-499": 1,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/함평군.json"
+    },
+    {
+      "key": "전라남/해남군",
+      "province": "전라남도",
+      "district": "해남군",
+      "label": "해남군",
+      "count": 15,
+      "withFees": 15,
+      "withCoordinates": 15,
+      "householdBands": {
+        "under-300": 10,
+        "300-499": 5,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/해남군.json"
+    },
+    {
+      "key": "전라남/화순군",
+      "province": "전라남도",
+      "district": "화순군",
+      "label": "화순군",
+      "count": 29,
+      "withFees": 29,
+      "withCoordinates": 29,
+      "householdBands": {
+        "under-300": 8,
+        "300-499": 10,
+        "500-999": 8,
+        "1000-1499": 3,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전라남/화순군.json"
+    },
+    {
+      "key": "전북/고창군",
+      "province": "전북특별자치도",
+      "district": "고창군",
+      "label": "고창군",
+      "count": 10,
+      "withFees": 10,
+      "withCoordinates": 10,
+      "householdBands": {
+        "under-300": 6,
+        "300-499": 2,
+        "500-999": 2,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전북/고창군.json"
+    },
+    {
+      "key": "전북/군산시",
+      "province": "전북특별자치도",
+      "district": "군산시",
+      "label": "군산시",
+      "count": 152,
+      "withFees": 150,
+      "withCoordinates": 152,
+      "householdBands": {
+        "under-300": 33,
+        "300-499": 51,
+        "500-999": 57,
+        "1000-1499": 9,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/전북/군산시.json"
+    },
+    {
+      "key": "전북/김제시",
+      "province": "전북특별자치도",
+      "district": "김제시",
+      "label": "김제시",
+      "count": 33,
+      "withFees": 33,
+      "withCoordinates": 31,
+      "householdBands": {
+        "under-300": 15,
+        "300-499": 11,
+        "500-999": 6,
+        "1000-1499": 1,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전북/김제시.json"
+    },
+    {
+      "key": "전북/남원시",
+      "province": "전북특별자치도",
+      "district": "남원시",
+      "label": "남원시",
+      "count": 33,
+      "withFees": 33,
+      "withCoordinates": 33,
+      "householdBands": {
+        "under-300": 12,
+        "300-499": 14,
+        "500-999": 6,
+        "1000-1499": 1,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전북/남원시.json"
+    },
+    {
+      "key": "전북/무주군",
+      "province": "전북특별자치도",
+      "district": "무주군",
+      "label": "무주군",
+      "count": 3,
+      "withFees": 3,
+      "withCoordinates": 3,
+      "householdBands": {
+        "under-300": 1,
+        "300-499": 2,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전북/무주군.json"
+    },
+    {
+      "key": "전북/부안군",
+      "province": "전북특별자치도",
+      "district": "부안군",
+      "label": "부안군",
+      "count": 13,
+      "withFees": 13,
+      "withCoordinates": 13,
+      "householdBands": {
+        "under-300": 6,
+        "300-499": 5,
+        "500-999": 2,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전북/부안군.json"
+    },
+    {
+      "key": "전북/순창군",
+      "province": "전북특별자치도",
+      "district": "순창군",
+      "label": "순창군",
+      "count": 7,
+      "withFees": 7,
+      "withCoordinates": 7,
+      "householdBands": {
+        "under-300": 5,
+        "300-499": 2,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전북/순창군.json"
+    },
+    {
+      "key": "전북/완주군",
+      "province": "전북특별자치도",
+      "district": "완주군",
+      "label": "완주군",
+      "count": 48,
+      "withFees": 48,
+      "withCoordinates": 48,
+      "householdBands": {
+        "under-300": 12,
+        "300-499": 13,
+        "500-999": 22,
+        "1000-1499": 1,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전북/완주군.json"
+    },
+    {
+      "key": "전북/익산시",
+      "province": "전북특별자치도",
+      "district": "익산시",
+      "label": "익산시",
+      "count": 166,
+      "withFees": 164,
+      "withCoordinates": 166,
+      "householdBands": {
+        "under-300": 61,
+        "300-499": 42,
+        "500-999": 47,
+        "1000-1499": 13,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/전북/익산시.json"
+    },
+    {
+      "key": "전북/임실군",
+      "province": "전북특별자치도",
+      "district": "임실군",
+      "label": "임실군",
+      "count": 3,
+      "withFees": 3,
+      "withCoordinates": 3,
+      "householdBands": {
+        "under-300": 2,
+        "300-499": 1,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전북/임실군.json"
+    },
+    {
+      "key": "전북/장수군",
+      "province": "전북특별자치도",
+      "district": "장수군",
+      "label": "장수군",
+      "count": 1,
+      "withFees": 1,
+      "withCoordinates": 1,
+      "householdBands": {
+        "under-300": 0,
+        "300-499": 1,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전북/장수군.json"
+    },
+    {
+      "key": "전북/전주덕진구",
+      "province": "전북특별자치도",
+      "district": "전주덕진구",
+      "label": "전주덕진구",
+      "count": 168,
+      "withFees": 167,
+      "withCoordinates": 168,
+      "householdBands": {
+        "under-300": 49,
+        "300-499": 49,
+        "500-999": 62,
+        "1000-1499": 4,
+        "over-1500": 4
+      },
+      "file": "/data/apartments/maps/전북/전주덕진구.json"
+    },
+    {
+      "key": "전북/전주완산구",
+      "province": "전북특별자치도",
+      "district": "전주완산구",
+      "label": "전주완산구",
+      "count": 186,
+      "withFees": 184,
+      "withCoordinates": 186,
+      "householdBands": {
+        "under-300": 58,
+        "300-499": 57,
+        "500-999": 56,
+        "1000-1499": 12,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/전북/전주완산구.json"
+    },
+    {
+      "key": "전북/정읍시",
+      "province": "전북특별자치도",
+      "district": "정읍시",
+      "label": "정읍시",
+      "count": 43,
+      "withFees": 43,
+      "withCoordinates": 43,
+      "householdBands": {
+        "under-300": 11,
+        "300-499": 22,
+        "500-999": 8,
+        "1000-1499": 2,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전북/정읍시.json"
+    },
+    {
+      "key": "전북/진안군",
+      "province": "전북특별자치도",
+      "district": "진안군",
+      "label": "진안군",
+      "count": 4,
+      "withFees": 4,
+      "withCoordinates": 4,
+      "householdBands": {
+        "under-300": 3,
+        "300-499": 1,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/전북/진안군.json"
+    },
+    {
+      "key": "제주/서귀포시",
+      "province": "제주특별자치도",
+      "district": "서귀포시",
+      "label": "서귀포시",
+      "count": 55,
+      "withFees": 53,
+      "withCoordinates": 55,
+      "householdBands": {
+        "under-300": 34,
+        "300-499": 13,
+        "500-999": 8,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/제주/서귀포시.json"
+    },
+    {
+      "key": "제주/제주시",
+      "province": "제주특별자치도",
+      "district": "제주시",
+      "label": "제주시",
+      "count": 122,
+      "withFees": 119,
+      "withCoordinates": 122,
+      "householdBands": {
+        "under-300": 70,
+        "300-499": 30,
+        "500-999": 19,
+        "1000-1499": 3,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/제주/제주시.json"
+    },
+    {
+      "key": "충청남/계룡시",
+      "province": "충청남도",
+      "district": "계룡시",
+      "label": "계룡시",
+      "count": 23,
+      "withFees": 22,
+      "withCoordinates": 23,
+      "householdBands": {
+        "under-300": 4,
+        "300-499": 2,
+        "500-999": 16,
+        "1000-1499": 0,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/충청남/계룡시.json"
+    },
+    {
+      "key": "충청남/공주시",
+      "province": "충청남도",
+      "district": "공주시",
+      "label": "공주시",
+      "count": 42,
+      "withFees": 42,
+      "withCoordinates": 42,
+      "householdBands": {
+        "under-300": 14,
+        "300-499": 13,
+        "500-999": 15,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청남/공주시.json"
+    },
+    {
+      "key": "충청남/금산군",
+      "province": "충청남도",
+      "district": "금산군",
+      "label": "금산군",
+      "count": 10,
+      "withFees": 10,
+      "withCoordinates": 10,
+      "householdBands": {
+        "under-300": 4,
+        "300-499": 2,
+        "500-999": 4,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청남/금산군.json"
+    },
+    {
+      "key": "충청남/논산시",
+      "province": "충청남도",
+      "district": "논산시",
+      "label": "논산시",
+      "count": 38,
+      "withFees": 37,
+      "withCoordinates": 38,
+      "householdBands": {
+        "under-300": 15,
+        "300-499": 13,
+        "500-999": 9,
+        "1000-1499": 1,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청남/논산시.json"
+    },
+    {
+      "key": "충청남/당진시",
+      "province": "충청남도",
+      "district": "당진시",
+      "label": "당진시",
+      "count": 86,
+      "withFees": 85,
+      "withCoordinates": 86,
+      "householdBands": {
+        "under-300": 24,
+        "300-499": 26,
+        "500-999": 30,
+        "1000-1499": 5,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/충청남/당진시.json"
+    },
+    {
+      "key": "충청남/보령시",
+      "province": "충청남도",
+      "district": "보령시",
+      "label": "보령시",
+      "count": 40,
+      "withFees": 40,
+      "withCoordinates": 40,
+      "householdBands": {
+        "under-300": 14,
+        "300-499": 14,
+        "500-999": 10,
+        "1000-1499": 2,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청남/보령시.json"
+    },
+    {
+      "key": "충청남/부여군",
+      "province": "충청남도",
+      "district": "부여군",
+      "label": "부여군",
+      "count": 11,
+      "withFees": 11,
+      "withCoordinates": 11,
+      "householdBands": {
+        "under-300": 1,
+        "300-499": 9,
+        "500-999": 1,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청남/부여군.json"
+    },
+    {
+      "key": "충청남/서산시",
+      "province": "충청남도",
+      "district": "서산시",
+      "label": "서산시",
+      "count": 80,
+      "withFees": 79,
+      "withCoordinates": 80,
+      "householdBands": {
+        "under-300": 27,
+        "300-499": 13,
+        "500-999": 34,
+        "1000-1499": 5,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/충청남/서산시.json"
+    },
+    {
+      "key": "충청남/서천군",
+      "province": "충청남도",
+      "district": "서천군",
+      "label": "서천군",
+      "count": 12,
+      "withFees": 12,
+      "withCoordinates": 12,
+      "householdBands": {
+        "under-300": 6,
+        "300-499": 6,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청남/서천군.json"
+    },
+    {
+      "key": "충청남/아산시",
+      "province": "충청남도",
+      "district": "아산시",
+      "label": "아산시",
+      "count": 191,
+      "withFees": 186,
+      "withCoordinates": 191,
+      "householdBands": {
+        "under-300": 36,
+        "300-499": 49,
+        "500-999": 83,
+        "1000-1499": 18,
+        "over-1500": 5
+      },
+      "file": "/data/apartments/maps/충청남/아산시.json"
+    },
+    {
+      "key": "충청남/예산군",
+      "province": "충청남도",
+      "district": "예산군",
+      "label": "예산군",
+      "count": 35,
+      "withFees": 34,
+      "withCoordinates": 35,
+      "householdBands": {
+        "under-300": 17,
+        "300-499": 9,
+        "500-999": 8,
+        "1000-1499": 1,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청남/예산군.json"
+    },
+    {
+      "key": "충청남/천안동남구",
+      "province": "충청남도",
+      "district": "천안동남구",
+      "label": "천안동남구",
+      "count": 128,
+      "withFees": 126,
+      "withCoordinates": 128,
+      "householdBands": {
+        "under-300": 42,
+        "300-499": 28,
+        "500-999": 40,
+        "1000-1499": 9,
+        "over-1500": 9
+      },
+      "file": "/data/apartments/maps/충청남/천안동남구.json"
+    },
+    {
+      "key": "충청남/천안서북구",
+      "province": "충청남도",
+      "district": "천안서북구",
+      "label": "천안서북구",
+      "count": 229,
+      "withFees": 229,
+      "withCoordinates": 227,
+      "householdBands": {
+        "under-300": 82,
+        "300-499": 45,
+        "500-999": 74,
+        "1000-1499": 23,
+        "over-1500": 5
+      },
+      "file": "/data/apartments/maps/충청남/천안서북구.json"
+    },
+    {
+      "key": "충청남/청양군",
+      "province": "충청남도",
+      "district": "청양군",
+      "label": "청양군",
+      "count": 5,
+      "withFees": 5,
+      "withCoordinates": 5,
+      "householdBands": {
+        "under-300": 3,
+        "300-499": 2,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청남/청양군.json"
+    },
+    {
+      "key": "충청남/태안군",
+      "province": "충청남도",
+      "district": "태안군",
+      "label": "태안군",
+      "count": 18,
+      "withFees": 18,
+      "withCoordinates": 18,
+      "householdBands": {
+        "under-300": 6,
+        "300-499": 7,
+        "500-999": 5,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청남/태안군.json"
+    },
+    {
+      "key": "충청남/홍성군",
+      "province": "충청남도",
+      "district": "홍성군",
+      "label": "홍성군",
+      "count": 43,
+      "withFees": 42,
+      "withCoordinates": 43,
+      "householdBands": {
+        "under-300": 12,
+        "300-499": 9,
+        "500-999": 16,
+        "1000-1499": 4,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/충청남/홍성군.json"
+    },
+    {
+      "key": "충청북/괴산군",
+      "province": "충청북도",
+      "district": "괴산군",
+      "label": "괴산군",
+      "count": 7,
+      "withFees": 5,
+      "withCoordinates": 7,
+      "householdBands": {
+        "under-300": 5,
+        "300-499": 2,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청북/괴산군.json"
+    },
+    {
+      "key": "충청북/단양군",
+      "province": "충청북도",
+      "district": "단양군",
+      "label": "단양군",
+      "count": 9,
+      "withFees": 9,
+      "withCoordinates": 9,
+      "householdBands": {
+        "under-300": 4,
+        "300-499": 5,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청북/단양군.json"
+    },
+    {
+      "key": "충청북/보은군",
+      "province": "충청북도",
+      "district": "보은군",
+      "label": "보은군",
+      "count": 7,
+      "withFees": 7,
+      "withCoordinates": 7,
+      "householdBands": {
+        "under-300": 5,
+        "300-499": 2,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청북/보은군.json"
+    },
+    {
+      "key": "충청북/영동군",
+      "province": "충청북도",
+      "district": "영동군",
+      "label": "영동군",
+      "count": 11,
+      "withFees": 9,
+      "withCoordinates": 11,
+      "householdBands": {
+        "under-300": 8,
+        "300-499": 3,
+        "500-999": 0,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청북/영동군.json"
+    },
+    {
+      "key": "충청북/옥천군",
+      "province": "충청북도",
+      "district": "옥천군",
+      "label": "옥천군",
+      "count": 19,
+      "withFees": 19,
+      "withCoordinates": 19,
+      "householdBands": {
+        "under-300": 8,
+        "300-499": 9,
+        "500-999": 2,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청북/옥천군.json"
+    },
+    {
+      "key": "충청북/음성군",
+      "province": "충청북도",
+      "district": "음성군",
+      "label": "음성군",
+      "count": 59,
+      "withFees": 59,
+      "withCoordinates": 59,
+      "householdBands": {
+        "under-300": 22,
+        "300-499": 17,
+        "500-999": 15,
+        "1000-1499": 4,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/충청북/음성군.json"
+    },
+    {
+      "key": "충청북/제천시",
+      "province": "충청북도",
+      "district": "제천시",
+      "label": "제천시",
+      "count": 72,
+      "withFees": 71,
+      "withCoordinates": 72,
+      "householdBands": {
+        "under-300": 16,
+        "300-499": 31,
+        "500-999": 24,
+        "1000-1499": 1,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청북/제천시.json"
+    },
+    {
+      "key": "충청북/증평군",
+      "province": "충청북도",
+      "district": "증평군",
+      "label": "증평군",
+      "count": 23,
+      "withFees": 22,
+      "withCoordinates": 23,
+      "householdBands": {
+        "under-300": 6,
+        "300-499": 6,
+        "500-999": 11,
+        "1000-1499": 0,
+        "over-1500": 0
+      },
+      "file": "/data/apartments/maps/충청북/증평군.json"
+    },
+    {
+      "key": "충청북/진천군",
+      "province": "충청북도",
+      "district": "진천군",
+      "label": "진천군",
+      "count": 53,
+      "withFees": 53,
+      "withCoordinates": 53,
+      "householdBands": {
+        "under-300": 21,
+        "300-499": 14,
+        "500-999": 13,
+        "1000-1499": 4,
+        "over-1500": 1
+      },
+      "file": "/data/apartments/maps/충청북/진천군.json"
+    },
+    {
+      "key": "충청북/청주상당구",
+      "province": "충청북도",
+      "district": "청주상당구",
+      "label": "청주상당구",
+      "count": 96,
+      "withFees": 91,
+      "withCoordinates": 96,
+      "householdBands": {
+        "under-300": 23,
+        "300-499": 28,
+        "500-999": 32,
+        "1000-1499": 10,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/충청북/청주상당구.json"
+    },
+    {
+      "key": "충청북/청주서원구",
+      "province": "충청북도",
+      "district": "청주서원구",
+      "label": "청주서원구",
+      "count": 93,
+      "withFees": 90,
+      "withCoordinates": 93,
+      "householdBands": {
+        "under-300": 27,
+        "300-499": 17,
+        "500-999": 35,
+        "1000-1499": 11,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/충청북/청주서원구.json"
+    },
+    {
+      "key": "충청북/청주청원구",
+      "province": "충청북도",
+      "district": "청주청원구",
+      "label": "청주청원구",
+      "count": 86,
+      "withFees": 85,
+      "withCoordinates": 86,
+      "householdBands": {
+        "under-300": 29,
+        "300-499": 20,
+        "500-999": 28,
+        "1000-1499": 6,
+        "over-1500": 3
+      },
+      "file": "/data/apartments/maps/충청북/청주청원구.json"
+    },
+    {
+      "key": "충청북/청주흥덕구",
+      "province": "충청북도",
+      "district": "청주흥덕구",
+      "label": "청주흥덕구",
+      "count": 153,
+      "withFees": 152,
+      "withCoordinates": 153,
+      "householdBands": {
+        "under-300": 55,
+        "300-499": 41,
+        "500-999": 38,
+        "1000-1499": 10,
+        "over-1500": 9
+      },
+      "file": "/data/apartments/maps/충청북/청주흥덕구.json"
+    },
+    {
+      "key": "충청북/충주시",
+      "province": "충청북도",
+      "district": "충주시",
+      "label": "충주시",
+      "count": 100,
+      "withFees": 97,
+      "withCoordinates": 100,
+      "householdBands": {
+        "under-300": 22,
+        "300-499": 31,
+        "500-999": 42,
+        "1000-1499": 3,
+        "over-1500": 2
+      },
+      "file": "/data/apartments/maps/충청북/충주시.json"
+    }
+  ],
+  "coordinateValidation": {
+    "thresholdKm": 80,
+    "sourceCoordinates": 21647,
+    "validCoordinates": 21617,
+    "missingCoordinates": 4,
+    "malformedCoordinates": 0,
+    "outOfBoundsCoordinates": 0,
+    "districtCenterMissing": 0,
+    "distanceInvalidCoordinates": 30,
+    "invalidCoordinates": 30,
+    "excludedFromMap": 34,
+    "repeatedCoordinateGroups": 207,
+    "repeatedCoordinateComplexes": 454,
+    "suspiciousRepeatedCoordinateGroups": 2,
+    "suspiciousRepeatedCoordinates": 17,
+    "suspiciousRepeatedInvalidCoordinates": 16,
+    "orphanCoordinates": 798
+  },
+  "feeHistory": {
+    "discovery": "auto",
+    "files": [
+      {
+        "sourceDate": "20260710",
+        "fileName": "fee.xlsx",
+        "path": "data/kapt/raw/20260710/fee.xlsx",
+        "rows": 104209
+      }
+    ]
+  }
 }

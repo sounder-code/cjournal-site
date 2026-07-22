@@ -7,8 +7,23 @@ export interface ApartmentManifest {
   latestMonth: string;
   months: string[];
   index: string;
+  search?: string | {
+    file: string;
+    count: number;
+    withCoordinates?: number;
+    fields?: string[];
+  };
   stats: Record<string, number>;
   regions: Array<{ key: string; name: string; count: number; withFees: number; file: string }>;
+  districts?: Array<{
+    province: string;
+    district: string;
+    count: number;
+    withCoordinates?: number;
+    file: string;
+    householdBands?: Record<string, number>;
+    bands?: Record<string, number>;
+  }>;
 }
 
 export type FeeTuple = [
@@ -46,6 +61,9 @@ export interface ApartmentEntry {
   tf: number;
   cf: number;
   rf: number;
+  q?: number;
+  la?: number;
+  lo?: number;
   p: number;
   e: number;
   f: FeeTuple[];

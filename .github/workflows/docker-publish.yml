@@ -46,7 +46,7 @@ jobs:
           target: production
           push: true
           build-args: |
-            PUBLIC_SITE_URL=${{ vars.PUBLIC_SITE_URL || 'https://cjournal.kr' }}
+            PUBLIC_SITE_URL=${{ vars.PUBLIC_SITE_URL || 'https://danjipyo.kr' }}
             PUBLIC_NAVER_ANALYTICS_ID=${{ vars.PUBLIC_NAVER_ANALYTICS_ID || '24eb41c656c0500' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

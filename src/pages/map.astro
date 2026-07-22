@@ -70,7 +70,7 @@ const metrics = [
         <div class="map-status">
           <div class="map-summary">
             <button type="button" data-map-back hidden></button>
-            <strong data-count>전국 데이터를 불러오는 중</strong><span data-metric-label>총 관리비 기준</span>
+            <strong data-count>{Number(manifest.stats.complexes || 0).toLocaleString('ko-KR')}개 단지</strong><span data-metric-label>총 관리비 기준</span>
           </div>
           <div class="legend" aria-label="비교 수준 범례">
             <span><i class="low"></i>낮음</span>
@@ -170,11 +170,14 @@ const metrics = [
 
   <script is:inline type="application/json" id="map-payload" set:html={JSON.stringify({
     indexUrl: manifest.index,
+    searchUrl: typeof manifest.search === 'string' ? manifest.search : manifest.search?.file || manifest.index,
+    regions: manifest.regions,
+    districts: manifest.districts || [],
     metrics,
     adminCenters
   })} />
 
-  <script is:inline src={`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${naverMapClientId}&submodules=geocoder`}></script>
+  <script is:inline src={`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${naverMapClientId}`}></script>
 
   <script>
     // @ts-nocheck
@@ -261,30 +264,54 @@ const metrics = [
     });
 
     const map = {
-      getZoom: () => rawMap.getZoom(),
-      getCenter: () => rawMap.getCenter(),
-      getBounds: () => rawMap.getBounds(),
+      getZoom: () => {
+        try { return rawMap.getZoom(); } catch { return 7; }
+      },
+      getCenter: () => {
+        try { return rawMap.getCenter(); } catch { return toLatLng([36.35, 127.85]); }
+      },
+      getBounds: () => {
+        try { return rawMap.getBounds(); } catch { return null; }
+      },
       getContainer: () => mapElement,
       setView: (coordinate, zoom) => {
-        rawMap.setCenter(toLatLng(coordinate));
-        rawMap.setZoom(zoom);
+        try {
+          rawMap.setCenter(toLatLng(coordinate));
+          rawMap.setZoom(zoom);
+          return true;
+        } catch {
+          return false;
+        }
       },
       fitBounds: (coordinates, options = {}) => {
-        const bounds = new naver.maps.LatLngBounds();
-        coordinates.forEach((coordinate) => bounds.extend(toLatLng(coordinate)));
-        const padding = Number(options.padding?.[0] || 40);
-        const listener = naver.maps.Event.addListener(rawMap, 'idle', () => {
-          naver.maps.Event.removeListener(listener);
-          if (Number.isFinite(options.maxZoom) && rawMap.getZoom() > options.maxZoom) rawMap.setZoom(options.maxZoom);
-        });
-        rawMap.fitBounds(bounds, { top: padding, right: padding, bottom: padding, left: padding });
+        try {
+          const bounds = new naver.maps.LatLngBounds();
+          coordinates.forEach((coordinate) => bounds.extend(toLatLng(coordinate)));
+          const padding = Number(options.padding?.[0] || 40);
+          const listener = naver.maps.Event.addListener(rawMap, 'idle', () => {
+            naver.maps.Event.removeListener(listener);
+            if (Number.isFinite(options.maxZoom) && rawMap.getZoom() > options.maxZoom) rawMap.setZoom(options.maxZoom);
+          });
+          rawMap.fitBounds(bounds, { top: padding, right: padding, bottom: padding, left: padding });
+          return true;
+        } catch {
+          return false;
+        }
       },
-      latLngToContainerPoint: (coordinate) => rawMap.getProjection().fromCoordToOffset(toLatLng(coordinate)),
-      on: (event, handler) => naver.maps.Event.addListener(
-        rawMap,
-        event === 'zoomend' ? 'zoom_changed' : event === 'moveend' ? 'idle' : event,
-        handler
-      )
+      latLngToContainerPoint: (coordinate) => {
+        try { return rawMap.getProjection().fromCoordToOffset(toLatLng(coordinate)); } catch { return { x: -10000, y: -10000 }; }
+      },
+      on: (event, handler) => {
+        try {
+          return naver.maps.Event.addListener(
+            rawMap,
+            event === 'zoomend' ? 'zoom_changed' : event === 'moveend' ? 'idle' : event,
+            handler
+          );
+        } catch {
+          return null;
+        }
+      }
     };
 
     const complexMarkerBySlug = new Map();
@@ -293,7 +320,9 @@ const metrics = [
       markers: [],
       mode: '',
       clearLayers(nextMode = '') {
-        this.markers.forEach((marker) => marker.raw.setMap(null));
+        this.markers.forEach((marker) => {
+          try { marker.raw.setMap(null); } catch {}
+        });
         this.markers = [];
         this.mode = nextMode;
         complexMarkerBySlug.clear();
@@ -394,6 +423,16 @@ const metrics = [
     updateComplexLabels();
 
     let apartments = [];
+    let searchEntries = [];
+    const apartmentBySlug = new Map();
+    const districtLoads = new Map();
+    const loadedDistrictKeys = new Set();
+    const districtSummaries = Array.isArray(payload.districts) ? payload.districts : [];
+    let searchLoadPromise = null;
+    let legacyLoadPromise = null;
+    let viewportLoadSequence = 0;
+    let selectionLoadSequence = 0;
+    let searchFocused = false;
     let activeMetric = 'tf';
     let selectedSlug = initialSlug;
     let activeProvince = '';
@@ -410,6 +449,11 @@ const metrics = [
     let reportDialogOpen = initialReportOpen && Boolean(initialSlug);
     let reportContentMode = 'report';
     let toastTimer = 0;
+
+    const storageKeys = {
+      saved: 'danjipyo:saved-apartments',
+      recent: 'danjipyo:recent-apartments'
+    };
 
     const escapeHtml = (value) => String(value ?? '')
       .replaceAll('&', '&amp;')
@@ -511,12 +555,118 @@ const metrics = [
     const normalizeDong = (value) => String(value || '').replace(/제?\d+(?=동$)/g, '');
     const districtKey = (province, district) => `${province}|${normalizeDistrict(district)}`;
     const districtCenters = new Map(payload.adminCenters.districts.map((item) => [districtKey(item.province, item.district), item]));
-
-    const filteredApartments = () => {
-      const query = (search?.value || '').trim().toLowerCase();
+    const displayDistrictName = (province, district) => {
+      const official = districtCenters.get(districtKey(province, district))?.district || district || '지역 전체';
+      return String(official).replace(/^(.+시)(.+구)$/, '$1 $2');
+    };
+    const districtSummaryKey = (item) => districtKey(item.province || item.sd, item.district || item.sg);
+    const districtSummaryByKey = new Map(districtSummaries.map((item) => [districtSummaryKey(item), item]));
+    const apartmentCoordinate = (item) => {
+      const latitude = Number(item?.la);
+      const longitude = Number(item?.lo);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < 32 || latitude > 39.5 || longitude < 124 || longitude > 132) return null;
+      const center = districtCenters.get(districtKey(item.sd, item.sg));
+      if (center && distanceBetween([center.latitude, center.longitude], [latitude, longitude]) > 80000) return null;
+      return [latitude, longitude];
+    };
+    const districtBandCounts = (item) => item.householdBands || item.bands || item.households || {};
+    const districtSummaryCount = (item) => {
+      const selectedHouseholds = households?.value || 'all';
+      if (selectedHouseholds === 'all') return Number(item.count || 0);
+      return Number(districtBandCounts(item)[selectedHouseholds] || 0);
+    };
+    const readStoredSlugs = (key) => {
+      try {
+        const value = JSON.parse(localStorage.getItem(key) || '[]');
+        return Array.isArray(value) ? value.filter((slug) => typeof slug === 'string').slice(0, 8) : [];
+      } catch {
+        return [];
+      }
+    };
+    const writeStoredSlugs = (key, slugs) => {
+      try {
+        localStorage.setItem(key, JSON.stringify([...new Set(slugs)].slice(0, 8)));
+      } catch {}
+    };
+    const savedApartmentSlugs = () => readStoredSlugs(storageKeys.saved);
+    const recentApartmentSlugs = () => readStoredSlugs(storageKeys.recent);
+    const rememberApartment = (slug) => writeStoredSlugs(storageKeys.recent, [slug, ...recentApartmentSlugs()]);
+    const isApartmentSaved = (slug) => savedApartmentSlugs().includes(slug);
+    const toggleSavedApartment = (slug) => {
+      const current = savedApartmentSlugs();
+      const saved = current.includes(slug);
+      writeStoredSlugs(storageKeys.saved, saved ? current.filter((item) => item !== slug) : [slug, ...current]);
+      showToast(saved ? '저장한 단지에서 뺐습니다' : '우리 단지로 저장했습니다');
+      window.danjipyoTrack?.(saved ? 'apartment_unsave' : 'apartment_save', { apartment_slug: slug });
+      render();
+    };
+    const addApartments = (items, key = '') => {
+      if (!Array.isArray(items)) return [];
+      items.forEach((item) => {
+        if (!item?.s) return;
+        apartmentBySlug.set(item.s, { ...(apartmentBySlug.get(item.s) || {}), ...item });
+      });
+      apartments = [...apartmentBySlug.values()];
+      if (key) loadedDistrictKeys.add(key);
+      return items;
+    };
+    const fetchJson = async (url) => {
+      const response = await fetch(url, { credentials: 'same-origin' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    };
+    const ensureLegacyData = () => {
+      legacyLoadPromise ??= fetchJson(payload.indexUrl).then((items) => {
+        addApartments(items);
+        districtSummaries.forEach((summary) => loadedDistrictKeys.add(districtSummaryKey(summary)));
+        return apartments;
+      });
+      return legacyLoadPromise;
+    };
+    const ensureSearchLoaded = () => {
+      searchLoadPromise ??= fetchJson(payload.searchUrl || payload.indexUrl).then((items) => {
+        searchEntries = Array.isArray(items) ? items : [];
+        if (!districtSummaries.length || payload.searchUrl === payload.indexUrl) addApartments(searchEntries);
+        return searchEntries;
+      }).catch((error) => {
+        searchLoadPromise = null;
+        throw error;
+      });
+      return searchLoadPromise;
+    };
+    const ensureDistrictLoaded = async (province, district) => {
+      const key = districtKey(province, district);
+      if (loadedDistrictKeys.has(key)) return apartments.filter((item) => districtKey(item.sd, item.sg) === key);
+      const summary = districtSummaryByKey.get(key);
+      if (!summary?.file) return ensureLegacyData();
+      if (!districtLoads.has(key)) {
+        districtLoads.set(key, fetchJson(summary.file)
+          .then((items) => addApartments(items, key))
+          .catch((error) => {
+            districtLoads.delete(key);
+            throw error;
+          }));
+      }
+      return districtLoads.get(key);
+    };
+    const findApartment = (slug) => apartmentBySlug.get(slug)
+      || searchEntries.find((item) => item.s === slug)
+      || null;
+    const ensureApartmentLoaded = async (slug) => {
+      if (apartmentBySlug.has(slug) && (!districtSummaries.length || loadedDistrictKeys.has(districtKey(apartmentBySlug.get(slug).sd, apartmentBySlug.get(slug).sg)))) {
+        return apartmentBySlug.get(slug);
+      }
+      await ensureSearchLoaded();
+      const entry = searchEntries.find((item) => item.s === slug) || apartmentBySlug.get(slug);
+      if (!entry) return null;
+      await ensureDistrictLoaded(entry.sd, entry.sg);
+      return apartmentBySlug.get(slug) || entry;
+    };
+    const filterEntries = (entries, { includeQuery = true } = {}) => {
+      const query = includeQuery ? (search?.value || '').trim().toLowerCase() : '';
       const selectedRegion = region?.value || 'all';
       const selectedHouseholds = households?.value || 'all';
-      return apartments.filter((item) => {
+      return entries.filter((item) => {
         const text = `${item.n} ${item.sd} ${item.sg} ${item.d} ${item.a}`.toLowerCase();
         return (!query || text.includes(query))
           && (selectedRegion === 'all' || item.sd === selectedRegion)
@@ -524,10 +674,13 @@ const metrics = [
       });
     };
 
+    const filteredApartments = () => {
+      const query = (search?.value || '').trim();
+      return filterEntries(query && searchEntries.length ? searchEntries : apartments);
+    };
+
     const mapEligibleApartments = () => {
-      const selectedHouseholds = households?.value || 'all';
-      return apartments.filter((item) => selectedHouseholds === 'all'
-        || householdBand(Number(item.h || 0)) === selectedHouseholds);
+      return filterEntries(apartments, { includeQuery: false });
     };
 
     const comparisonForApartment = (apartment) => {
@@ -540,7 +693,19 @@ const metrics = [
       const bounds = map.getBounds();
       const southWest = bounds?.getSW?.();
       const northEast = bounds?.getNE?.();
-      if (!southWest || !northEast) return selected ? [selected] : [];
+      if (!southWest || !northEast) {
+        const fallbackCenter = selected ? apartmentCoordinate(selected) : null;
+        const fallback = mapEligibleApartments()
+          .filter((item) => !selected || districtKey(item.sd, item.sg) === districtKey(selected.sd, selected.sg))
+          .filter((item) => apartmentCoordinate(item))
+          .sort((a, b) => Number(b.s === selected?.s) - Number(a.s === selected?.s)
+            || (fallbackCenter
+              ? distanceBetween(fallbackCenter, apartmentCoordinate(a)) - distanceBetween(fallbackCenter, apartmentCoordinate(b))
+              : a.n.localeCompare(b.n, 'ko')))
+          .slice(0, window.matchMedia('(max-width: 720px)').matches ? 90 : 160);
+        if (selected && !fallback.some((item) => item.s === selected.s)) fallback.unshift(selected);
+        return fallback;
+      }
       const south = Number(southWest.lat());
       const west = Number(southWest.lng());
       const north = Number(northEast.lat());
@@ -551,10 +716,10 @@ const metrics = [
       const limit = window.matchMedia('(max-width: 720px)').matches ? 90 : 160;
       const visible = mapEligibleApartments()
         .filter((item) => {
-          const latitude = Number(item.la);
-          const longitude = Number(item.lo);
-          return Number.isFinite(latitude) && Number.isFinite(longitude)
-            && latitude >= south - latitudePadding
+          const coordinate = apartmentCoordinate(item);
+          if (!coordinate) return false;
+          const [latitude, longitude] = coordinate;
+          return latitude >= south - latitudePadding
             && latitude <= north + latitudePadding
             && longitude >= west - longitudePadding
             && longitude <= east + longitudePadding;
@@ -566,8 +731,58 @@ const metrics = [
       return visible;
     };
 
+    const districtSummariesNearViewport = () => {
+      if (!districtSummaries.length || map.getZoom() < 13) return [];
+      const bounds = map.getBounds();
+      const southWest = bounds?.getSW?.();
+      const northEast = bounds?.getNE?.();
+      if (!southWest || !northEast) return [];
+      const south = Number(southWest.lat());
+      const west = Number(southWest.lng());
+      const north = Number(northEast.lat());
+      const east = Number(northEast.lng());
+      const latitudePadding = Math.max((north - south) * .45, .01);
+      const longitudePadding = Math.max((east - west) * .45, .01);
+      const center = map.getCenter();
+      const candidates = districtSummaries
+        .map((summary) => ({ summary, center: districtCenters.get(districtSummaryKey(summary)) }))
+        .filter(({ summary, center: districtCenter }) => districtCenter && districtSummaryCount(summary) > 0)
+        .sort((a, b) => distanceBetween(center, [a.center.latitude, a.center.longitude]) - distanceBetween(center, [b.center.latitude, b.center.longitude]));
+      const visible = candidates
+        .filter(({ center: districtCenter }) => Number(districtCenter.latitude) >= south - latitudePadding
+          && Number(districtCenter.latitude) <= north + latitudePadding
+          && Number(districtCenter.longitude) >= west - longitudePadding
+          && Number(districtCenter.longitude) <= east + longitudePadding)
+        .slice(0, compactMap ? 5 : 8)
+        .map(({ summary }) => summary);
+      candidates.slice(0, compactMap ? 3 : 4).forEach(({ summary }) => {
+        if (!visible.includes(summary)) visible.push(summary);
+      });
+      const activeSummary = districtSummaryByKey.get(activeDistrict);
+      if (activeSummary && !visible.includes(activeSummary)) visible.unshift(activeSummary);
+      return visible;
+    };
+
+    const ensureViewportApartments = async () => {
+      if (!districtSummaries.length) return ensureLegacyData();
+      const summaries = districtSummariesNearViewport();
+      await Promise.allSettled(summaries.map((summary) => ensureDistrictLoaded(
+        summary.province || summary.sd,
+        summary.district || summary.sg
+      )));
+      return apartments;
+    };
+
+    const refreshApartmentViewport = async (selected = null) => {
+      const sequence = ++viewportLoadSequence;
+      await ensureViewportApartments();
+      if (sequence !== viewportLoadSequence || !apartmentMode) return;
+      const currentSelected = selectedSlug ? findApartment(selectedSlug) : selected;
+      refreshApartmentMode(currentSelected || null);
+    };
+
     const comparedApartments = () => compareSlugs
-      .map((slug) => apartments.find((item) => item.s === slug))
+      .map((slug) => findApartment(slug))
       .filter(Boolean);
 
     const comparisonRows = [
@@ -683,7 +898,7 @@ const metrics = [
                 <th scope="col">비교 항목</th>
                 ${items.map((item) => `<th scope="col">
                   <button type="button" class="compare-apartment" data-compare-select="${escapeHtml(item.s)}">
-                    <span>${escapeHtml(item.sd)} ${escapeHtml(item.sg)}</span>
+                    <span>${escapeHtml(item.sd)} ${escapeHtml(displayDistrictName(item.sd, item.sg))}</span>
                     <strong>${escapeHtml(item.n)}</strong>
                     <small>${escapeHtml(item.a)}</small>
                   </button>
@@ -745,11 +960,17 @@ const metrics = [
       renderComparisonDialog();
     };
 
-    const toggleCompare = (slug) => {
+    const toggleCompare = async (slug) => {
       if (!slug) return;
+      const apartment = await ensureApartmentLoaded(slug);
+      if (!apartment) {
+        showToast('단지 정보를 불러오지 못했습니다');
+        return;
+      }
       if (compareSlugs.includes(slug)) {
         compareSlugs = compareSlugs.filter((item) => item !== slug);
         if (compareSlugs.length < 2) compareDialogOpen = false;
+        window.danjipyoTrack?.('compare_remove', { apartment_slug: slug, compare_count: compareSlugs.length });
       } else {
         if (compareSlugs.length >= 4) {
           showToast('비교는 최대 4개 단지까지 가능합니다');
@@ -757,6 +978,7 @@ const metrics = [
           return;
         }
         compareSlugs.push(slug);
+        window.danjipyoTrack?.('compare_add', { apartment_slug: slug, compare_count: compareSlugs.length });
         showToast(compareSlugs.length === 1 ? '비교할 단지를 1개 더 선택하세요' : '비교 목록에 담았습니다');
       }
       syncComparisonUrl();
@@ -770,6 +992,7 @@ const metrics = [
       }
       compareDialogOpen = true;
       syncComparisonUrl();
+      window.danjipyoTrack?.('compare_open', { compare_count: compareSlugs.length });
       renderComparisonDialog();
     };
 
@@ -854,8 +1077,8 @@ const metrics = [
     };
     const centerOfApartments = (items) => {
       const coordinates = items
-        .map((item) => [Number(item.la), Number(item.lo)])
-        .filter(([latitude, longitude]) => Number.isFinite(latitude) && Number.isFinite(longitude));
+        .map(apartmentCoordinate)
+        .filter(Boolean);
       if (!coordinates.length) return null;
       return [
         coordinates.reduce((sum, [latitude]) => sum + latitude, 0) / coordinates.length,
@@ -863,21 +1086,22 @@ const metrics = [
       ];
     };
 
-    const addAreaMarker = ({ coordinate, name, items, kind, onClick, selected = false }) => {
+    const addAreaMarker = ({ coordinate, name, items = [], count: explicitCount, kind, onClick, selected = false }) => {
+      const markerCount = Number.isFinite(Number(explicitCount)) ? Number(explicitCount) : items.length;
       const value = representativeValue(items);
       const compactProvinceMarker = kind === 'province' && window.matchMedia('(max-width: 720px)').matches;
       const provinceSize = compactProvinceMarker ? 48 : 64;
       const icon = L.divIcon({
         className: `${kind}-marker-wrap`,
         html: kind === 'province'
-          ? `<div class="province-marker"><strong>${formatNumber(items.length)}</strong><span>${escapeHtml(name)}</span></div>`
-          : `<div class="area-marker ${kind}${selected ? ' selected' : ''}"><strong>${escapeHtml(name)}</strong><span>${formatNumber(items.length)}개${kind !== 'district' && value ? ` · ${formatNumber(value)}원` : ''}</span></div>`,
+          ? `<div class="province-marker"><strong>${formatNumber(markerCount)}</strong><span>${escapeHtml(name)}</span></div>`
+          : `<div class="area-marker ${kind}${selected ? ' selected' : ''}"><strong>${escapeHtml(name)}</strong><span>${formatNumber(markerCount)}개${kind !== 'district' && value ? ` · ${formatNumber(value)}원` : ''}</span></div>`,
         iconSize: kind === 'province' ? [provinceSize, provinceSize] : kind === 'district' ? [62, 58] : [88, 44],
         iconAnchor: kind === 'province' ? [provinceSize / 2, provinceSize / 2] : kind === 'district' ? [31, 29] : [44, 22]
       });
       return L.marker(coordinate, {
         icon,
-        title: `${name} ${formatNumber(items.length)}개 단지`,
+        title: `${name} ${formatNumber(markerCount)}개 단지`,
         keyboard: true,
         riseOnHover: true,
         zIndexOffset: kind === 'province'
@@ -890,17 +1114,30 @@ const metrics = [
       markerLayer.clearLayers('province');
       complexMarkerEntries = [];
       mapCoordinateStatus = '';
+      const hasQuery = Boolean((search?.value || '').trim());
       const regionCounts = new Map();
-      items.forEach((item) => {
-        const group = regionCounts.get(item.sd) || [];
-        group.push(item);
-        regionCounts.set(item.sd, group);
-      });
+      if (districtSummaries.length && !hasQuery) {
+        districtSummaries.forEach((summary) => {
+          const name = summary.province || summary.sd;
+          const count = districtSummaryCount(summary);
+          if (!name || !count) return;
+          const group = regionCounts.get(name) || { items: [], count: 0 };
+          group.count += count;
+          regionCounts.set(name, group);
+        });
+      } else {
+        items.forEach((item) => {
+          const group = regionCounts.get(item.sd) || { items: [], count: 0 };
+          group.items.push(item);
+          group.count += 1;
+          regionCounts.set(item.sd, group);
+        });
+      }
       const bounds = [];
-      for (const [name, regionItems] of regionCounts) {
+      for (const [name, group] of regionCounts) {
         const coordinate = provinceCenters[name];
         if (!coordinate) continue;
-        addAreaMarker({ coordinate, name, items: regionItems, kind: 'province', onClick: () => openProvince(name) });
+        addAreaMarker({ coordinate, name, items: group.items, count: group.count, kind: 'province', onClick: () => openProvince(name) });
         bounds.push(coordinate);
       }
       if (fitMap && bounds.length > 1) map.fitBounds(bounds, {
@@ -915,13 +1152,26 @@ const metrics = [
       markerLayer.clearLayers('district');
       complexMarkerEntries = [];
       mapCoordinateStatus = '';
+      const hasQuery = Boolean((search?.value || '').trim());
       const groups = new Map();
-      items.forEach((item) => {
-        const key = districtKey(item.sd, item.sg);
-        const group = groups.get(key) || { name: item.sg, items: [] };
-        group.items.push(item);
-        groups.set(key, group);
-      });
+      if (districtSummaries.length && !hasQuery) {
+        districtSummaries.forEach((summary) => {
+          const province = summary.province || summary.sd;
+          const rawName = summary.district || summary.sg;
+          const name = displayDistrictName(province, rawName);
+          const count = districtSummaryCount(summary);
+          if (province !== activeProvince || !name || !count) return;
+          groups.set(districtKey(province, name), { name, items: [], count });
+        });
+      } else {
+        items.forEach((item) => {
+          const key = districtKey(item.sd, item.sg);
+          const group = groups.get(key) || { name: displayDistrictName(item.sd, item.sg), items: [], count: 0 };
+          group.items.push(item);
+          group.count += 1;
+          groups.set(key, group);
+        });
+      }
       const bounds = [];
       for (const [key, group] of groups) {
         const center = districtCenters.get(key);
@@ -932,6 +1182,7 @@ const metrics = [
           coordinate,
           name: group.name,
           items: group.items,
+          count: group.count,
           kind: 'district',
           selected: key === activeDistrict,
           onClick: () => openDistrict(key, coordinate)
@@ -1009,12 +1260,12 @@ const metrics = [
       const visibleSlugs = new Set();
       const validItems = [];
       items.forEach((apartment) => {
-        const latitude = Number(apartment.la);
-        const longitude = Number(apartment.lo);
-        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        const coordinate = apartmentCoordinate(apartment);
+        if (!coordinate) {
           missingCoordinates += 1;
           return;
         }
+        const [latitude, longitude] = coordinate;
         visibleSlugs.add(apartment.s);
         validItems.push(apartment);
         bounds.push([latitude, longitude]);
@@ -1099,7 +1350,11 @@ const metrics = [
 
     const refreshApartmentMode = (selected = null) => {
       const nearby = apartmentsInCurrentView(selected);
-      renderApartmentMarkers(nearby, false, selected?.s || '');
+      try {
+        renderApartmentMarkers(nearby, false, selected?.s || '');
+      } catch {
+        mapCoordinateStatus = '지도 연결 지연';
+      }
       renderResults(nearby);
       if (count) count.textContent = `${formatNumber(nearby.length)}개 주변 단지`;
       if (metricLabelNode) metricLabelNode.textContent = `${metricLabel()} 기준 · 지도 이동 시 자동 갱신`;
@@ -1107,9 +1362,8 @@ const metrics = [
     };
 
     const centerApartment = (apartment) => {
-      const coordinate = Number.isFinite(Number(apartment.la)) && Number.isFinite(Number(apartment.lo))
-        ? { latitude: Number(apartment.la), longitude: Number(apartment.lo) }
-        : null;
+      const rawCoordinate = apartmentCoordinate(apartment);
+      const coordinate = rawCoordinate ? { latitude: rawCoordinate[0], longitude: rawCoordinate[1] } : null;
       if (selectedSlug !== apartment.s) return;
       const status = detail?.querySelector('[data-location-status]');
       if (!coordinate) {
@@ -1123,22 +1377,74 @@ const metrics = [
       locatingSelection = true;
       let finished = false;
       let fallbackTimer = 0;
+      let idleListener = null;
       const finishCentering = () => {
         if (finished) return;
         finished = true;
         window.clearTimeout(fallbackTimer);
-        naver.maps.Event.removeListener(idleListener);
+        if (idleListener) {
+          try { naver.maps.Event.removeListener(idleListener); } catch {}
+        }
         locatingSelection = false;
         if (selectedSlug === apartment.s) refreshApartmentMode(apartment);
       };
-      const idleListener = naver.maps.Event.addListener(rawMap, 'idle', () => {
+      try {
+        idleListener = naver.maps.Event.addListener(rawMap, 'idle', finishCentering);
+      } catch {}
+      const moved = map.setView([coordinate.latitude, coordinate.longitude], 16);
+      if (!moved) {
         finishCentering();
-      });
-      map.setView([coordinate.latitude, coordinate.longitude], 16);
+        return;
+      }
       window.requestAnimationFrame(() => {
         if (selectedSlug === apartment.s) refreshApartmentMode(apartment);
       });
       fallbackTimer = window.setTimeout(finishCentering, 500);
+    };
+
+    const areaRows = () => {
+      if (!districtSummaries.length) return [];
+      if (activeProvince) {
+        return districtSummaries
+          .filter((summary) => (summary.province || summary.sd) === activeProvince)
+          .map((summary) => ({
+            level: 'district',
+            key: districtSummaryKey(summary),
+            name: displayDistrictName(summary.province || summary.sd, summary.district || summary.sg),
+            count: districtSummaryCount(summary)
+          }))
+          .filter((item) => item.count > 0)
+          .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ko'));
+      }
+      const rows = new Map();
+      districtSummaries.forEach((summary) => {
+        const name = summary.province || summary.sd;
+        const value = rows.get(name) || { level: 'province', key: name, name, count: 0 };
+        value.count += districtSummaryCount(summary);
+        rows.set(name, value);
+      });
+      return [...rows.values()].filter((item) => item.count > 0).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ko'));
+    };
+
+    const renderAreaResults = () => {
+      if (!results) return;
+      const rows = areaRows().slice(0, 6);
+      results.innerHTML = rows.map((item) => `<article class="area-result-card">
+        <button type="button" data-area-level="${item.level}" data-area-key="${escapeHtml(item.key)}">
+          <span>${item.level === 'province' ? '시·도' : activeProvince}</span>
+          <strong>${escapeHtml(item.name)}</strong>
+          <em>${formatNumber(item.count)}개 단지</em>
+        </button>
+      </article>`).join('');
+      results.querySelectorAll('[data-area-level="province"]').forEach((button) => {
+        button.addEventListener('click', () => openProvince(button.dataset.areaKey));
+      });
+      results.querySelectorAll('[data-area-level="district"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const center = districtCenters.get(button.dataset.areaKey);
+          if (center) openDistrict(button.dataset.areaKey, [center.latitude, center.longitude]);
+        });
+      });
     };
 
     const renderResults = (items) => {
@@ -1159,7 +1465,7 @@ const metrics = [
         return `<article class="result-card ${band}${item.s === selectedSlug ? ' selected' : ''}${isCompared ? ' compared' : ''}">
           <button type="button" class="result-card-main" data-slug="${escapeHtml(item.s)}">
             <i aria-hidden="true"></i>
-            <span>${escapeHtml(item.sd)} ${escapeHtml(item.sg)}</span>
+            <span>${escapeHtml(item.sd)} ${escapeHtml(displayDistrictName(item.sd, item.sg))}</span>
             <strong>${escapeHtml(item.n)}</strong>
             <small>${escapeHtml(item.ht || '난방 미확인')} · ${formatNumber(item.h)}세대</small>
             <b>${percentile}p</b>
@@ -1179,9 +1485,11 @@ const metrics = [
     const renderMobileSuggestions = (items) => {
       if (!mobileSuggestions) return;
       const query = (search?.value || '').trim().toLowerCase();
-      if (!query || suggestionsDismissed) {
+      const librarySlugs = [...new Set([...savedApartmentSlugs(), ...recentApartmentSlugs()])];
+      const libraryItems = librarySlugs.map((slug) => findApartment(slug)).filter(Boolean);
+      if ((!query && (!searchFocused || !libraryItems.length)) || suggestionsDismissed) {
         mobileSuggestions.hidden = true;
-        if (!query) mobileSuggestions.replaceChildren();
+        if (!query && !searchFocused) mobileSuggestions.replaceChildren();
         app?.classList.remove('mobile-searching');
         return;
       }
@@ -1194,20 +1502,24 @@ const metrics = [
         if (area.includes(query)) return 3;
         return 4;
       };
-      const rows = items.slice().sort((a, b) => relevance(a) - relevance(b) || a.n.localeCompare(b.n, 'ko')).slice(0, 4);
+      const sourceItems = query ? items : libraryItems;
+      const rows = sourceItems.slice().sort((a, b) => query
+        ? relevance(a) - relevance(b) || a.n.localeCompare(b.n, 'ko')
+        : librarySlugs.indexOf(a.s) - librarySlugs.indexOf(b.s)).slice(0, 5);
       mobileSuggestions.hidden = false;
       mobileSuggestions.innerHTML = `
-        <div class="suggestion-heading"><strong>${formatNumber(items.length)}개 검색 결과</strong><button type="button" data-mobile-close>필터 보기</button></div>
+        <div class="suggestion-heading"><strong>${query ? `${formatNumber(items.length)}개 검색 결과` : '저장·최근 본 단지'}</strong><button type="button" data-mobile-close>필터 보기</button></div>
         ${rows.map((item) => `<button type="button" class="suggestion-row" data-mobile-slug="${escapeHtml(item.s)}">
-          <span><strong>${escapeHtml(item.n)}</strong><small>${escapeHtml(item.sd)} ${escapeHtml(item.sg)} · ${formatNumber(item.h)}세대</small></span>
+          <span><strong>${escapeHtml(item.n)}</strong><small>${isApartmentSaved(item.s) ? '저장됨 · ' : ''}${escapeHtml(item.sd)} ${escapeHtml(displayDistrictName(item.sd, item.sg))} · ${formatNumber(item.h)}세대</small></span>
           <em>${formatWon(item.tf)}/㎡</em>
         </button>`).join('')}
-        ${rows.length ? '' : '<p>조건에 맞는 단지가 없습니다.</p>'}
+        ${rows.length ? '' : `<p>${query ? '조건에 맞는 단지가 없습니다.' : '최근 본 단지가 없습니다.'}</p>`}
       `;
       mobileSuggestions.querySelectorAll('[data-mobile-slug]').forEach((button) => {
         button.addEventListener('click', () => {
           app?.classList.remove('mobile-searching');
           search?.blur();
+          window.danjipyoTrack?.('search_result_select', { apartment_slug: button.dataset.mobileSlug, source: query ? 'search' : 'library' });
           selectApartment(button.dataset.mobileSlug);
           window.setTimeout(() => detail?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 180);
         });
@@ -1225,23 +1537,25 @@ const metrics = [
       const percentile = percentileFor(comparison, apartment);
       const band = bandFor(percentile);
       const isCompared = compareSlugs.includes(apartment.s);
+      const isSaved = isApartmentSaved(apartment.s);
       detail.innerHTML = `
         <button type="button" class="detail-close" data-detail-close aria-label="단지 정보 닫기">&#215;</button>
         <div class="detail-head">
-          <span>${escapeHtml(apartment.sd)} ${escapeHtml(apartment.sg)} · ${escapeHtml(apartment.ht || '난방 미확인')}</span>
+          <span>${escapeHtml(apartment.sd)} ${escapeHtml(displayDistrictName(apartment.sd, apartment.sg))} · ${escapeHtml(apartment.ht || '난방 미확인')}</span>
           <h2>${escapeHtml(apartment.n)}</h2>
           <p>${escapeHtml(apartment.a)}</p>
           <small data-location-status>지도 위치 준비 중</small>
         </div>
         <div class="detail-actions">
           <button type="button" class="detail-compare${isCompared ? ' active' : ''}" data-detail-compare aria-pressed="${isCompared}">${isCompared ? '비교에서 빼기' : '비교 담기'}</button>
+          <button type="button" class="detail-save${isSaved ? ' active' : ''}" data-detail-save aria-pressed="${isSaved}">${isSaved ? '저장됨' : '우리 단지 저장'}</button>
           <button type="button" data-detail-share>단지 공유</button>
         </div>
         <div class="score-box ${band}">
           <section><span>${metricLabel()} 수준</span><strong>${bandLabel(band)}</strong><p>비슷한 규모 ${formatNumber(comparison.length)}개 단지 중 백분위 ${percentile}</p></section>
           <section><span>기준월 금액</span><strong>${formatWon(apartment[activeMetric])}</strong><p>관리비부과면적 ㎡당</p></section>
         </div>
-        <p class="comparison-note">${escapeHtml(apartment.sg)} 공개 단지와 비교한 참고값입니다. 세대별 실제 청구액은 전용면적과 사용량에 따라 달라집니다.</p>
+        <p class="comparison-note">${escapeHtml(displayDistrictName(apartment.sd, apartment.sg))} 공개 단지와 비교한 참고값입니다. 세대별 실제 청구액은 전용면적과 사용량에 따라 달라집니다.</p>
         <dl class="facts">
           <div><dt>세대수</dt><dd>${formatNumber(apartment.h)}세대</dd></div>
           <div><dt>사용승인</dt><dd>${apartment.y ? `${apartment.y}년` : '미확인'}</dd></div>
@@ -1257,13 +1571,15 @@ const metrics = [
           : '<p class="report-unavailable">최근 관리비 공개 이력이 5개월 미만입니다.</p>'}
       `;
       detail.querySelector('[data-detail-compare]')?.addEventListener('click', () => toggleCompare(apartment.s));
+      detail.querySelector('[data-detail-save]')?.addEventListener('click', () => toggleSavedApartment(apartment.s));
       detail.querySelector('[data-detail-share]')?.addEventListener('click', () => shareLink({
         title: `${apartment.n} 관리비`,
         text: `${apartment.n}의 공개 관리비와 단지 정보를 확인해 보세요.`,
         url: apartmentShareUrl(apartment.s)
-      }));
+      }).then(() => window.danjipyoTrack?.('apartment_share', { apartment_slug: apartment.s })));
       detail.querySelector('[data-report-open]')?.addEventListener('click', (event) => {
         event.preventDefault();
+        window.danjipyoTrack?.('report_open', { apartment_slug: apartment.s });
         openReport(apartment);
       });
       detail.querySelector('[data-detail-close]')?.addEventListener('click', () => {
@@ -1284,18 +1600,29 @@ const metrics = [
       }
     };
 
-    const selectApartment = (slug, { center = true } = {}) => {
+    const selectApartment = async (slug, { center = true } = {}) => {
+      const sequence = ++selectionLoadSequence;
+      if (searchFeedback) {
+        searchFeedback.hidden = false;
+        searchFeedback.textContent = '단지 정보 불러오는 중';
+      }
+      const apartment = await ensureApartmentLoaded(slug).catch(() => null);
+      if (sequence !== selectionLoadSequence) return;
+      if (!apartment) {
+        if (searchFeedback) searchFeedback.textContent = '단지를 찾지 못했습니다';
+        showToast('단지 정보를 불러오지 못했습니다');
+        return;
+      }
       selectedSlug = slug;
       apartmentMode = true;
       selectionNeedsCenter = center;
       suggestionsDismissed = true;
-      const apartment = apartments.find((item) => item.s === slug);
-      if (apartment) {
-        activeProvince = apartment.sd;
-        activeDistrict = districtKey(apartment.sd, apartment.sg);
-        activeDong = apartment.d;
-        if (region) region.value = apartment.sd;
-      }
+      activeProvince = apartment.sd;
+      activeDistrict = districtKey(apartment.sd, apartment.sg);
+      activeDong = apartment.d;
+      if (region) region.value = apartment.sd;
+      rememberApartment(slug);
+      window.danjipyoTrack?.('apartment_open', { apartment_slug: slug, source: (search?.value || '').trim() ? 'search' : 'map' });
       const url = new URL(window.location.href);
       url.searchParams.set('apt', slug);
       history.replaceState({}, '', url);
@@ -1310,15 +1637,22 @@ const metrics = [
       selectedSlug = '';
       region.value = name;
       map.setView(provinceCenters[name], 11, { animate: true });
+      window.danjipyoTrack?.('map_area_open', { area_level: 'province', area_name: name });
       render();
     };
 
-    const openDistrict = (key, coordinate) => {
+    const openDistrict = async (key, coordinate) => {
       apartmentMode = false;
       activeDistrict = key;
       activeDong = '';
       selectedSlug = '';
       map.setView(coordinate, 13, { animate: true });
+      const summary = districtSummaryByKey.get(key);
+      if (count) count.textContent = `${summary ? formatNumber(districtSummaryCount(summary)) : ''}개 단지 불러오는 중`;
+      window.danjipyoTrack?.('map_area_open', { area_level: 'district', area_name: summary?.district || summary?.sg || key.split('|')[1] });
+      const center = districtCenters.get(key);
+      await ensureDistrictLoaded(summary?.province || summary?.sd || center?.province || activeProvince, summary?.district || summary?.sg || center?.district || key.split('|')[1]).catch(() => null);
+      if (activeDistrict !== key || apartmentMode) return;
       render();
     };
 
@@ -1336,7 +1670,7 @@ const metrics = [
       const district = districtCenters.get(activeDistrict);
       mapBack.hidden = !activeProvince;
       mapBack.textContent = activeDistrict
-        ? `${activeProvince} · ${district?.district || ''}`
+        ? `${activeProvince} · ${displayDistrictName(activeProvince, district?.district || '')}`
         : activeProvince || '';
       mapBack.setAttribute('aria-label', activeDistrict ? '시도 단계로 돌아가기' : '전국 단계로 돌아가기');
     };
@@ -1347,59 +1681,89 @@ const metrics = [
         (!activeDistrict || districtKey(item.sd, item.sg) === activeDistrict)
         && (!activeDong || item.d === activeDong));
       const hasQuery = Boolean((search?.value || '').trim());
-      const selected = apartments.find((item) => item.s === selectedSlug);
+      const selected = selectedSlug ? findApartment(selectedSlug) : null;
       app?.classList.toggle('has-detail', Boolean(selected));
       app?.classList.toggle('apartment-mode', apartmentMode);
       if (selected) renderDetail(selected, comparisonForApartment(selected));
       else if (apartmentMode) refreshApartmentMode();
-      else if (activeDistrict) renderDongMarkers(navigated, fitMap);
-      else if (activeProvince) renderDistrictMarkers(filtered, fitMap);
-      else renderProvinceMarkers(filtered, fitMap);
-      renderResults(apartmentMode ? apartmentsInCurrentView(selected || null) : navigated);
-      renderMobileSuggestions(navigated);
+      else {
+        try {
+          if (activeDistrict) renderDongMarkers(navigated, fitMap);
+          else if (activeProvince) renderDistrictMarkers(filtered, fitMap);
+          else renderProvinceMarkers(filtered, fitMap);
+        } catch {
+          mapCoordinateStatus = '지도 연결 지연';
+        }
+      }
+      if (!hasQuery && !apartmentMode && !activeDistrict && districtSummaries.length) renderAreaResults();
+      else renderResults(apartmentMode ? apartmentsInCurrentView(selected || null) : navigated);
+      renderMobileSuggestions(filtered);
       updateMapNavigation();
       renderCompareTray();
       renderReportDialog(selected || null);
-      if (count && !apartmentMode) count.textContent = `${formatNumber(navigated.length)}개 단지`;
+      const summaryCount = areaRows().reduce((sum, item) => sum + item.count, 0);
+      if (count && !apartmentMode) count.textContent = `${formatNumber(!hasQuery && !activeDistrict && districtSummaries.length ? summaryCount : navigated.length)}개 단지`;
       if (searchFeedback) {
         searchFeedback.hidden = !hasQuery;
         searchFeedback.textContent = hasQuery ? `${formatNumber(filtered.length)}개 찾음` : '';
       }
       if (metricLabelNode && !apartmentMode) metricLabelNode.textContent = `${metricLabel()} 기준${mapCoordinateStatus ? ` · ${mapCoordinateStatus}` : ''}`;
-      app?.classList.toggle('empty', navigated.length === 0);
+      app?.classList.toggle('empty', navigated.length === 0 && !(summaryCount && !hasQuery && !activeDistrict));
     };
 
-    search?.addEventListener('input', () => {
+    search?.addEventListener('input', async () => {
       window.clearTimeout(inputTimer);
       suggestionsDismissed = false;
-      if ((search.value || '').trim()) app?.classList.add('mobile-searching');
+      const query = (search.value || '').trim();
+      if (query) app?.classList.add('mobile-searching');
       else app?.classList.remove('mobile-searching');
       if (searchFeedback) {
-        searchFeedback.hidden = !(search.value || '').trim();
-        searchFeedback.textContent = (search.value || '').trim() ? '검색 중' : '';
+        searchFeedback.hidden = !query;
+        searchFeedback.textContent = query ? '검색 중' : '';
       }
-      inputTimer = window.setTimeout(() => {
-        selectedSlug = '';
-        activeDong = '';
-        apartmentMode = false;
-        render();
-      }, 120);
-    });
-    search?.addEventListener('focus', () => {
-      if ((search.value || '').trim()) {
-        suggestionsDismissed = false;
-        app?.classList.add('mobile-searching');
-        render();
+      selectedSlug = '';
+      activeDistrict = '';
+      activeDong = '';
+      apartmentMode = false;
+      if (query) {
+        window.danjipyoTrack?.('search_start', { query_length: query.length });
+        await ensureSearchLoaded().catch(() => []);
+        if ((search.value || '').trim() !== query) return;
       }
+      render();
     });
-    search?.addEventListener('keydown', (event) => {
+    search?.addEventListener('focus', async () => {
+      searchFocused = true;
+      suggestionsDismissed = false;
+      app?.classList.add('mobile-searching');
+      if (savedApartmentSlugs().length || recentApartmentSlugs().length) {
+        await ensureSearchLoaded().catch(() => []);
+      }
+      if (searchFocused) render();
+    });
+    search?.addEventListener('keydown', async (event) => {
       if (event.key !== 'Enter') return;
       event.preventDefault();
       window.clearTimeout(inputTimer);
       selectedSlug = '';
+      activeDistrict = '';
       activeDong = '';
       apartmentMode = false;
+      const query = (search.value || '').trim();
+      await ensureSearchLoaded().catch(() => []);
       render();
+      const first = filteredApartments().slice().sort((a, b) => {
+        const aName = String(a.n || '').toLowerCase();
+        const bName = String(b.n || '').toLowerCase();
+        const normalizedQuery = query.toLowerCase();
+        return Number(bName === normalizedQuery) - Number(aName === normalizedQuery)
+          || Number(bName.startsWith(normalizedQuery)) - Number(aName.startsWith(normalizedQuery))
+          || a.n.localeCompare(b.n, 'ko');
+      })[0];
+      window.danjipyoTrack?.('search_submit', { query_length: query.length, result_count: filteredApartments().length });
+      if (first) await selectApartment(first.s, { center: true });
+      else if (query) window.danjipyoTrack?.('search_no_result', { query_length: query.length });
+      searchFocused = false;
       search.blur();
       window.setTimeout(() => document.querySelector('.search-field')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
     });
@@ -1409,17 +1773,20 @@ const metrics = [
       activeProvince = region.value === 'all' ? '' : region.value;
       activeDistrict = '';
       activeDong = '';
+      window.danjipyoTrack?.('filter_change', { filter: 'region', value: region.value });
       render({ fitMap: true });
     });
     households?.addEventListener('change', () => {
       selectedSlug = '';
       activeDong = '';
       apartmentMode = false;
+      window.danjipyoTrack?.('filter_change', { filter: 'households', value: households.value });
       render();
     });
     metricButtons.forEach((button) => button.addEventListener('click', () => {
       activeMetric = button.dataset.metric || 'tf';
       metricButtons.forEach((item) => item.classList.toggle('active', item === button));
+      window.danjipyoTrack?.('filter_change', { filter: 'metric', value: activeMetric });
       render();
     }));
     reset?.addEventListener('click', () => {
@@ -1443,6 +1810,15 @@ const metrics = [
       history.replaceState({}, '', window.location.pathname);
       map.setView([36.35, 127.85], window.matchMedia('(max-width: 720px)').matches ? 6 : 7, { animate: true });
       render();
+    });
+
+    document.addEventListener('pointerdown', (event) => {
+      if (!searchFocused || event.target.closest('.search-field, [data-mobile-suggestions]')) return;
+      searchFocused = false;
+      if (!(search?.value || '').trim()) {
+        suggestionsDismissed = true;
+        renderMobileSuggestions([]);
+      }
     });
 
     mapBack?.addEventListener('click', () => {
@@ -1491,7 +1867,7 @@ const metrics = [
       if (event.origin !== window.location.origin || event.source !== reportFrame?.contentWindow) return;
       if (event.data?.type === 'danjipyo:open-guide') {
         reportContentMode = 'guide';
-        const apartment = apartments.find((item) => item.s === selectedSlug);
+        const apartment = findApartment(selectedSlug);
         renderReportDialog(apartment || null);
         return;
       }
@@ -1513,7 +1889,7 @@ const metrics = [
       }
       if (event.data?.type !== 'danjipyo:report-loaded') return;
       reportContentMode = 'report';
-      const apartment = apartments.find((item) => item.s === event.data.slug);
+      const apartment = findApartment(event.data.slug);
       if (!apartment) return;
       selectedSlug = apartment.s;
       apartmentMode = true;
@@ -1540,7 +1916,7 @@ const metrics = [
       }
     });
     reportShare?.addEventListener('click', () => {
-      const apartment = apartments.find((item) => item.s === selectedSlug);
+      const apartment = findApartment(selectedSlug);
       if (!apartment) return;
       shareLink({
         title: `${apartment.n} 월별 관리비`,
@@ -1555,7 +1931,7 @@ const metrics = [
       else if (compareDialogOpen) closeComparison();
     });
 
-    map.on('zoomend', () => {
+    map.on('zoomend', async () => {
       const zoom = map.getZoom();
       updateComplexLabels();
       if (apartmentMode) return;
@@ -1583,7 +1959,9 @@ const metrics = [
       }
       if (!activeProvince && zoom >= 9) {
         const center = map.getCenter();
-        const available = [...new Set(filteredApartments().map((item) => item.sd))].filter((name) => provinceCenters[name]);
+        const available = districtSummaries.length
+          ? [...new Set(districtSummaries.filter((item) => districtSummaryCount(item) > 0).map((item) => item.province || item.sd))].filter((name) => provinceCenters[name])
+          : [...new Set(filteredApartments().map((item) => item.sd))].filter((name) => provinceCenters[name]);
         const nearest = available.sort((a, b) => distanceBetween(center, provinceCenters[a]) - distanceBetween(center, provinceCenters[b]))[0];
         if (nearest) {
           activeProvince = nearest;
@@ -1593,55 +1971,72 @@ const metrics = [
       }
       if (activeProvince && !activeDistrict && zoom >= 12) {
         const center = map.getCenter();
-        const available = [...new Set(filteredApartments().map((item) => districtKey(item.sd, item.sg)))]
+        const availableKeys = districtSummaries.length
+          ? districtSummaries
+            .filter((item) => (item.province || item.sd) === activeProvince && districtSummaryCount(item) > 0)
+            .map((item) => districtSummaryKey(item))
+          : filteredApartments().map((item) => districtKey(item.sd, item.sg));
+        const available = [...new Set(availableKeys)]
           .map((key) => [key, districtCenters.get(key)])
           .filter((entry) => entry[1]);
         const nearest = available.sort((a, b) => distanceBetween(center, [a[1].latitude, a[1].longitude]) - distanceBetween(center, [b[1].latitude, b[1].longitude]))[0];
-        if (nearest) {
-          activeDistrict = nearest[0];
-          changed = true;
-        }
+          if (nearest) {
+            activeDistrict = nearest[0];
+            const summary = districtSummaryByKey.get(activeDistrict);
+            await ensureDistrictLoaded(
+              summary?.province || summary?.sd || nearest[1].province,
+              summary?.district || summary?.sg || nearest[1].district
+            ).catch(() => null);
+            changed = true;
+          }
       }
       if (changed) render();
     });
     map.on('moveend', () => {
       updateComplexLabels();
       if (!apartmentMode || locatingSelection) return;
-      const selected = apartments.find((item) => item.s === selectedSlug) || null;
-      refreshApartmentMode(selected);
+      const selected = findApartment(selectedSlug) || null;
+      refreshApartmentViewport(selected);
     });
 
-    fetch(payload.indexUrl)
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json();
-      })
-      .then((data) => {
-        apartments = Array.isArray(data) ? data : [];
-        if (!selectedSlug && initialProvince && apartments.some((item) => item.sd === initialProvince)) {
+    const bootstrapMap = async () => {
+      try {
+        if (!districtSummaries.length) await ensureLegacyData();
+        if (!selectedSlug && initialProvince && (payload.regions || []).some((item) => item.name === initialProvince)) {
           activeProvince = initialProvince;
           region.value = initialProvince;
-          if (initialDistrict && apartments.some((item) => item.sd === initialProvince && item.sg === initialDistrict)) {
+          if (initialDistrict) {
             activeDistrict = districtKey(initialProvince, initialDistrict);
             const center = districtCenters.get(activeDistrict);
+            await ensureDistrictLoaded(initialProvince, initialDistrict);
             if (center) map.setView([center.latitude, center.longitude], 13);
           } else if (provinceCenters[initialProvince]) {
             map.setView(provinceCenters[initialProvince], 11);
           }
         }
-        compareSlugs = compareSlugs.filter((slug) => apartments.some((item) => item.s === slug)).slice(0, 4);
+        const requestedSlugs = [...new Set([selectedSlug, ...compareSlugs].filter(Boolean))];
+        if (requestedSlugs.length) await Promise.all(requestedSlugs.map((slug) => ensureApartmentLoaded(slug)));
+        compareSlugs = compareSlugs.filter((slug) => Boolean(findApartment(slug))).slice(0, 4);
         if (compareSlugs.length < 2) compareDialogOpen = false;
-        if (selectedSlug && !apartments.some((item) => item.s === selectedSlug)) {
+        const selected = selectedSlug ? findApartment(selectedSlug) : null;
+        if (selected) {
+          activeProvince = selected.sd;
+          activeDistrict = districtKey(selected.sd, selected.sg);
+          activeDong = selected.d;
+          region.value = selected.sd;
+          rememberApartment(selected.s);
+        } else if (selectedSlug) {
           selectedSlug = '';
           apartmentMode = false;
           selectionNeedsCenter = false;
         }
-        render({ fitMap: true });
-      })
-      .catch(() => {
+        render({ fitMap: !selected });
+      } catch {
         if (count) count.textContent = '전국 데이터를 불러오지 못했습니다';
         if (results) results.innerHTML = '<p class="empty-result">잠시 후 다시 시도해 주세요.</p>';
-      });
+      }
+    };
+    bootstrapMap();
   </script>
 </BaseLayout>
 
@@ -1739,6 +2134,12 @@ const metrics = [
   .result-heading { min-height: 38px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; }
   .result-heading strong { font-size: .82rem; }
   .result-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 14px 14px; }
+  .area-result-card { min-width: 0; min-height: 75px; overflow: hidden; border: 1px solid #dce4df; border-radius: 7px; background: #fff; }
+  .area-result-card button { width: 100%; min-height: 75px; display: grid; align-content: center; gap: 3px; border: 0; background: transparent; padding: 10px 12px; text-align: left; cursor: pointer; }
+  .area-result-card:hover { border-color: #65b49e; box-shadow: 0 0 0 3px rgba(8, 118, 92, .1); }
+  .area-result-card span { color: #76817b; font-size: .64rem; font-weight: 760; }
+  .area-result-card strong { overflow: hidden; color: var(--ink); font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
+  .area-result-card em { color: #08765c; font-size: .69rem; font-style: normal; font-weight: 850; }
   .result-card { position: relative; min-width: 0; min-height: 75px; overflow: hidden; border: 1px solid #dce4df; border-radius: 7px; background: #fff; text-align: left; }
   .result-card-main { width: 100%; min-height: 75px; display: grid; grid-template-columns: 9px minmax(0, 1fr) auto; grid-template-areas: 'dot region score' 'dot name fee' 'dot meta fee'; gap: 3px 8px; border: 0; background: transparent; padding: 10px 62px 10px 10px; text-align: left; cursor: pointer; }
   .result-card:hover, .result-card.selected { border-color: #65b49e; box-shadow: 0 0 0 3px rgba(8, 118, 92, .1); }
@@ -1764,11 +2165,12 @@ const metrics = [
   .detail-head h2 { margin: 6px 0; color: var(--ink); font-size: 1.42rem; line-height: 1.28; letter-spacing: 0; }
   .detail-head p { margin: 0; color: #65706a; font-size: .82rem; line-height: 1.55; }
   .detail-head small { display: block; margin-top: 7px; color: #89918d; font-size: .66rem; font-weight: 730; }
-  .detail-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .detail-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
   .detail-actions button { min-height: 40px; border: 1px solid #cad8d1; border-radius: 7px; background: #fff; color: #33413a; font-size: .76rem; font-weight: 850; cursor: pointer; }
   .detail-actions button:hover { border-color: #71ad9c; background: #f2f8f5; }
   .detail-actions .detail-compare { border-color: #08765c; background: #08765c; color: #fff; }
   .detail-actions .detail-compare.active { border-color: #b9cec5; background: #edf5f1; color: #076e57; }
+  .detail-actions .detail-save.active { border-color: #87b8a8; background: #edf7f3; color: #076e57; }
   .score-box { min-height: 126px; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; border: 1px solid #dce4df; border-radius: 7px; }
   .score-box section { min-height: 124px; display: grid; align-content: center; gap: 6px; padding: 16px; }
   .score-box section + section { border-left: 1px solid #e2e8e4; }

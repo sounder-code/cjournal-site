@@ -6,7 +6,7 @@ import {
   type ApartmentPageData,
   type FeeTuple
 } from '@/lib/apartmentBulk';
-import { districtHubPath, regionHubPath } from '@/lib/apartmentSeo';
+import { displayDistrictName, districtHubPath, regionHubPath } from '@/lib/apartmentSeo';
 import { siteUrl } from '@/lib/site';
 
 export const getStaticPaths = async () =>
@@ -15,6 +15,9 @@ export const getStaticPaths = async () =>
 const { data } = Astro.props as { data: ApartmentPageData };
 const manifest = await loadApartmentManifest();
 const { apartment, percentiles, nearby, peerLabel, peerCount, titleSuffix } = data;
+const districtName = displayDistrictName(apartment.sd, apartment.sg);
+const displayTitleSuffix = apartment.sg ? titleSuffix.replace(apartment.sg, districtName) : titleSuffix;
+const displayPeerLabel = apartment.sg ? peerLabel.replace(apartment.sg, districtName) : peerLabel;
 const latest = apartment.f.at(-1)!;
 const previous = apartment.f.at(-2) ?? latest;
 const averageTotal = Math.round(apartment.f.reduce((sum, fee) => sum + fee[1], 0) / apartment.f.length);
@@ -48,7 +51,7 @@ const driverCopy = secondDriver
   ? `세부 항목 중 ${topDriver.name} ${won(topDriver.value)}/㎡와 ${secondDriver.name} ${won(secondDriver.value)}/㎡의 비중이 큽니다.`
   : `현재 공개된 세부 항목에서는 ${topDriver.name}이 ㎡당 ${won(topDriver.value)}으로 가장 큽니다.`;
 const trendCopy = `공개 기간 중 가장 높았던 달은 ${monthLabel(peak[0])} ${won(peak[1])}/㎡, 가장 낮았던 달은 ${monthLabel(low[0])} ${won(low[1])}/㎡입니다.`;
-const description = `${apartment.n} ${latest[0]} 관리비는 ㎡당 ${won(latest[1])}입니다. 최근 ${apartment.f.length}개월 추이와 ${peerLabel} 비교, 공용관리비·장기수선충당금을 확인하세요.`;
+const description = `${apartment.n} ${latest[0]} 관리비는 ㎡당 ${won(latest[1])}입니다. 최근 ${apartment.f.length}개월 추이와 ${displayPeerLabel} 비교, 공용관리비·장기수선충당금을 확인하세요.`;
 const trendValues = apartment.f.map((fee) => fee[1]);
 const minTrend = Math.min(...trendValues);
 const maxTrend = Math.max(...trendValues);
@@ -79,7 +82,7 @@ const structuredData = [
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: '단지 찾기', item: siteUrl('/apartments/') },
       { '@type': 'ListItem', position: 2, name: apartment.sd, item: siteUrl(regionHubPath(apartment.sd)) },
-      { '@type': 'ListItem', position: 3, name: apartment.sg || '세종시 전체', item: siteUrl(districtHubPath(apartment.sd, apartment.sg)) },
+      { '@type': 'ListItem', position: 3, name: districtName, item: siteUrl(districtHubPath(apartment.sd, apartment.sg)) },
       { '@type': 'ListItem', position: 4, name: apartment.n }
     ]
   },
@@ -101,7 +104,7 @@ const structuredData = [
 ];
 ---
 <BaseLayout
-  title={`${apartment.n} 관리비 ${latest[0]} · ${titleSuffix} | 단지표`}
+  title={`${apartment.n} 관리비 ${latest[0]} · ${displayTitleSuffix} | 단지표`}
   description={description}
   canonical={`/apartments/${apartment.s}/`}
   robots="index, follow"
@@ -138,7 +141,7 @@ const structuredData = [
   <article class="report">
     <header class="report-head">
       <div>
-        <nav aria-label="경로"><a href="/apartments/">단지 찾기</a><span>/</span><a href={regionHubPath(apartment.sd)}>{apartment.sd}</a><span>/</span><a href={districtHubPath(apartment.sd, apartment.sg)}>{apartment.sg || '세종시 전체'}</a></nav>
+        <nav aria-label="경로"><a href="/apartments/">단지 찾기</a><span>/</span><a href={regionHubPath(apartment.sd)}>{apartment.sd}</a><span>/</span><a href={districtHubPath(apartment.sd, apartment.sg)}>{districtName}</a></nav>
         <h1>{apartment.n} 관리비</h1>
         <p>{apartment.a}</p>
       </div>
@@ -218,7 +221,7 @@ const structuredData = [
       <h2>확인할 점</h2>
       <details open><summary>세대별 고지서 금액과 왜 다른가요?</summary><p>이 페이지는 단지 전체 관리비를 관리비부과면적으로 나눈 비교 단가입니다. 세대별 고지서는 전용면적, 난방·전기·수도 사용량, 할인과 정산에 따라 달라집니다.</p></details>
       <details><summary>음수 금액이 표시될 수 있나요?</summary><p>관리주체의 환급이나 이전 달 정산이 반영되면 일부 사용료 항목이 음수로 공개될 수 있습니다. 원본 값을 임의로 0원 처리하지 않습니다.</p></details>
-      <details><summary>비교 순위는 어떻게 계산하나요?</summary><p>{apartment.sg}에서 세대수 구간이 같은 단지를 우선 비교합니다. 표본이 10개 미만이면 {apartment.sg} 전체 단지로 범위를 넓힙니다.</p></details>
+      <details><summary>비교 순위는 어떻게 계산하나요?</summary><p>{districtName}에서 세대수 구간이 같은 단지를 우선 비교합니다. 표본이 10개 미만이면 {districtName} 전체 단지로 범위를 넓힙니다.</p></details>
     </section>
   </article>
 </BaseLayout>
