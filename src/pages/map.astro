@@ -36,9 +36,14 @@ const metrics = [
 
       <div class="mobile-suggestions" data-mobile-suggestions hidden></div>
 
-      <div class="metric-control" role="list" aria-label="비교 항목">
+      <div class="metric-control" role="group" aria-label="비교 항목">
         {metrics.map((metric) => (
-          <button type="button" data-metric={metric.key} class={metric.key === 'tf' ? 'active' : ''}>{metric.shortLabel}</button>
+          <button
+            type="button"
+            data-metric={metric.key}
+            class={metric.key === 'tf' ? 'active' : ''}
+            aria-pressed={metric.key === 'tf' ? 'true' : 'false'}
+          >{metric.shortLabel}</button>
         ))}
       </div>
 
@@ -79,7 +84,7 @@ const metrics = [
             <span><i class="very-high"></i>매우 높음</span>
           </div>
         </div>
-        <div id="apartment-map" class="map-canvas" aria-label="전국 아파트 관리비 지도"></div>
+        <div id="apartment-map" class="map-canvas" role="region" aria-label="전국 아파트 관리비 지도"></div>
         <div class="result-area">
           <div class="result-heading"><strong>단지 목록</strong><a href="/apartments/">전국 목록</a></div>
           <div class="result-list" data-results aria-live="polite"></div>
@@ -1785,7 +1790,11 @@ const metrics = [
     });
     metricButtons.forEach((button) => button.addEventListener('click', () => {
       activeMetric = button.dataset.metric || 'tf';
-      metricButtons.forEach((item) => item.classList.toggle('active', item === button));
+      metricButtons.forEach((item) => {
+        const isActive = item === button;
+        item.classList.toggle('active', isActive);
+        item.setAttribute('aria-pressed', String(isActive));
+      });
       window.danjipyoTrack?.('filter_change', { filter: 'metric', value: activeMetric });
       render();
     }));
@@ -1806,7 +1815,11 @@ const metrics = [
       document.body.classList.remove('report-dialog-open');
       app?.classList.remove('mobile-searching');
       activeMetric = 'tf';
-      metricButtons.forEach((item) => item.classList.toggle('active', item.dataset.metric === 'tf'));
+      metricButtons.forEach((item) => {
+        const isActive = item.dataset.metric === 'tf';
+        item.classList.toggle('active', isActive);
+        item.setAttribute('aria-pressed', String(isActive));
+      });
       history.replaceState({}, '', window.location.pathname);
       map.setView([36.35, 127.85], window.matchMedia('(max-width: 720px)').matches ? 6 : 7, { animate: true });
       render();
