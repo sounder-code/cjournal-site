@@ -57,7 +57,7 @@ jobs:
         id: search-documents
         shell: bash
         run: |
-          if git diff-tree --no-commit-id --name-only -r HEAD | grep -Eq '^(public/dd31d55254614118988122a86e38eb19\.txt|public/data/apartments/|src/pages/apartments/|src/pages/sitemap\.xml\.ts|src/lib/apartment|src/layouts/BaseLayout\.astro)'; then
+          if git diff-tree --no-commit-id --name-only -r HEAD | grep -Eq '^(public/dd31d55254614118988122a86e38eb19\.txt|public/data/apartments/|public/robots\.txt|src/pages/apartments/|src/pages/sitemaps/|src/pages/sitemap\.xml\.ts|src/pages/robots\.txt\.ts|src/lib/apartment|src/layouts/BaseLayout\.astro)'; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
