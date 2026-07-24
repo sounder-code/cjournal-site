@@ -44,7 +44,10 @@ const sitemapLastmod = (sourceDate?: string, generatedAt?: string) => {
   const fromSource = compact
     ? validIsoDate(`${compact[1]}-${compact[2]}-${compact[3]}`)
     : undefined;
-  return fromSource ?? validIsoDate(generatedAt?.slice(0, 10) ?? '');
+  const fromGeneration = validIsoDate(generatedAt?.slice(0, 10) ?? '');
+  if (!fromSource) return fromGeneration;
+  if (!fromGeneration) return fromSource;
+  return fromSource >= fromGeneration ? fromSource : fromGeneration;
 };
 
 const comparePaths = (left: string, right: string) => left.localeCompare(right, 'ko');
