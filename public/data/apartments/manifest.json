@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "generatedAt": "2026-07-22T01:27:59.052Z",
-  "sourceDate": "20260710",
+  "generatedAt": "2026-07-29T05:45:05.548Z",
+  "sourceDate": "20260724",
   "source": "K-apt 주간 일괄 공개자료",
   "units": {
     "fee": "원/m2",
@@ -33,31 +33,33 @@
   ],
   "latestMonth": "2026-06",
   "stats": {
-    "basicRows": 21651,
-    "areaRows": 92377,
-    "feeRows": 104209,
-    "complexes": 21651,
-    "complexesWithArea": 21337,
-    "complexesWithFees": 21279,
+    "basicRows": 21662,
+    "areaRows": 92545,
+    "feeRows": 219468,
+    "complexes": 21661,
+    "sourceComplexes": 21662,
+    "excludedInvalidRegionComplexes": 1,
+    "complexesWithArea": 21367,
+    "complexesWithFees": 21316,
     "duplicateComplexes": 0,
     "duplicateFeeRows": 0,
-    "supersededFeeRows": 0,
-    "feeSourceFiles": 1,
+    "supersededFeeRows": 103224,
+    "feeSourceFiles": 2,
     "areaConflicts": 0,
-    "feeRowsWithoutArea": 1118,
-    "feeRowsWithoutComplex": 2,
+    "feeRowsWithoutArea": 2078,
+    "feeRowsWithoutComplex": 4,
     "invalidFeeMonths": 0,
-    "publishedFeeRows": 103089,
-    "publishableComplexes": 18021,
-    "negativeAdjustmentValues": 1005,
+    "publishedFeeRows": 114164,
+    "publishableComplexes": 19633,
+    "negativeAdjustmentValues": 1116,
     "districtFiles": 253
   },
   "index": "/data/apartments/index.json",
   "search": "/data/apartments/search.json",
   "searchMeta": {
     "file": "/data/apartments/search.json",
-    "count": 21651,
-    "withCoordinates": 21617,
+    "count": 21661,
+    "withCoordinates": 21627,
     "fields": [
       "c",
       "s",
@@ -80,28 +82,28 @@
       "key": "강원",
       "name": "강원특별자치도",
       "count": 830,
-      "withFees": 819,
+      "withFees": 821,
       "file": "/data/apartments/regions/강원.json"
     },
     {
       "key": "경기",
       "name": "경기도",
       "count": 5553,
-      "withFees": 5465,
+      "withFees": 5475,
       "file": "/data/apartments/regions/경기.json"
     },
     {
       "key": "경상남",
       "name": "경상남도",
       "count": 1440,
-      "withFees": 1429,
+      "withFees": 1432,
       "file": "/data/apartments/regions/경상남.json"
     },
     {
       "key": "경상북",
       "name": "경상북도",
-      "count": 1045,
-      "withFees": 1036,
+      "count": 1046,
+      "withFees": 1037,
       "file": "/data/apartments/regions/경상북.json"
     },
     {
@@ -114,50 +116,50 @@
     {
       "key": "대구",
       "name": "대구광역시",
-      "count": 1175,
-      "withFees": 1146,
+      "count": 1176,
+      "withFees": 1149,
       "file": "/data/apartments/regions/대구.json"
     },
     {
       "key": "대전",
       "name": "대전광역시",
       "count": 588,
-      "withFees": 574,
+      "withFees": 575,
       "file": "/data/apartments/regions/대전.json"
     },
     {
       "key": "부산",
       "name": "부산광역시",
-      "count": 1440,
+      "count": 1443,
       "withFees": 1410,
       "file": "/data/apartments/regions/부산.json"
     },
     {
       "key": "서울",
       "name": "서울특별시",
-      "count": 3174,
-      "withFees": 3097,
+      "count": 3176,
+      "withFees": 3099,
       "file": "/data/apartments/regions/서울.json"
     },
     {
       "key": "세종",
       "name": "세종특별자치시",
       "count": 216,
-      "withFees": 213,
+      "withFees": 214,
       "file": "/data/apartments/regions/세종.json"
     },
     {
       "key": "울산",
       "name": "울산광역시",
-      "count": 542,
-      "withFees": 535,
+      "count": 544,
+      "withFees": 536,
       "file": "/data/apartments/regions/울산.json"
     },
     {
       "key": "인천",
       "name": "인천광역시",
       "count": 1115,
-      "withFees": 1089,
+      "withFees": 1093,
       "file": "/data/apartments/regions/인천.json"
     },
     {
@@ -171,28 +173,28 @@
       "key": "전북",
       "name": "전북특별자치도",
       "count": 870,
-      "withFees": 863,
+      "withFees": 864,
       "file": "/data/apartments/regions/전북.json"
     },
     {
       "key": "제주",
       "name": "제주특별자치도",
       "count": 177,
-      "withFees": 172,
+      "withFees": 175,
       "file": "/data/apartments/regions/제주.json"
     },
     {
       "key": "충청남",
       "name": "충청남도",
-      "count": 991,
-      "withFees": 978,
+      "count": 992,
+      "withFees": 980,
       "file": "/data/apartments/regions/충청남.json"
     },
     {
       "key": "충청북",
       "name": "충청북도",
       "count": 788,
-      "withFees": 769,
+      "withFees": 772,
       "file": "/data/apartments/regions/충청북.json"
     }
   ],
@@ -271,7 +273,7 @@
       "district": "속초시",
       "label": "속초시",
       "count": 71,
-      "withFees": 70,
+      "withFees": 71,
       "withCoordinates": 71,
       "householdBands": {
         "under-300": 36,
@@ -339,7 +341,7 @@
       "district": "원주시",
       "label": "원주시",
       "count": 229,
-      "withFees": 225,
+      "withFees": 226,
       "withCoordinates": 229,
       "householdBands": {
         "under-300": 57,
@@ -565,9 +567,9 @@
       "householdBands": {
         "under-300": 34,
         "300-499": 39,
-        "500-999": 66,
+        "500-999": 65,
         "1000-1499": 4,
-        "over-1500": 5
+        "over-1500": 6
       },
       "file": "/data/apartments/maps/경기/고양일산서구.json"
     },
@@ -576,13 +578,13 @@
       "province": "경기도",
       "district": "과천시",
       "label": "과천시",
-      "count": 21,
+      "count": 20,
       "withFees": 19,
-      "withCoordinates": 21,
+      "withCoordinates": 20,
       "householdBands": {
         "under-300": 2,
         "300-499": 2,
-        "500-999": 12,
+        "500-999": 11,
         "1000-1499": 1,
         "over-1500": 4
       },
@@ -678,13 +680,13 @@
       "province": "경기도",
       "district": "남양주시",
       "label": "남양주시",
-      "count": 325,
+      "count": 326,
       "withFees": 324,
-      "withCoordinates": 325,
+      "withCoordinates": 326,
       "householdBands": {
         "under-300": 57,
         "300-499": 111,
-        "500-999": 105,
+        "500-999": 106,
         "1000-1499": 42,
         "over-1500": 10
       },
@@ -730,7 +732,7 @@
       "district": "부천오정구",
       "label": "부천오정구",
       "count": 44,
-      "withFees": 38,
+      "withFees": 40,
       "withCoordinates": 44,
       "householdBands": {
         "under-300": 28,
@@ -781,7 +783,7 @@
       "district": "성남수정구",
       "label": "성남수정구",
       "count": 57,
-      "withFees": 53,
+      "withFees": 55,
       "withCoordinates": 57,
       "householdBands": {
         "under-300": 20,
@@ -883,7 +885,7 @@
       "district": "시흥시",
       "label": "시흥시",
       "count": 253,
-      "withFees": 251,
+      "withFees": 252,
       "withCoordinates": 253,
       "householdBands": {
         "under-300": 60,
@@ -1121,7 +1123,7 @@
       "district": "의왕시",
       "label": "의왕시",
       "count": 87,
-      "withFees": 84,
+      "withFees": 85,
       "withCoordinates": 87,
       "householdBands": {
         "under-300": 22,
@@ -1155,7 +1157,7 @@
       "district": "이천시",
       "label": "이천시",
       "count": 108,
-      "withFees": 103,
+      "withFees": 104,
       "withCoordinates": 108,
       "householdBands": {
         "under-300": 46,
@@ -1189,7 +1191,7 @@
       "district": "평택시",
       "label": "평택시",
       "count": 305,
-      "withFees": 303,
+      "withFees": 304,
       "withCoordinates": 305,
       "householdBands": {
         "under-300": 84,
@@ -1240,7 +1242,7 @@
       "district": "화성동탄구",
       "label": "화성동탄구",
       "count": 185,
-      "withFees": 182,
+      "withFees": 183,
       "withCoordinates": 185,
       "householdBands": {
         "under-300": 17,
@@ -1274,7 +1276,7 @@
       "district": "화성병점구",
       "label": "화성병점구",
       "count": 75,
-      "withFees": 74,
+      "withFees": 75,
       "withCoordinates": 75,
       "householdBands": {
         "under-300": 10,
@@ -1359,7 +1361,7 @@
       "district": "김해시",
       "label": "김해시",
       "count": 243,
-      "withFees": 239,
+      "withFees": 240,
       "withCoordinates": 241,
       "householdBands": {
         "under-300": 49,
@@ -1410,7 +1412,7 @@
       "district": "사천시",
       "label": "사천시",
       "count": 54,
-      "withFees": 53,
+      "withFees": 54,
       "withCoordinates": 54,
       "householdBands": {
         "under-300": 24,
@@ -1563,7 +1565,7 @@
       "district": "창원의창구",
       "label": "창원의창구",
       "count": 72,
-      "withFees": 70,
+      "withFees": 71,
       "withCoordinates": 72,
       "householdBands": {
         "under-300": 29,
@@ -1890,10 +1892,10 @@
       "withCoordinates": 40,
       "householdBands": {
         "under-300": 13,
-        "300-499": 14,
+        "300-499": 13,
         "500-999": 10,
         "1000-1499": 2,
-        "over-1500": 1
+        "over-1500": 2
       },
       "file": "/data/apartments/maps/경상북/영천시.json"
     },
@@ -2004,11 +2006,11 @@
       "province": "경상북도",
       "district": "포항남구",
       "label": "포항남구",
-      "count": 84,
+      "count": 85,
       "withFees": 84,
-      "withCoordinates": 84,
+      "withCoordinates": 85,
       "householdBands": {
-        "under-300": 35,
+        "under-300": 36,
         "300-499": 22,
         "500-999": 18,
         "1000-1499": 5,
@@ -2022,7 +2024,7 @@
       "district": "포항북구",
       "label": "포항북구",
       "count": 145,
-      "withFees": 142,
+      "withFees": 143,
       "withCoordinates": 143,
       "householdBands": {
         "under-300": 54,
@@ -2141,7 +2143,7 @@
       "district": "남구",
       "label": "남구",
       "count": 50,
-      "withFees": 46,
+      "withFees": 47,
       "withCoordinates": 50,
       "householdBands": {
         "under-300": 14,
@@ -2192,7 +2194,7 @@
       "district": "동구",
       "label": "동구",
       "count": 167,
-      "withFees": 160,
+      "withFees": 161,
       "withCoordinates": 167,
       "householdBands": {
         "under-300": 41,
@@ -2208,13 +2210,13 @@
       "province": "대구광역시",
       "district": "북구",
       "label": "북구",
-      "count": 212,
+      "count": 213,
       "withFees": 207,
-      "withCoordinates": 212,
+      "withCoordinates": 213,
       "householdBands": {
         "under-300": 40,
         "300-499": 66,
-        "500-999": 81,
+        "500-999": 82,
         "1000-1499": 21,
         "over-1500": 4
       },
@@ -2260,7 +2262,7 @@
       "district": "중구",
       "label": "중구",
       "count": 61,
-      "withFees": 58,
+      "withFees": 59,
       "withCoordinates": 61,
       "householdBands": {
         "under-300": 20,
@@ -2328,7 +2330,7 @@
       "district": "유성구",
       "label": "유성구",
       "count": 171,
-      "withFees": 169,
+      "withFees": 170,
       "withCoordinates": 171,
       "householdBands": {
         "under-300": 45,
@@ -2412,13 +2414,13 @@
       "province": "부산광역시",
       "district": "남구",
       "label": "남구",
-      "count": 98,
+      "count": 99,
       "withFees": 95,
-      "withCoordinates": 98,
+      "withCoordinates": 99,
       "householdBands": {
         "under-300": 33,
         "300-499": 31,
-        "500-999": 23,
+        "500-999": 24,
         "1000-1499": 5,
         "over-1500": 6
       },
@@ -2470,8 +2472,8 @@
         "under-300": 74,
         "300-499": 29,
         "500-999": 41,
-        "1000-1499": 13,
-        "over-1500": 12
+        "1000-1499": 14,
+        "over-1500": 11
       },
       "file": "/data/apartments/maps/부산/부산진구.json"
     },
@@ -2548,14 +2550,14 @@
       "province": "부산광역시",
       "district": "수영구",
       "label": "수영구",
-      "count": 60,
+      "count": 61,
       "withFees": 58,
-      "withCoordinates": 60,
+      "withCoordinates": 61,
       "householdBands": {
         "under-300": 26,
         "300-499": 14,
         "500-999": 13,
-        "1000-1499": 6,
+        "1000-1499": 7,
         "over-1500": 1
       },
       "file": "/data/apartments/maps/부산/수영구.json"
@@ -2565,12 +2567,12 @@
       "province": "부산광역시",
       "district": "연제구",
       "label": "연제구",
-      "count": 104,
+      "count": 105,
       "withFees": 103,
-      "withCoordinates": 104,
+      "withCoordinates": 105,
       "householdBands": {
         "under-300": 45,
-        "300-499": 30,
+        "300-499": 31,
         "500-999": 15,
         "1000-1499": 8,
         "over-1500": 6
@@ -2803,11 +2805,11 @@
       "province": "서울특별시",
       "district": "동대문구",
       "label": "동대문구",
-      "count": 126,
+      "count": 127,
       "withFees": 120,
-      "withCoordinates": 126,
+      "withCoordinates": 127,
       "householdBands": {
-        "under-300": 55,
+        "under-300": 56,
         "300-499": 28,
         "500-999": 24,
         "1000-1499": 10,
@@ -2837,11 +2839,11 @@
       "province": "서울특별시",
       "district": "마포구",
       "label": "마포구",
-      "count": 137,
-      "withFees": 134,
-      "withCoordinates": 137,
+      "count": 138,
+      "withFees": 135,
+      "withCoordinates": 138,
       "householdBands": {
-        "under-300": 60,
+        "under-300": 61,
         "300-499": 29,
         "500-999": 36,
         "1000-1499": 8,
@@ -2875,11 +2877,11 @@
       "withFees": 166,
       "withCoordinates": 170,
       "householdBands": {
-        "under-300": 76,
+        "under-300": 75,
         "300-499": 47,
         "500-999": 30,
         "1000-1499": 11,
-        "over-1500": 7
+        "over-1500": 8
       },
       "file": "/data/apartments/maps/서울/서초구.json"
     },
@@ -2909,10 +2911,10 @@
       "withFees": 135,
       "withCoordinates": 138,
       "householdBands": {
-        "under-300": 53,
+        "under-300": 52,
         "300-499": 32,
         "500-999": 31,
-        "1000-1499": 11,
+        "1000-1499": 12,
         "over-1500": 11
       },
       "file": "/data/apartments/maps/서울/성북구.json"
@@ -2974,7 +2976,7 @@
       "district": "용산구",
       "label": "용산구",
       "count": 81,
-      "withFees": 80,
+      "withFees": 81,
       "withCoordinates": 81,
       "householdBands": {
         "under-300": 46,
@@ -3048,8 +3050,8 @@
         "under-300": 70,
         "300-499": 18,
         "500-999": 20,
-        "1000-1499": 11,
-        "over-1500": 5
+        "1000-1499": 12,
+        "over-1500": 4
       },
       "file": "/data/apartments/maps/서울/중랑구.json"
     },
@@ -3059,7 +3061,7 @@
       "district": "",
       "label": "세종시",
       "count": 216,
-      "withFees": 213,
+      "withFees": 214,
       "withCoordinates": 216,
       "householdBands": {
         "under-300": 52,
@@ -3075,12 +3077,12 @@
       "province": "울산광역시",
       "district": "남구",
       "label": "남구",
-      "count": 169,
+      "count": 170,
       "withFees": 167,
-      "withCoordinates": 168,
+      "withCoordinates": 169,
       "householdBands": {
         "under-300": 89,
-        "300-499": 32,
+        "300-499": 33,
         "500-999": 37,
         "1000-1499": 9,
         "over-1500": 2
@@ -3126,13 +3128,13 @@
       "province": "울산광역시",
       "district": "울주군",
       "label": "울주군",
-      "count": 103,
+      "count": 104,
       "withFees": 102,
-      "withCoordinates": 103,
+      "withCoordinates": 104,
       "householdBands": {
         "under-300": 31,
         "300-499": 30,
-        "500-999": 36,
+        "500-999": 37,
         "1000-1499": 3,
         "over-1500": 3
       },
@@ -3144,7 +3146,7 @@
       "district": "중구",
       "label": "중구",
       "count": 94,
-      "withFees": 93,
+      "withFees": 94,
       "withCoordinates": 94,
       "householdBands": {
         "under-300": 43,
@@ -3178,7 +3180,7 @@
       "district": "검단구",
       "label": "검단구",
       "count": 125,
-      "withFees": 121,
+      "withFees": 122,
       "withCoordinates": 125,
       "householdBands": {
         "under-300": 20,
@@ -3229,7 +3231,7 @@
       "district": "미추홀구",
       "label": "미추홀구",
       "count": 111,
-      "withFees": 106,
+      "withFees": 107,
       "withCoordinates": 110,
       "householdBands": {
         "under-300": 31,
@@ -3280,7 +3282,7 @@
       "district": "연수구",
       "label": "연수구",
       "count": 177,
-      "withFees": 173,
+      "withFees": 175,
       "withCoordinates": 177,
       "householdBands": {
         "under-300": 26,
@@ -3841,7 +3843,7 @@
       "district": "익산시",
       "label": "익산시",
       "count": 166,
-      "withFees": 164,
+      "withFees": 165,
       "withCoordinates": 166,
       "householdBands": {
         "under-300": 61,
@@ -3960,7 +3962,7 @@
       "district": "서귀포시",
       "label": "서귀포시",
       "count": 55,
-      "withFees": 53,
+      "withFees": 54,
       "withCoordinates": 55,
       "householdBands": {
         "under-300": 34,
@@ -3977,7 +3979,7 @@
       "district": "제주시",
       "label": "제주시",
       "count": 122,
-      "withFees": 119,
+      "withFees": 121,
       "withCoordinates": 122,
       "householdBands": {
         "under-300": 70,
@@ -4147,7 +4149,7 @@
       "district": "아산시",
       "label": "아산시",
       "count": 191,
-      "withFees": 186,
+      "withFees": 188,
       "withCoordinates": 191,
       "householdBands": {
         "under-300": 36,
@@ -4180,11 +4182,11 @@
       "province": "충청남도",
       "district": "천안동남구",
       "label": "천안동남구",
-      "count": 128,
+      "count": 129,
       "withFees": 126,
-      "withCoordinates": 128,
+      "withCoordinates": 129,
       "householdBands": {
-        "under-300": 42,
+        "under-300": 43,
         "300-499": 28,
         "500-999": 40,
         "1000-1499": 9,
@@ -4317,7 +4319,7 @@
       "district": "영동군",
       "label": "영동군",
       "count": 11,
-      "withFees": 9,
+      "withFees": 10,
       "withCoordinates": 11,
       "householdBands": {
         "under-300": 8,
@@ -4419,7 +4421,7 @@
       "district": "청주상당구",
       "label": "청주상당구",
       "count": 96,
-      "withFees": 91,
+      "withFees": 93,
       "withCoordinates": 96,
       "householdBands": {
         "under-300": 23,
@@ -4501,8 +4503,8 @@
   ],
   "coordinateValidation": {
     "thresholdKm": 80,
-    "sourceCoordinates": 21647,
-    "validCoordinates": 21617,
+    "sourceCoordinates": 21657,
+    "validCoordinates": 21627,
     "missingCoordinates": 4,
     "malformedCoordinates": 0,
     "outOfBoundsCoordinates": 0,
@@ -4515,7 +4517,7 @@
     "suspiciousRepeatedCoordinateGroups": 2,
     "suspiciousRepeatedCoordinates": 17,
     "suspiciousRepeatedInvalidCoordinates": 16,
-    "orphanCoordinates": 798
+    "orphanCoordinates": 803
   },
   "feeHistory": {
     "discovery": "auto",
@@ -4525,6 +4527,12 @@
         "fileName": "fee.xlsx",
         "path": "data/kapt/raw/20260710/fee.xlsx",
         "rows": 104209
+      },
+      {
+        "sourceDate": "20260724",
+        "fileName": "fee.xlsx",
+        "path": "data/kapt/raw/20260724/fee.xlsx",
+        "rows": 115259
       }
     ]
   }

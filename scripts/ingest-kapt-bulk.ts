@@ -366,8 +366,14 @@ for (const [key, item] of feeRowsByKey) {
 }
 for (const rows of fees.values()) rows.sort((a, b) => a.month.localeCompare(b.month));
 
+const eligibleComplexes = [...complexes.values()].filter((complex) => {
+  const isSejong = complex.sido === '세종특별자치시';
+  return Boolean(complex.sido && (complex.sigungu || isSejong));
+});
+const excludedInvalidRegionComplexes = complexes.size - eligibleComplexes.length;
+
 const coordinateValidation = validateApartmentCoordinates({
-  apartments: [...complexes.values()].map((complex) => ({
+  apartments: eligibleComplexes.map((complex) => ({
     code: complex.code,
     sido: complex.sido,
     sigungu: complex.sigungu
@@ -384,7 +390,7 @@ let complexesWithArea = 0;
 let complexesWithFees = 0;
 let publishedFeeRows = 0;
 let publishableComplexes = 0;
-for (const complex of complexes.values()) {
+for (const complex of eligibleComplexes) {
   const area = managementAreas.get(complex.code) ?? 0;
   const monthlyFees = fees.get(complex.code) ?? [];
   const latest = monthlyFees.at(-1);
@@ -544,7 +550,9 @@ const outputManifest = {
     basicRows,
     areaRows,
     feeRows,
-    complexes: complexes.size,
+    complexes: index.length,
+    sourceComplexes: complexes.size,
+    excludedInvalidRegionComplexes,
     complexesWithArea,
     complexesWithFees,
     duplicateComplexes,
@@ -586,5 +594,6 @@ await writeFile(resolve(outputDir, 'manifest.json'), `${JSON.stringify(outputMan
 console.log(JSON.stringify(outputManifest.stats, null, 2));
 console.log(JSON.stringify({ coordinateValidation: outputManifest.coordinateValidation }, null, 2));
 console.log(
-  `전국 ${complexes.size.toLocaleString('ko-KR')}개 단지, 원본 ${feeRows.toLocaleString('ko-KR')}개/병합 ${publishedFeeRows.toLocaleString('ko-KR')}개 관리비 행 변환 완료`
+  `전국 ${index.length.toLocaleString('ko-KR')}개 단지, 원본 ${feeRows.toLocaleString('ko-KR')}개/병합 ${publishedFeeRows.toLocaleString('ko-KR')}개 관리비 행 변환 완료` +
+    (excludedInvalidRegionComplexes ? ` (지역 누락 ${excludedInvalidRegionComplexes.toLocaleString('ko-KR')}개 제외)` : '')
 );

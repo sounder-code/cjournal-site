@@ -141,6 +141,7 @@ assert(manifest.months.at(-1) === manifest.latestMonth, 'manifest 최신월과 �
 
 const indexByCode = new Map(index.map((entry) => [entry.c, entry]));
 for (const entry of index) {
+  assert(Boolean(entry.sd && (entry.sg || entry.sd === '세종특별자치시')), `${entry.c} 지역 정보 누락`);
   assert(Object.hasOwn(entry, 'la') === Object.hasOwn(entry, 'lo'), `${entry.c} 전국 인덱스 좌표 쌍 불완전`);
 }
 const searchRequiredFields = ['c', 's', 'n', 'sd', 'sg', 'd', 'a', 'h', 'tf', 'cf', 'rf', 'q'];
