@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generatedAt": "2026-07-29T05:45:05.548Z",
+  "generatedAt": "2026-07-29T06:05:35.416Z",
   "sourceDate": "20260724",
   "source": "K-apt 주간 일괄 공개자료",
   "units": {
@@ -50,7 +50,9 @@
     "feeRowsWithoutComplex": 4,
     "invalidFeeMonths": 0,
     "publishedFeeRows": 114164,
-    "publishableComplexes": 19633,
+    "publishableCandidates": 19633,
+    "publishableLimit": 19000,
+    "publishableComplexes": 19000,
     "negativeAdjustmentValues": 1116,
     "districtFiles": 253
   },

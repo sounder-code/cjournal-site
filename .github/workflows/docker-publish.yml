@@ -66,14 +66,17 @@ jobs:
       - name: Wait for production release
         if: steps.search-documents.outputs.changed == 'true'
         shell: bash
+        env:
+          EXPECTED_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           for attempt in {1..60}; do
-            if [ "$(curl --silent --show-error --fail https://danjipyo.kr/dd31d55254614118988122a86e38eb19.txt || true)" = "dd31d55254614118988122a86e38eb19" ]; then
+            deployed_commit="$(curl --silent --show-error --fail "https://danjipyo.kr/deployment.json?commit=${EXPECTED_COMMIT}" 2>/dev/null | jq --raw-output '.commit // empty' || true)"
+            if [ "$deployed_commit" = "$EXPECTED_COMMIT" ]; then
               exit 0
             fi
             sleep 10
           done
-          echo "Production did not expose the IndexNow key within 10 minutes" >&2
+          echo "Production did not expose commit ${EXPECTED_COMMIT} within 10 minutes" >&2
           exit 1
 
       - name: Notify Naver IndexNow

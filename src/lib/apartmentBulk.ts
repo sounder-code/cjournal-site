@@ -119,6 +119,7 @@ export const loadApartmentEntries = () => {
 };
 
 export const isPublishableApartment = (entry: ApartmentEntry) =>
+  entry.q === 1 &&
   entry.f.length >= 5 &&
   entry.ma > 0 &&
   entry.tf > 0 &&

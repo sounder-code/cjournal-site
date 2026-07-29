@@ -13,8 +13,12 @@ const manifestPath = resolve(rootDir, process.env.KAPT_BULK_MANIFEST || 'data/ka
 const outputDir = resolve(rootDir, process.env.KAPT_BULK_OUTPUT || 'public/data/apartments');
 const feeRootDir = resolve(rootDir, process.env.KAPT_FEE_ROOT || 'data/kapt/raw');
 const coordinateThresholdKm = Number(process.env.KAPT_COORDINATE_MAX_KM || 80);
+const maxPublishableComplexes = Number(process.env.KAPT_MAX_PUBLISHABLE_COMPLEXES || 19000);
 if (!Number.isFinite(coordinateThresholdKm) || coordinateThresholdKm <= 0) {
   throw new Error('KAPT_COORDINATE_MAX_KM는 0보다 큰 숫자여야 합니다.');
+}
+if (!Number.isInteger(maxPublishableComplexes) || maxPublishableComplexes <= 0) {
+  throw new Error('KAPT_MAX_PUBLISHABLE_COMPLEXES는 0보다 큰 정수여야 합니다.');
 }
 
 /**
@@ -383,6 +387,32 @@ const coordinateValidation = validateApartmentCoordinates({
   thresholdKm: coordinateThresholdKm
 });
 
+const isPublishableCandidate = (complex: BasicComplex) => {
+  const monthlyFees = fees.get(complex.code) ?? [];
+  const latest = monthlyFees.at(-1);
+  return monthlyFees.length >= 5 &&
+    (managementAreas.get(complex.code) ?? 0) > 0 &&
+    Number(latest?.totalFeePerM2 ?? 0) > 0 &&
+    complex.households > 0 &&
+    complex.address.length >= 5 &&
+    complex.name.length >= 2;
+};
+const publishableCandidates = eligibleComplexes.filter(isPublishableCandidate);
+const publishableCodes = new Set(
+  [...publishableCandidates]
+    .sort((a, b) => {
+      const aFees = fees.get(a.code) ?? [];
+      const bFees = fees.get(b.code) ?? [];
+      return String(bFees.at(-1)?.month ?? '').localeCompare(String(aFees.at(-1)?.month ?? '')) ||
+        bFees.length - aFees.length ||
+        Number(coordinateValidation.validCoordinates.has(b.code)) - Number(coordinateValidation.validCoordinates.has(a.code)) ||
+        b.households - a.households ||
+        a.code.localeCompare(b.code);
+    })
+    .slice(0, maxPublishableComplexes)
+    .map((complex) => complex.code)
+);
+
 const byRegion = new Map<string, Array<Record<string, unknown>>>();
 const byDistrict = new Map<string, ApartmentSummary[]>();
 const index: ApartmentSummary[] = [];
@@ -397,13 +427,7 @@ for (const complex of eligibleComplexes) {
   if (area > 0) complexesWithArea += 1;
   if (monthlyFees.length) complexesWithFees += 1;
   publishedFeeRows += monthlyFees.length;
-  const isPublishable =
-    monthlyFees.length >= 5 &&
-    area > 0 &&
-    Number(latest?.totalFeePerM2 ?? 0) > 0 &&
-    complex.households > 0 &&
-    complex.address.length >= 5 &&
-    complex.name.length >= 2;
+  const isPublishable = publishableCodes.has(complex.code);
   if (isPublishable) publishableComplexes += 1;
   const regionKey = keyForRegion(complex.sido) || 'unknown';
   const coordinate = coordinateValidation.validCoordinates.get(complex.code);
@@ -564,6 +588,8 @@ const outputManifest = {
     feeRowsWithoutComplex,
     invalidFeeMonths,
     publishedFeeRows,
+    publishableCandidates: publishableCandidates.length,
+    publishableLimit: maxPublishableComplexes,
     publishableComplexes,
     negativeAdjustmentValues,
     districtFiles: districtManifest.length
