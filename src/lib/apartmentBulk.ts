@@ -127,6 +127,13 @@ export const isPublishableApartment = (entry: ApartmentEntry) =>
   entry.a.length >= 5 &&
   entry.n.length >= 2;
 
+export const compareApartmentDiscoveryPriority = (left: ApartmentEntry, right: ApartmentEntry) =>
+  String(right.f.at(-1)?.[0] ?? '').localeCompare(String(left.f.at(-1)?.[0] ?? '')) ||
+  right.f.length - left.f.length ||
+  right.h - left.h ||
+  left.n.localeCompare(right.n, 'ko') ||
+  left.c.localeCompare(right.c);
+
 const metricIndexes: Record<ComparisonMetric, number> = {
   total: 1,
   common: 2,

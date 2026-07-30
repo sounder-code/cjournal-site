@@ -1,4 +1,8 @@
-import { loadApartmentManifest, loadApartmentPageData } from '@/lib/apartmentBulk';
+import {
+  compareApartmentDiscoveryPriority,
+  loadApartmentManifest,
+  loadApartmentPageData
+} from '@/lib/apartmentBulk';
 import { districtHubPath, regionHubPath } from '@/lib/apartmentSeo';
 
 export const APARTMENT_SITEMAP_CHUNK_SIZE = 5_000;
@@ -95,9 +99,15 @@ export const loadSitemapInventory = () => {
     const regions = [...provincePaths, ...districtPaths]
       .sort(comparePaths)
       .map((loc) => ({ loc, lastmod, priority: '0.8', changefreq: 'monthly' as const }));
-    const apartments = [...apartmentPaths]
-      .sort(comparePaths)
-      .map((loc) => ({ loc, lastmod, priority: '0.7', changefreq: 'weekly' as const }));
+    const apartments = [...pages]
+      .filter((page) => page?.apartment && apartmentPaths.has(`/apartments/${page.apartment.s}/`))
+      .sort((left, right) => compareApartmentDiscoveryPriority(left.apartment, right.apartment))
+      .map(({ apartment }) => ({
+        loc: `/apartments/${apartment.s}/`,
+        lastmod,
+        priority: apartment.h >= 1_000 ? '0.8' : '0.7',
+        changefreq: 'weekly' as const
+      }));
 
     assertUniqueCanonicalPaths([
       ['core sitemap', core],
