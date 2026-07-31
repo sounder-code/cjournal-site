@@ -20,6 +20,7 @@ User-agent: Googlebot
 Allow: /ads.txt
 
 Sitemap: ${origin}/sitemap.xml
+Sitemap: ${origin}/sitemaps/apartments/1.xml
 `;
 
   return new Response(body, {
