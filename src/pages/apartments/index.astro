@@ -2,7 +2,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { loadApartmentPageData } from '@/lib/apartmentBulk';
+import { compareApartmentDiscoveryPriority, loadApartmentPageData } from '@/lib/apartmentBulk';
 import { apartmentMedian, regionHubPath } from '@/lib/apartmentSeo';
 
 interface BulkManifest {
@@ -26,6 +26,10 @@ const regionSummaries = manifest.regions.map((region) => {
   const apartments = apartmentPages.map(({ apartment }) => apartment).filter((apartment) => apartment.sd === region.name);
   return { ...region, published: apartments.length, medianFee: apartmentMedian(apartments) };
 });
+const featuredApartments = [...apartmentPages]
+  .sort((left, right) => compareApartmentDiscoveryPriority(left.apartment, right.apartment))
+  .slice(0, 16)
+  .map(({ apartment }) => apartment);
 ---
 <BaseLayout
   title="전국 아파트 관리비 단지 찾기 | 단지표"
@@ -61,6 +65,27 @@ const regionSummaries = manifest.regions.map((region) => {
             <strong>{region.name}</strong>
             <span>{region.published.toLocaleString('ko-KR')}개 단지</span>
             <small>㎡당 중앙값 {region.medianFee.toLocaleString('ko-KR')}원</small>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="featured-links" aria-labelledby="featured-links-title">
+      <header>
+        <div>
+          <h2 id="featured-links-title">주요 단지 관리비</h2>
+          <p>최신 공개월과 데이터 기간, 세대수를 기준으로 우선 확인할 단지입니다.</p>
+        </div>
+        <span>{latestMonth} 기준</span>
+      </header>
+      <div>
+        {featuredApartments.map((apartment) => (
+          <a href={`/apartments/${apartment.s}/`}>
+            <span>
+              <strong>{apartment.n}</strong>
+              <small>{apartment.sd} {apartment.sg} · {apartment.h.toLocaleString('ko-KR')}세대</small>
+            </span>
+            <b>{apartment.tf.toLocaleString('ko-KR')}원<small>/㎡</small></b>
           </a>
         ))}
       </div>
@@ -273,6 +298,20 @@ const regionSummaries = manifest.regions.map((region) => {
   .region-links a strong { font-size: .8rem; }
   .region-links a span { color: #08765c; font-size: .66rem; font-weight: 800; }
   .region-links a small { color: #77817c; font-size: .62rem; font-weight: 680; }
+  .featured-links { border: 1px solid #dde2df; border-radius: 7px; background: #fff; padding: 16px; }
+  .featured-links > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 12px; }
+  .featured-links h2 { margin: 0; font-size: 1rem; }
+  .featured-links p { margin: 4px 0 0; color: #727c76; font-size: .7rem; }
+  .featured-links > header > span { color: #08765c; font-size: .7rem; font-weight: 820; }
+  .featured-links > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid #e5eae7; border-left: 1px solid #e5eae7; }
+  .featured-links a { min-width: 0; min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-right: 1px solid #e5eae7; border-bottom: 1px solid #e5eae7; color: #17211d; padding: 10px 12px; text-decoration: none; }
+  .featured-links a:hover { background: #f2f8f5; }
+  .featured-links a > span { min-width: 0; display: grid; gap: 3px; }
+  .featured-links strong, .featured-links a > span > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .featured-links strong { font-size: .76rem; }
+  .featured-links a > span > small { color: #77817c; font-size: .6rem; font-weight: 680; }
+  .featured-links b { flex: 0 0 auto; color: #08765c; font-size: .7rem; font-variant-numeric: tabular-nums; }
+  .featured-links b small { margin-left: 1px; color: #77817c; font-size: .56rem; }
   .directory-panel { overflow: hidden; border: 1px solid #dde2df; border-radius: 7px; background: #fff; }
   .toolbar { display: grid; grid-template-columns: minmax(260px, 1fr) 230px 190px auto; gap: 8px; padding: 12px; border-bottom: 1px solid #e5e9e6; background: #fafbfa; }
   .toolbar label { min-height: 44px; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; border: 1px solid #dce1de; border-radius: 6px; background: #fff; padding: 0 12px; }
@@ -311,6 +350,8 @@ const regionSummaries = manifest.regions.map((region) => {
     .summary-strip div:nth-child(2) { border-right: 0; }
     .summary-strip div:nth-child(-n + 2) { border-bottom: 1px solid #e9ecea; }
     .region-links > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .featured-links > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .featured-links a { min-height: 66px; }
     .toolbar { grid-template-columns: 1fr 1fr; }
     .search-field { grid-column: 1 / -1; }
     .toolbar button { min-height: 44px; }
