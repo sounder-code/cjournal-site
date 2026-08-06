@@ -26,10 +26,14 @@ const regionSummaries = manifest.regions.map((region) => {
   const apartments = apartmentPages.map(({ apartment }) => apartment).filter((apartment) => apartment.sd === region.name);
   return { ...region, published: apartments.length, medianFee: apartmentMedian(apartments) };
 });
-const featuredApartments = [...apartmentPages]
-  .sort((left, right) => compareApartmentDiscoveryPriority(left.apartment, right.apartment))
-  .slice(0, 16)
-  .map(({ apartment }) => apartment);
+const featuredByRegion = regionSummaries.map((region) => ({
+  region: region.name,
+  apartments: apartmentPages
+    .filter(({ apartment }) => apartment.sd === region.name)
+    .sort((left, right) => compareApartmentDiscoveryPriority(left.apartment, right.apartment))
+    .slice(0, 4)
+    .map(({ apartment }) => apartment)
+}));
 ---
 <BaseLayout
   title="전국 아파트 관리비 단지 찾기 | 단지표"
@@ -78,15 +82,22 @@ const featuredApartments = [...apartmentPages]
         </div>
         <span>{latestMonth} 기준</span>
       </header>
-      <div>
-        {featuredApartments.map((apartment) => (
-          <a href={`/apartments/${apartment.s}/`}>
-            <span>
-              <strong>{apartment.n}</strong>
-              <small>{apartment.sd} {apartment.sg} · {apartment.h.toLocaleString('ko-KR')}세대</small>
-            </span>
-            <b>{apartment.tf.toLocaleString('ko-KR')}원<small>/㎡</small></b>
-          </a>
+      <div class="featured-region-grid">
+        {featuredByRegion.map((group) => (
+          <section>
+            <header><h3>{group.region}</h3><a href={regionHubPath(group.region)}>전체 보기</a></header>
+            <div>
+              {group.apartments.map((apartment) => (
+                <a href={`/apartments/${apartment.s}/`}>
+                  <span>
+                    <strong>{apartment.n}</strong>
+                    <small>{apartment.sg} · {apartment.h.toLocaleString('ko-KR')}세대</small>
+                  </span>
+                  <b>{apartment.tf.toLocaleString('ko-KR')}원<small>/㎡</small></b>
+                </a>
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     </section>
@@ -303,8 +314,13 @@ const featuredApartments = [...apartmentPages]
   .featured-links h2 { margin: 0; font-size: 1rem; }
   .featured-links p { margin: 4px 0 0; color: #727c76; font-size: .7rem; }
   .featured-links > header > span { color: #08765c; font-size: .7rem; font-weight: 820; }
-  .featured-links > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid #e5eae7; border-left: 1px solid #e5eae7; }
-  .featured-links a { min-width: 0; min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-right: 1px solid #e5eae7; border-bottom: 1px solid #e5eae7; color: #17211d; padding: 10px 12px; text-decoration: none; }
+  .featured-region-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #e5eae7; border-left: 1px solid #e5eae7; }
+  .featured-region-grid > section { min-width: 0; border-right: 1px solid #e5eae7; border-bottom: 1px solid #e5eae7; padding: 11px 13px 4px; }
+  .featured-region-grid > section > header { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 30px; }
+  .featured-region-grid h3 { margin: 0; color: #17211d; font-size: .76rem; }
+  .featured-region-grid > section > header a { min-height: auto; border: 0; color: #08765c; padding: 0; font-size: .62rem; font-weight: 800; }
+  .featured-region-grid > section > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .featured-links .featured-region-grid > section > div > a { min-width: 0; min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid #edf1ef; color: #17211d; padding: 8px 7px 8px 0; text-decoration: none; }
   .featured-links a:hover { background: #f2f8f5; }
   .featured-links a > span { min-width: 0; display: grid; gap: 3px; }
   .featured-links strong, .featured-links a > span > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -350,8 +366,9 @@ const featuredApartments = [...apartmentPages]
     .summary-strip div:nth-child(2) { border-right: 0; }
     .summary-strip div:nth-child(-n + 2) { border-bottom: 1px solid #e9ecea; }
     .region-links > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .featured-links > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .featured-links a { min-height: 66px; }
+    .featured-region-grid { grid-template-columns: 1fr; }
+    .featured-region-grid > section > div { grid-template-columns: 1fr; }
+    .featured-links .featured-region-grid > section > div > a { min-height: 66px; }
     .toolbar { grid-template-columns: 1fr 1fr; }
     .search-field { grid-column: 1 / -1; }
     .toolbar button { min-height: 44px; }

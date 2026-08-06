@@ -76,6 +76,8 @@ export interface ApartmentPageData {
   titleSuffix: string;
   peerLabel: string;
   peerCount: number;
+  peerRank: number;
+  peerMedianTotal: number;
   percentiles: Record<ComparisonMetric, number>;
   nearby: Array<Pick<ApartmentEntry, 's' | 'n' | 'sg' | 'd' | 'h' | 'y' | 'tf' | 'ht'>>;
 }
@@ -213,6 +215,12 @@ export const loadApartmentPageData = () => {
       const peers = selected.peers;
       const values = sortedMetrics.get(peerKey)!;
       const latest = apartment.f.at(-1)!;
+      const totalValues = values.total;
+      const peerRank = totalValues.findIndex((value) => value >= latest[1]) + 1;
+      const medianIndex = Math.floor(totalValues.length / 2);
+      const peerMedianTotal = totalValues.length % 2
+        ? totalValues[medianIndex]
+        : Math.round((totalValues[medianIndex - 1] + totalValues[medianIndex]) / 2);
       const percentiles = Object.fromEntries(
         Object.entries(metricIndexes).map(([metric, index]) => [
           metric,
@@ -222,7 +230,7 @@ export const loadApartmentPageData = () => {
       const nearby = peers
         .filter((item) => item.c !== apartment.c)
         .sort((a, b) => Math.abs(a.h - apartment.h) - Math.abs(b.h - apartment.h) || a.n.localeCompare(b.n, 'ko'))
-        .slice(0, 6)
+        .slice(0, 8)
         .map(({ s, n, sg, d, h, y, tf, ht }) => ({ s, n, sg, d, h, y, tf, ht }));
 
       return {
@@ -232,6 +240,8 @@ export const loadApartmentPageData = () => {
           : `${apartment.sg} ${apartment.d}`,
         peerLabel: selected.label,
         peerCount: peers.length,
+        peerRank: peerRank || peers.length,
+        peerMedianTotal,
         percentiles,
         nearby
       };

@@ -14,7 +14,7 @@ export const getStaticPaths = async () =>
 
 const { data } = Astro.props as { data: ApartmentPageData };
 const manifest = await loadApartmentManifest();
-const { apartment, percentiles, nearby, peerLabel, peerCount, titleSuffix } = data;
+const { apartment, percentiles, nearby, peerLabel, peerCount, peerRank, peerMedianTotal, titleSuffix } = data;
 const districtName = displayDistrictName(apartment.sd, apartment.sg);
 const displayTitleSuffix = apartment.sg ? titleSuffix.replace(apartment.sg, districtName) : titleSuffix;
 const displayPeerLabel = apartment.sg ? peerLabel.replace(apartment.sg, districtName) : peerLabel;
@@ -39,6 +39,10 @@ const detailMetrics = metricIndexes
 const topDriver = detailMetrics[0] ?? { name: '공용관리비', value: latest[2] };
 const secondDriver = detailMetrics[1];
 const totalLevel = levelLabel(percentiles.total);
+const medianDelta = latest[1] - peerMedianTotal;
+const medianComparison = medianDelta === 0
+  ? `${displayPeerLabel} 중앙값과 같습니다.`
+  : `${displayPeerLabel} 중앙값 ${won(peerMedianTotal)}/㎡보다 ${Math.abs(medianDelta).toLocaleString('ko-KR')}원 ${medianDelta > 0 ? '높습니다' : '낮습니다'}.`;
 const headline = `${monthLabel(latest[0])} 총 관리비는 ㎡당 ${won(latest[1])}, 비교군에서 ${totalLevel}입니다.`;
 const averageCopy = averageDelta === 0
   ? `최근 ${apartment.f.length}개월 평균 ${won(averageTotal)}/㎡와 같습니다.`
@@ -159,7 +163,7 @@ const structuredData = [
 
     <section class="summary-panel">
       <div><span>{trendLabel}</span><h2>{headline}</h2><p>{overview} {driverCopy}</p></div>
-      <dl><div><dt>비교 기준</dt><dd>{peerLabel}</dd></div><div><dt>비교 단지</dt><dd>{peerCount.toLocaleString('ko-KR')}개</dd></div><div><dt>총액 백분위</dt><dd>{percentiles.total}</dd></div></dl>
+      <dl><div><dt>비교 기준</dt><dd>{displayPeerLabel}</dd></div><div><dt>낮은 금액 순</dt><dd>{peerRank.toLocaleString('ko-KR')}위 / {peerCount.toLocaleString('ko-KR')}개</dd></div><div><dt>비교군 중앙값</dt><dd>{won(peerMedianTotal)}/㎡</dd></div></dl>
     </section>
 
     <section class="kpi-grid" aria-label="최근 관리비 요약">
@@ -167,6 +171,20 @@ const structuredData = [
         const delta = value - prior;
         return <div><span>{label}</span><strong>{won(value)}<small>/㎡</small></strong><em class:list={[delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat']}>{delta === 0 ? '전월과 동일' : `전월 대비 ${delta > 0 ? '+' : ''}${delta.toLocaleString('ko-KR')}원`}</em></div>;
       })}
+    </section>
+
+    <section class="panel estimator-panel" data-fee-estimator data-total={latest[1]} data-common={latest[2]} data-individual={latest[3]} data-reserve={latest[4]}>
+      <header>
+        <div><h2>관리비 부과면적별 단순 환산</h2><p>{latest[0]} 공개 단가에 관리비 부과면적을 곱해 항목별 금액을 확인합니다.</p></div>
+        <label><span>부과면적</span><input type="number" min="1" max="500" step="1" value="84" inputmode="decimal" data-estimator-area aria-label="관리비 부과면적"/><b>㎡</b></label>
+      </header>
+      <div class="estimator-results">
+        <div><span>총 관리비</span><strong data-estimator-total>{won(latest[1] * 84)}</strong></div>
+        <div><span>공용관리비</span><strong data-estimator-common>{won(latest[2] * 84)}</strong></div>
+        <div><span>개별사용료</span><strong data-estimator-individual>{won(latest[3] * 84)}</strong></div>
+        <div><span>장기수선충당금</span><strong data-estimator-reserve>{won(latest[4] * 84)}</strong></div>
+      </div>
+      <p>단순 환산값입니다. 입력값은 전용면적이 아니라 고지서에 표시된 관리비 부과면적을 사용해야 하며, 세대별 사용량·할인·정산에 따라 실제 청구액은 달라집니다.</p>
     </section>
 
     <div class="content-grid">
@@ -198,9 +216,9 @@ const structuredData = [
 
       <aside>
         <section class="panel comparison-panel">
-          <header><div><h2>비슷한 규모 단지 대비</h2><p>{peerLabel} · {peerCount.toLocaleString('ko-KR')}개 단지</p></div></header>
+          <header><div><h2>비슷한 규모 단지 대비</h2><p>{displayPeerLabel} · {peerCount.toLocaleString('ko-KR')}개 단지</p></div></header>
           <ul>{comparisons.map(([label, value, rank]) => <li><div><span>{label}</span><strong>{won(value)}/㎡</strong></div><i><b style={`width:${rank}%`}></b></i><em>{rank}</em></li>)}</ul>
-          <p>백분위가 높을수록 비교군에서 ㎡당 금액이 높은 편입니다. 품질이나 서비스 수준을 뜻하지는 않습니다.</p>
+          <p>총 관리비는 낮은 금액 순 {peerRank.toLocaleString('ko-KR')}위입니다. {medianComparison} 금액 순위는 품질이나 서비스 수준을 뜻하지 않습니다.</p>
         </section>
 
         <section class="panel related-panel">
@@ -221,9 +239,30 @@ const structuredData = [
       <h2>확인할 점</h2>
       <details open><summary>세대별 고지서 금액과 왜 다른가요?</summary><p>이 페이지는 단지 전체 관리비를 관리비부과면적으로 나눈 비교 단가입니다. 세대별 고지서는 전용면적, 난방·전기·수도 사용량, 할인과 정산에 따라 달라집니다.</p></details>
       <details><summary>음수 금액이 표시될 수 있나요?</summary><p>관리주체의 환급이나 이전 달 정산이 반영되면 일부 사용료 항목이 음수로 공개될 수 있습니다. 원본 값을 임의로 0원 처리하지 않습니다.</p></details>
-      <details><summary>비교 순위는 어떻게 계산하나요?</summary><p>{districtName}에서 세대수 구간이 같은 단지를 우선 비교합니다. 표본이 10개 미만이면 {districtName} 전체 단지로 범위를 넓힙니다.</p></details>
+      <details><summary>비교 순위는 어떻게 계산하나요?</summary><p>{districtName}에서 세대수 구간이 같은 단지를 우선 비교합니다. 표본이 10개 미만이면 {districtName} 전체 단지로 범위를 넓힙니다. 현재 총 관리비는 {peerCount.toLocaleString('ko-KR')}개 중 낮은 금액 순 {peerRank.toLocaleString('ko-KR')}위이며, {medianComparison}</p></details>
     </section>
   </article>
+  <script is:inline>
+    document.querySelectorAll('[data-fee-estimator]').forEach((root) => {
+      const input = root.querySelector('[data-estimator-area]');
+      if (!(input instanceof HTMLInputElement)) return;
+      const fees = {
+        total: Number(root.dataset.total || 0),
+        common: Number(root.dataset.common || 0),
+        individual: Number(root.dataset.individual || 0),
+        reserve: Number(root.dataset.reserve || 0)
+      };
+      const formatter = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
+      const render = () => {
+        const area = Math.max(0, Math.min(500, Number(input.value) || 0));
+        Object.entries(fees).forEach(([key, fee]) => {
+          const target = root.querySelector(`[data-estimator-${key}]`);
+          if (target) target.textContent = `${formatter.format(Math.round(fee * area))}원`;
+        });
+      };
+      input.addEventListener('input', render);
+    });
+  </script>
 </BaseLayout>
 
 <style>
@@ -260,6 +299,16 @@ const structuredData = [
   .kpi-grid small { margin-left: 3px; color: #79827d; font-size: .65rem; }
   .kpi-grid em { color: #747d78; font-size: .66rem; font-style: normal; font-weight: 700; }
   .kpi-grid em.up { color: #ad433c; } .kpi-grid em.down { color: #17745a; }
+  .estimator-panel > header label { min-width: 150px; display: flex; align-items: center; gap: 7px; border: 1px solid #d8dfdb; border-radius: 6px; background: #fff; padding: 7px 10px; }
+  .estimator-panel > header label span { color: #727c76; font-size: .68rem; font-weight: 750; }
+  .estimator-panel > header input { width: 62px; border: 0; outline: 0; color: #17211d; font: inherit; font-size: .82rem; font-weight: 800; text-align: right; }
+  .estimator-panel > header label b { color: #68726d; font-size: .7rem; }
+  .estimator-results { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .estimator-results div { min-height: 74px; display: grid; align-content: center; gap: 7px; border-right: 1px solid #e8ebe9; padding: 12px 16px; }
+  .estimator-results div:last-child { border: 0; }
+  .estimator-results span { color: #707a75; font-size: .68rem; font-weight: 720; }
+  .estimator-results strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
+  .estimator-panel > p { margin: 0; border-top: 1px solid #e8ebe9; color: #727c76; padding: 10px 16px; font-size: .66rem; line-height: 1.6; }
   .content-grid { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 10px; align-items: start; }
   main, aside { min-width: 0; display: grid; gap: 10px; }
   .panel { min-width: 0; border: 1px solid #dfe4e1; border-radius: 7px; background: #fff; }
@@ -322,6 +371,11 @@ const structuredData = [
     .fact-strip { grid-template-columns: repeat(2, 1fr); } .fact-strip div { border-bottom: 1px solid #e8ebe9; }
     .summary-panel { grid-template-columns: 1fr; padding: 17px; } .summary-panel dl { border-top: 1px solid #e8ebe9; padding-top: 12px; }
     .kpi-grid { grid-template-columns: repeat(2, 1fr); } .kpi-grid > div { min-height: 105px; }
+    .estimator-panel > header { align-items: flex-start; flex-direction: column; }
+    .estimator-panel > header label { width: 100%; box-sizing: border-box; }
+    .estimator-results { grid-template-columns: repeat(2, 1fr); }
+    .estimator-results div:nth-child(2) { border-right: 0; }
+    .estimator-results div:nth-child(-n + 2) { border-bottom: 1px solid #e8ebe9; }
     aside { grid-template-columns: 1fr; } .chart svg { height: 165px; }
     .reading-panel > div { grid-template-columns: 1fr; } .reading-panel article { border-right: 0; border-bottom: 1px solid #e8ebe9; }
     .method-note { grid-template-columns: 1fr; gap: 16px; } .method-note dl { grid-template-columns: 1fr; }
