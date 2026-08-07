@@ -5,6 +5,7 @@ const keyLocation = `${siteUrl}/${key}.txt`;
 const sitemapUrl = `${siteUrl}/sitemap.xml`;
 const batchSize = 10_000;
 const dryRun = process.env.INDEXNOW_DRY_RUN === '1';
+const releaseId = process.env.INDEXNOW_RELEASE_ID || process.env.GITHUB_SHA || Date.now().toString();
 
 const keyResponse = await fetch(keyLocation);
 if (!keyResponse.ok) {
@@ -18,6 +19,12 @@ if (publishedKey !== key) {
 
 const siteHost = new URL(siteUrl).host;
 const visitedSitemaps = new Set();
+
+const freshUrl = (value) => {
+  const url = new URL(value);
+  url.searchParams.set('_release', releaseId);
+  return url;
+};
 
 const decodeXml = (value) => value
   .replaceAll('&amp;', '&')
@@ -33,7 +40,7 @@ const collectSitemapUrls = async (url, depth = 0) => {
   if (new URL(url).host !== siteHost) throw new Error(`Sitemap URL is outside the configured site host: ${url}`);
   visitedSitemaps.add(url);
 
-  const response = await fetch(url);
+  const response = await fetch(freshUrl(url), { cache: 'no-store' });
   if (!response.ok) throw new Error(`Sitemap download failed: ${response.status} ${url}`);
   const xml = await response.text();
   const locations = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => decodeXml(match[1].trim()));

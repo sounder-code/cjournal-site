@@ -57,7 +57,7 @@ jobs:
         id: search-documents
         shell: bash
         run: |
-          if git diff-tree --no-commit-id --name-only -r HEAD | grep -Eq '^(public/dd31d55254614118988122a86e38eb19\.txt|public/data/apartments/|public/robots\.txt|src/pages/apartments/|src/pages/sitemaps/|src/pages/sitemap\.xml\.ts|src/pages/robots\.txt\.ts|src/lib/apartment|src/layouts/BaseLayout\.astro)'; then
+          if git diff-tree --no-commit-id --name-only -r HEAD | grep -Eq '^(public/dd31d55254614118988122a86e38eb19\.txt|public/data/apartments/|public/robots\.txt|scripts/submit-indexnow\.mjs|src/pages/apartments/|src/pages/sitemaps/|src/pages/sitemap\.xml\.ts|src/pages/robots\.txt\.ts|src/lib/apartment|src/layouts/BaseLayout\.astro)'; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -83,4 +83,5 @@ jobs:
         if: steps.search-documents.outputs.changed == 'true'
         env:
           PUBLIC_SITE_URL: https://danjipyo.kr
+          INDEXNOW_RELEASE_ID: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: node scripts/submit-indexnow.mjs
