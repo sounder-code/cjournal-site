@@ -73,6 +73,9 @@ export type ComparisonMetric = 'total' | 'common' | 'security' | 'cleaning' | 'm
 
 export interface ApartmentPageData {
   apartment: ApartmentEntry;
+  indexable: boolean;
+  comparisonEligible: boolean;
+  qualityReasons: string[];
   titleSuffix: string;
   peerLabel: string;
   peerCount: number;
@@ -81,6 +84,8 @@ export interface ApartmentPageData {
   percentiles: Record<ComparisonMetric, number>;
   nearby: Array<Pick<ApartmentEntry, 's' | 'n' | 'sg' | 'd' | 'h' | 'y' | 'tf' | 'ht'>>;
 }
+
+export const APARTMENT_REPORT_UPDATED = '2026-08-07';
 
 const manifestPath = resolve('public/data/apartments/manifest.json');
 let manifestPromise: Promise<ApartmentManifest> | undefined;
@@ -129,6 +134,28 @@ export const isPublishableApartment = (entry: ApartmentEntry) =>
   entry.a.length >= 5 &&
   entry.n.length >= 2;
 
+const latestFee = (entry: ApartmentEntry) => entry.f.at(-1);
+
+export const apartmentQualityReasons = (entry: ApartmentEntry) => {
+  const fee = latestFee(entry);
+  if (!fee) return ['최근 관리비가 공개되지 않았습니다.'];
+
+  const reasons: string[] = [];
+  if (fee[1] < 500 || fee[1] > 10_000) {
+    reasons.push('총 관리비 공개 단가가 일반적인 비교 범위를 크게 벗어납니다.');
+  }
+  if (fee[2] <= 0) {
+    reasons.push('공용관리비 합계가 공개되지 않았습니다.');
+  }
+  if (fee.slice(5).filter((value) => Number(value) > 0).length < 4) {
+    reasons.push('세부 관리비 항목의 공개 범위가 충분하지 않습니다.');
+  }
+  return reasons;
+};
+
+export const isComparableApartment = (entry: ApartmentEntry) =>
+  isPublishableApartment(entry) && apartmentQualityReasons(entry).length === 0;
+
 export const compareApartmentDiscoveryPriority = (left: ApartmentEntry, right: ApartmentEntry) =>
   String(right.f.at(-1)?.[0] ?? '').localeCompare(String(left.f.at(-1)?.[0] ?? '')) ||
   right.f.length - left.f.length ||
@@ -161,13 +188,14 @@ const percentile = (sorted: number[], value: number) => {
 export const loadApartmentPageData = () => {
   pageDataPromise ??= (async () => {
     const entries = (await loadApartmentEntries()).filter(isPublishableApartment);
+    const comparisonEntries = entries.filter(isComparableApartment);
     const districtGroups = new Map<string, ApartmentEntry[]>();
     const peerGroups = new Map<string, ApartmentEntry[]>();
     const provinceGroups = new Map<string, ApartmentEntry[]>();
     const provinceBandGroups = new Map<string, ApartmentEntry[]>();
     const titleCounts = new Map<string, number>();
 
-    for (const entry of entries) {
+    for (const entry of comparisonEntries) {
       const districtKey = `${entry.sd}|${entry.sg}`;
       const peerKey = `${districtKey}|${householdBand(entry.h)}`;
       districtGroups.set(districtKey, [...(districtGroups.get(districtKey) ?? []), entry]);
@@ -175,44 +203,47 @@ export const loadApartmentPageData = () => {
       provinceGroups.set(entry.sd, [...(provinceGroups.get(entry.sd) ?? []), entry]);
       const provinceBandKey = `${entry.sd}|${householdBand(entry.h)}`;
       provinceBandGroups.set(provinceBandKey, [...(provinceBandGroups.get(provinceBandKey) ?? []), entry]);
+    }
+
+    for (const entry of entries) {
       const titleKey = `${entry.n}|${entry.sg}|${entry.d}`;
       titleCounts.set(titleKey, (titleCounts.get(titleKey) ?? 0) + 1);
     }
+
+    const districtLabel = (entry: ApartmentEntry) =>
+      entry.sg || (entry.sd === '세종특별자치시' ? '세종시' : entry.sd);
 
     const selectPeers = (entry: ApartmentEntry) => {
       const districtKey = `${entry.sd}|${entry.sg}`;
       const direct = peerGroups.get(`${districtKey}|${householdBand(entry.h)}`) ?? [];
       const district = districtGroups.get(districtKey) ?? direct;
       const provinceBand = provinceBandGroups.get(`${entry.sd}|${householdBand(entry.h)}`) ?? [];
-      if (direct.length >= 10) return { peers: direct, label: `${entry.sg} · ${householdBand(entry.h)}` };
-      if (district.length >= 2) return { peers: district, label: `${entry.sg} 전체` };
+      if (direct.length >= 10) return { peers: direct, label: `${districtLabel(entry)} · ${householdBand(entry.h)}` };
+      if (district.length >= 2) return { peers: district, label: `${districtLabel(entry)} 전체` };
       if (provinceBand.length >= 2) return { peers: provinceBand, label: `${entry.sd} · ${householdBand(entry.h)}` };
       return { peers: provinceGroups.get(entry.sd) ?? district, label: `${entry.sd} 전체` };
     };
 
     const sortedMetrics = new Map<string, Record<ComparisonMetric, number[]>>();
-    for (const [key, group] of peerGroups) {
-      const sample = group[0];
-      const effectiveGroup = selectPeers(sample).peers;
-      sortedMetrics.set(
-        key,
-        Object.fromEntries(
-          Object.entries(metricIndexes).map(([metric, index]) => [
-            metric,
-            effectiveGroup
-              .map((item) => Number(item.f.at(-1)?.[index] ?? 0))
-              .filter((value) => value > 0)
-              .sort((a, b) => a - b)
-          ])
-        ) as Record<ComparisonMetric, number[]>
-      );
-    }
-
     return entries.map((apartment) => {
       const districtKey = `${apartment.sd}|${apartment.sg}`;
       const peerKey = `${districtKey}|${householdBand(apartment.h)}`;
       const selected = selectPeers(apartment);
       const peers = selected.peers;
+      if (!sortedMetrics.has(peerKey)) {
+        sortedMetrics.set(
+          peerKey,
+          Object.fromEntries(
+            Object.entries(metricIndexes).map(([metric, index]) => [
+              metric,
+              peers
+                .map((item) => Number(item.f.at(-1)?.[index] ?? 0))
+                .filter((value) => value > 0)
+                .sort((a, b) => a - b)
+            ])
+          ) as Record<ComparisonMetric, number[]>
+        );
+      }
       const values = sortedMetrics.get(peerKey)!;
       const latest = apartment.f.at(-1)!;
       const totalValues = values.total;
@@ -232,12 +263,23 @@ export const loadApartmentPageData = () => {
         .sort((a, b) => Math.abs(a.h - apartment.h) - Math.abs(b.h - apartment.h) || a.n.localeCompare(b.n, 'ko'))
         .slice(0, 8)
         .map(({ s, n, sg, d, h, y, tf, ht }) => ({ s, n, sg, d, h, y, tf, ht }));
+      const qualityReasons = apartmentQualityReasons(apartment);
+      const comparisonEligible = qualityReasons.length === 0;
+      const indexable = comparisonEligible &&
+        apartment.f.length >= 6 &&
+        apartment.h >= 500 &&
+        peers.length >= 10 &&
+        nearby.length >= 8;
+      const locationLabel = [districtLabel(apartment), apartment.d].filter(Boolean).join(' ');
 
       return {
         apartment,
+        indexable,
+        comparisonEligible,
+        qualityReasons,
         titleSuffix: titleCounts.get(`${apartment.n}|${apartment.sg}|${apartment.d}`)! > 1
-          ? `${apartment.sg} ${apartment.d} ${apartment.c}`
-          : `${apartment.sg} ${apartment.d}`,
+          ? `${locationLabel} ${apartment.c}`
+          : locationLabel,
         peerLabel: selected.label,
         peerCount: peers.length,
         peerRank: peerRank || peers.length,

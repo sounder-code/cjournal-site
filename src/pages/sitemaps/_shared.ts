@@ -1,5 +1,6 @@
 import {
   compareApartmentDiscoveryPriority,
+  APARTMENT_REPORT_UPDATED,
   loadApartmentManifest,
   loadApartmentPageData
 } from '@/lib/apartmentBulk';
@@ -49,9 +50,10 @@ const sitemapLastmod = (sourceDate?: string, generatedAt?: string) => {
     ? validIsoDate(`${compact[1]}-${compact[2]}-${compact[3]}`)
     : undefined;
   const fromGeneration = validIsoDate(generatedAt?.slice(0, 10) ?? '');
-  if (!fromSource) return fromGeneration;
-  if (!fromGeneration) return fromSource;
-  return fromSource >= fromGeneration ? fromSource : fromGeneration;
+  return [fromSource, fromGeneration, APARTMENT_REPORT_UPDATED]
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1);
 };
 
 const comparePaths = (left: string, right: string) => left.localeCompare(right, 'ko');
@@ -99,7 +101,8 @@ export const loadSitemapInventory = () => {
     const regions = [...provincePaths, ...districtPaths]
       .sort(comparePaths)
       .map((loc) => ({ loc, lastmod, priority: '0.8', changefreq: 'monthly' as const }));
-    const apartments = [...pages]
+    const apartments = pages
+      .filter((page) => page.indexable)
       .filter((page) => page?.apartment && apartmentPaths.has(`/apartments/${page.apartment.s}/`))
       .sort((left, right) => compareApartmentDiscoveryPriority(left.apartment, right.apartment))
       .map(({ apartment }) => ({

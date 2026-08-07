@@ -20,15 +20,16 @@ interface BulkManifest {
 const manifestPath = resolve('public/data/apartments/manifest.json');
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as BulkManifest;
 const apartmentPages = await loadApartmentPageData();
+const indexablePages = apartmentPages.filter((page) => page.indexable);
 const sourceDate = `${manifest.sourceDate.slice(0, 4)}.${manifest.sourceDate.slice(4, 6)}.${manifest.sourceDate.slice(6, 8)}`;
 const latestMonth = manifest.latestMonth.replace('-', '.');
 const regionSummaries = manifest.regions.map((region) => {
-  const apartments = apartmentPages.map(({ apartment }) => apartment).filter((apartment) => apartment.sd === region.name);
+  const apartments = indexablePages.map(({ apartment }) => apartment).filter((apartment) => apartment.sd === region.name);
   return { ...region, published: apartments.length, medianFee: apartmentMedian(apartments) };
 });
 const featuredByRegion = regionSummaries.map((region) => ({
   region: region.name,
-  apartments: apartmentPages
+  apartments: indexablePages
     .filter(({ apartment }) => apartment.sd === region.name)
     .sort((left, right) => compareApartmentDiscoveryPriority(left.apartment, right.apartment))
     .slice(0, 4)

@@ -17,9 +17,13 @@ check_status() {
 check_status "/healthz" "200"
 check_status "/" "200"
 check_status "/robots.txt" "200"
-check_status "/calculators/deposit-interest/" "200"
+check_status "/apartments/" "200"
+check_status "/sitemap.xml" "200"
+check_status "/calculators/" "404"
+check_status "/news/" "404"
+check_status "/guides/" "404"
+check_status "/calculator-audit/" "404"
 check_status "/posts/removed/" "410"
 check_status "/this-page-must-not-exist/" "404"
 
 echo "Docker smoke test passed: ${base_url}"
-

@@ -17,6 +17,7 @@ export async function GET(context: { site: URL }) {
     `${manifest.sourceDate.slice(0, 4)}-${manifest.sourceDate.slice(4, 6)}-${manifest.sourceDate.slice(6, 8)}T09:00:00+09:00`
   );
   const apartmentItems = [...pages]
+    .filter((page) => page.indexable)
     .sort((left, right) => compareApartmentDiscoveryPriority(left.apartment, right.apartment))
     .slice(0, 100)
     .map(({ apartment, peerLabel }) => {
