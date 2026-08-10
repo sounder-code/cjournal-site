@@ -83,6 +83,11 @@ const comparisons = [
   ['난방비', latest[12], percentiles.heating],
   ['장기수선충당금', latest[4], percentiles.reserve]
 ].filter((item) => Number(item[1]) > 0) as Array<[string, number, number]>;
+const mapApartments = [
+  { s: apartment.s, n: apartment.n, a: apartment.a, tf: apartment.tf, la: apartment.la, lo: apartment.lo, selected: true },
+  ...nearby.map((item) => ({ s: item.s, n: item.n, a: `${apartment.sd} ${item.sg} ${item.d}`.trim(), tf: item.tf, la: item.la, lo: item.lo, selected: false }))
+].filter((item) => Number.isFinite(item.la) && Number.isFinite(item.lo));
+const naverMapClientId = import.meta.env.PUBLIC_NAVER_MAP_CLIENT_ID || '8qq4ptrbjt';
 const structuredData = [
   {
     '@context': 'https://schema.org',
@@ -118,6 +123,8 @@ const structuredData = [
   robots={indexable ? 'index, follow' : 'noindex, follow'}
   updatedTime={`${pageModified}T00:00:00+09:00`}
   structuredData={structuredData}
+  fullBleed
+  hideHeader
 >
   <script is:inline define:vars={{ embedSlug: apartment.s, embedTitle: apartment.n, embedMonth: latest[0] }}>
     if (new URLSearchParams(window.location.search).get('embed') === 'map') {
@@ -146,6 +153,19 @@ const structuredData = [
       });
     }
   </script>
+  <section class="apartment-landing" data-apartment-landing data-map-client-id={naverMapClientId}>
+    <header class="landing-bar">
+      <a class="landing-brand" href="/" aria-label="단지표 지도 홈"><i aria-hidden="true"></i><strong>단지표</strong></a>
+      <div class="landing-title"><span>{districtName} · {apartment.d}</span><strong>{apartment.n} 관리비 분석</strong></div>
+      <a class="landing-map-link" href={`/?apt=${encodeURIComponent(apartment.s)}`}>전체 지도에서 보기</a>
+    </header>
+    <div class="landing-workspace">
+      <section class="landing-map-pane" aria-label={`${apartment.n} 주변 단지 지도`}>
+        <div id="apartment-landing-map"></div>
+        <div class="landing-map-caption"><strong>{nearby.length.toLocaleString('ko-KR')}개 주변 단지</strong><span>마커를 눌러 관리비를 이어서 비교하세요</span></div>
+        <noscript><a href={`/?apt=${encodeURIComponent(apartment.s)}`}>지도에서 {apartment.n} 보기</a></noscript>
+      </section>
+      <div class="landing-report-scroll">
   <article class="report">
     <header class="report-head">
       <div>
@@ -260,6 +280,79 @@ const structuredData = [
       <details><summary>비교 순위는 어떻게 계산하나요?</summary><p>{districtName}에서 세대수 구간이 같은 단지를 우선 비교합니다. 표본이 10개 미만이면 {districtName} 전체 단지로 범위를 넓힙니다. 현재 총 관리비는 {peerCount.toLocaleString('ko-KR')}개 중 낮은 금액 순 {peerRank.toLocaleString('ko-KR')}위이며, {medianComparison}</p></details>
     </section>
   </article>
+      </div>
+    </div>
+  </section>
+  <script is:inline id="apartment-map-data" type="application/json" set:html={JSON.stringify(mapApartments).replace(/</g, '\\u003c')}></script>
+  <script is:inline>
+    (() => {
+      if (new URLSearchParams(window.location.search).get('embed') === 'map') return;
+      const shell = document.querySelector('[data-apartment-landing]');
+      const mapElement = document.querySelector('#apartment-landing-map');
+      const payload = document.querySelector('#apartment-map-data');
+      if (!(shell instanceof HTMLElement) || !(mapElement instanceof HTMLElement) || !payload) return;
+
+      const apartments = JSON.parse(payload.textContent || '[]');
+      if (!apartments.length) {
+        mapElement.innerHTML = '<p class="map-unavailable">공개 좌표를 확인 중입니다.</p>';
+        return;
+      }
+
+      const escapeHtml = (value) => String(value)
+        .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+      const initMap = () => {
+        if (!window.naver?.maps) return;
+        const selected = apartments.find((item) => item.selected) || apartments[0];
+        const map = new window.naver.maps.Map(mapElement, {
+          center: new window.naver.maps.LatLng(selected.la, selected.lo),
+          zoom: 16,
+          minZoom: 11,
+          zoomControl: true,
+          zoomControlOptions: { position: window.naver.maps.Position.TOP_RIGHT },
+          mapDataControl: false,
+          scaleControl: false,
+          logoControlOptions: { position: window.naver.maps.Position.BOTTOM_LEFT }
+        });
+        const bounds = new window.naver.maps.LatLngBounds();
+        apartments.forEach((item) => {
+          const position = new window.naver.maps.LatLng(item.la, item.lo);
+          bounds.extend(position);
+          const fee = new Intl.NumberFormat('ko-KR').format(item.tf || 0);
+          const marker = new window.naver.maps.Marker({
+            map,
+            position,
+            zIndex: item.selected ? 100 : 20,
+            icon: {
+              content: `<div class="landing-apt-marker${item.selected ? ' is-selected' : ''}"><strong>${escapeHtml(item.n)}</strong><span>${fee}원/㎡</span></div>`,
+              anchor: new window.naver.maps.Point(14, 48)
+            }
+          });
+          if (!item.selected) {
+            window.naver.maps.Event.addListener(marker, 'click', () => {
+              window.location.href = `/apartments/${encodeURIComponent(item.s)}/`;
+            });
+          }
+        });
+        if (apartments.length > 1) {
+          map.fitBounds(bounds, { top: 100, right: 70, bottom: 90, left: 70 });
+        }
+      };
+
+      if (window.naver?.maps) {
+        initMap();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${encodeURIComponent(shell.dataset.mapClientId || '')}`;
+      script.async = true;
+      script.addEventListener('load', initMap, { once: true });
+      script.addEventListener('error', () => {
+        mapElement.innerHTML = '<p class="map-unavailable">지도를 불러오지 못했습니다. 전체 지도에서 다시 확인해 주세요.</p>';
+      }, { once: true });
+      document.head.appendChild(script);
+    })();
+  </script>
   <script is:inline>
     document.querySelectorAll('[data-fee-estimator]').forEach((root) => {
       const input = root.querySelector('[data-estimator-area]');
@@ -284,7 +377,32 @@ const structuredData = [
 </BaseLayout>
 
 <style>
-  :global(.main-content:has(.report)) { width: min(1320px, calc(100vw - 40px)); }
+  :global(body:has(.apartment-landing)) { overflow: hidden; background: #eef2f0; }
+  :global(.main-content:has(.apartment-landing)) { width: 100%; min-height: 100dvh; padding: 0; }
+  .apartment-landing { min-height: 100dvh; background: #eef2f0; }
+  .landing-bar { height: 62px; box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px; border-bottom: 1px solid #dce3df; background: #fff; padding: 0 18px; }
+  .landing-brand { display: flex; align-items: center; gap: 9px; color: #17211d; text-decoration: none; }
+  .landing-brand i { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 7px; background: #087c5d; }
+  .landing-brand i::after { width: 8px; height: 8px; border: 3px solid #fff; border-radius: 50%; content: ''; }
+  .landing-brand strong { font-size: .95rem; }
+  .landing-title { min-width: 0; display: flex; align-items: baseline; gap: 10px; border-left: 1px solid #e3e8e5; padding-left: 18px; }
+  .landing-title span { color: #087c5d; font-size: .68rem; font-weight: 800; white-space: nowrap; }
+  .landing-title strong { overflow: hidden; font-size: .88rem; text-overflow: ellipsis; white-space: nowrap; }
+  .landing-map-link { min-height: 38px; display: inline-flex; align-items: center; border: 1px solid #cddbd4; border-radius: 6px; color: #205b49; padding: 0 13px; font-size: .7rem; font-weight: 800; text-decoration: none; }
+  .landing-map-link:hover { border-color: #087c5d; background: #f3f8f6; }
+  .landing-workspace { height: calc(100dvh - 62px); display: grid; grid-template-columns: minmax(380px, 42vw) minmax(0, 1fr); }
+  .landing-map-pane { position: relative; min-width: 0; min-height: 0; border-right: 1px solid #d8e0dc; background: #e9eeeb; }
+  #apartment-landing-map { width: 100%; height: 100%; }
+  .landing-map-caption { position: absolute; z-index: 20; top: 14px; left: 14px; display: grid; gap: 3px; border: 1px solid rgba(211, 222, 217, .92); border-radius: 6px; background: rgba(255, 255, 255, .95); box-shadow: 0 4px 16px rgba(23, 42, 34, .1); padding: 11px 13px; pointer-events: none; }
+  .landing-map-caption strong { font-size: .75rem; }
+  .landing-map-caption span { color: #6b756f; font-size: .62rem; }
+  .map-unavailable { height: 100%; display: grid; place-items: center; margin: 0; color: #65716b; font-size: .75rem; }
+  :global(.landing-apt-marker) { max-width: 170px; display: grid; gap: 2px; border: 1px solid #cbd8d2; border-radius: 6px; background: rgba(255, 255, 255, .97); box-shadow: 0 2px 8px rgba(20, 42, 32, .16); color: #26322d; padding: 7px 9px; cursor: pointer; transform: translate(-2px, -2px); }
+  :global(.landing-apt-marker strong) { overflow: hidden; font-size: 11px; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+  :global(.landing-apt-marker span) { color: #087c5d; font-size: 10px; font-weight: 800; }
+  :global(.landing-apt-marker.is-selected) { border: 2px solid #087c5d; background: #087c5d; color: #fff; box-shadow: 0 3px 12px rgba(8, 124, 93, .28); cursor: default; }
+  :global(.landing-apt-marker.is-selected span) { color: #fff; }
+  .landing-report-scroll { min-width: 0; overflow-y: auto; overscroll-behavior: contain; background: #f7f9f8; padding: 16px 18px 42px; }
   .report { min-width: 0; display: grid; gap: 14px; }
   .guide-link { margin: 0; border: 1px solid #d8e4de; border-radius: 7px; background: #f2f8f5; padding: 14px 16px; }
   .guide-link a { color: #0c6844; font-size: .78rem; font-weight: 800; text-decoration: none; }
@@ -385,12 +503,26 @@ const structuredData = [
   :global(html.report-embed body) { overflow: auto; background: #f7f9f8; }
   :global(html.report-embed .site-header),
   :global(html.report-embed .site-footer) { display: none; }
-  :global(html.report-embed .main-content:has(.report)) { width: min(1400px, calc(100vw - 32px)); min-height: 100%; padding: 16px 0 36px; }
+  :global(html.report-embed .main-content:has(.apartment-landing)) { width: 100%; min-height: 100%; padding: 0; }
+  :global(html.report-embed .apartment-landing) { min-height: 0; background: #f7f9f8; }
+  :global(html.report-embed .landing-bar),
+  :global(html.report-embed .landing-map-pane) { display: none; }
+  :global(html.report-embed .landing-workspace) { height: auto; display: block; }
+  :global(html.report-embed .landing-report-scroll) { overflow: visible; padding: 16px 16px 36px; }
   :global(html.report-embed .report-head) { display: none; }
   :global(html.report-embed .report) { gap: 12px; }
   @media (max-width: 980px) { .content-grid { grid-template-columns: 1fr; } aside { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 760px) {
-    :global(.main-content:has(.report)) { width: calc(100vw - 24px); }
+    :global(body:has(.apartment-landing)) { overflow: auto; }
+    .landing-bar { height: 56px; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 0 12px; }
+    .landing-brand strong, .landing-title span { display: none; }
+    .landing-title { border-left: 0; padding-left: 0; }
+    .landing-title strong { font-size: .78rem; }
+    .landing-map-link { display: none; }
+    .landing-workspace { height: auto; display: grid; grid-template-columns: 1fr; grid-template-rows: minmax(280px, 38dvh) auto; }
+    .landing-map-pane { border-right: 0; border-bottom: 1px solid #d8e0dc; }
+    .landing-map-caption { top: 10px; left: 10px; padding: 9px 11px; }
+    .landing-report-scroll { overflow: visible; padding: 12px 12px 30px; }
     .report-head { align-items: flex-start; } .report-head h1 { font-size: 1.4rem; } .report-meta { display: none; }
     .fact-strip { grid-template-columns: repeat(2, 1fr); } .fact-strip div { border-bottom: 1px solid #e8ebe9; }
     .summary-panel { grid-template-columns: 1fr; padding: 17px; } .summary-panel dl { border-top: 1px solid #e8ebe9; padding-top: 12px; }
@@ -403,6 +535,7 @@ const structuredData = [
     aside { grid-template-columns: 1fr; } .chart svg { height: 165px; }
     .reading-panel > div { grid-template-columns: 1fr; } .reading-panel article { border-right: 0; border-bottom: 1px solid #e8ebe9; }
     .method-note { grid-template-columns: 1fr; gap: 16px; } .method-note dl { grid-template-columns: 1fr; }
-    :global(html.report-embed .main-content:has(.report)) { width: calc(100vw - 20px); padding: 10px 0 24px; }
+    :global(html.report-embed .landing-workspace) { display: block; }
+    :global(html.report-embed .landing-report-scroll) { padding: 10px 10px 24px; }
   }
 </style>
