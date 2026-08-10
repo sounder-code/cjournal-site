@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { loadApartmentManifest } from '@/lib/apartmentBulk';
-import adminCenters from '@/data/admin-centers.json';
 
 const manifest = await loadApartmentManifest();
 const naverMapClientId = import.meta.env.PUBLIC_NAVER_MAP_CLIENT_ID || '8qq4ptrbjt';
@@ -187,20 +186,14 @@ const metrics = [
     </footer>
   </section>
 
-  <script is:inline type="application/json" id="map-payload" set:html={JSON.stringify({
-    indexUrl: manifest.index,
-    searchUrl: typeof manifest.search === 'string' ? manifest.search : manifest.search?.file || manifest.index,
-    regions: manifest.regions,
-    districts: manifest.districts || [],
-    metrics,
-    adminCenters
-  })} />
-
   <script is:inline src={`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${naverMapClientId}`}></script>
 
   <script>
     // @ts-nocheck
-    const payload = JSON.parse(document.querySelector('#map-payload')?.textContent || '{}');
+    const payload = await fetch('/data/map-payload.json', { credentials: 'same-origin' }).then((response) => {
+      if (!response.ok) throw new Error(`Map payload HTTP ${response.status}`);
+      return response.json();
+    });
     const app = document.querySelector('[data-map-app]');
     const search = app?.querySelector('[data-search]');
     const searchFeedback = app?.querySelector('[data-search-feedback]');
