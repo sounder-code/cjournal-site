@@ -82,7 +82,7 @@ export interface ApartmentPageData {
   peerRank: number;
   peerMedianTotal: number;
   percentiles: Record<ComparisonMetric, number>;
-  nearby: Array<Pick<ApartmentEntry, 's' | 'n' | 'sg' | 'd' | 'h' | 'y' | 'tf' | 'ht' | 'la' | 'lo'>>;
+  nearby: Array<Pick<ApartmentEntry, 's' | 'n' | 'sg' | 'd' | 'h' | 'y' | 'tf' | 'ht'>>;
 }
 
 export const APARTMENT_REPORT_UPDATED = '2026-08-07';
@@ -114,23 +114,13 @@ export const loadApartmentManifest = () => {
 export const loadApartmentEntries = () => {
   entriesPromise ??= (async () => {
     const manifest = await loadApartmentManifest();
-    const [regions, searchEntries] = await Promise.all([
-      Promise.all(
+    const regions = await Promise.all(
       manifest.regions.map(async (region) => {
         const path = resolve('public', region.file.replace(/^\//, ''));
         return JSON.parse(await readFile(path, 'utf8')) as ApartmentEntry[];
       })
-      ),
-      manifest.search
-        ? readFile(resolve('public', (typeof manifest.search === 'string' ? manifest.search : manifest.search.file).replace(/^\//, '')), 'utf8')
-          .then((text) => JSON.parse(text) as Array<Pick<ApartmentEntry, 'c' | 'la' | 'lo'>>)
-        : Promise.resolve([])
-    ]);
-    const coordinates = new Map(searchEntries.map((entry) => [entry.c, { la: entry.la, lo: entry.lo }]));
-    return regions.flat().map((entry) => {
-      const coordinate = coordinates.get(entry.c);
-      return coordinate ? { ...entry, ...coordinate } : entry;
-    });
+    );
+    return regions.flat();
   })();
   return entriesPromise;
 };
@@ -272,7 +262,7 @@ export const loadApartmentPageData = () => {
         .filter((item) => item.c !== apartment.c)
         .sort((a, b) => Math.abs(a.h - apartment.h) - Math.abs(b.h - apartment.h) || a.n.localeCompare(b.n, 'ko'))
         .slice(0, 8)
-        .map(({ s, n, sg, d, h, y, tf, ht, la, lo }) => ({ s, n, sg, d, h, y, tf, ht, la, lo }));
+        .map(({ s, n, sg, d, h, y, tf, ht }) => ({ s, n, sg, d, h, y, tf, ht }));
       const qualityReasons = apartmentQualityReasons(apartment);
       const comparisonEligible = qualityReasons.length === 0;
       const indexable = comparisonEligible &&

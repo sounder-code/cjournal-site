@@ -6,6 +6,17 @@ import adminCenters from '@/data/admin-centers.json';
 const manifest = await loadApartmentManifest();
 const naverMapClientId = import.meta.env.PUBLIC_NAVER_MAP_CLIENT_ID || '8qq4ptrbjt';
 const currentYear = new Date().getFullYear();
+const {
+  pageTitle = '전국 아파트 관리비 지도·단지 비교 | 단지표',
+  pageDescription = '전국 공동주택을 검색하고 총 관리비, 공용관리비, 장기수선충당금을 지도에서 비교합니다.',
+  pageCanonical = '/',
+  pageRobots = manifest.stats.complexes > 0 ? 'index, follow' : 'noindex, nofollow',
+  pageUpdatedTime,
+  pageStructuredData,
+  initialApartmentSlug = '',
+  initialReport = false
+} = Astro.props;
+const hasServerReport = Astro.slots.has('report');
 const metrics = [
   { key: 'tf', label: '총 관리비', shortLabel: '총액' },
   { key: 'cf', label: '공용관리비', shortLabel: '공용' },
@@ -13,14 +24,16 @@ const metrics = [
 ];
 ---
 <BaseLayout
-  title="전국 아파트 관리비 지도·단지 비교 | 단지표"
-  description="전국 공동주택을 검색하고 총 관리비, 공용관리비, 장기수선충당금을 지도에서 비교합니다."
-  canonical="/"
-  robots={manifest.stats.complexes > 0 ? 'index, follow' : 'noindex, nofollow'}
+  title={pageTitle}
+  description={pageDescription}
+  canonical={pageCanonical}
+  robots={pageRobots}
+  updatedTime={pageUpdatedTime}
+  structuredData={pageStructuredData}
   fullBleed
   hideHeader
 >
-  <section class="map-shell" data-map-app>
+  <section class="map-shell" data-map-app data-initial-slug={initialApartmentSlug} data-initial-report={initialReport ? '1' : '0'}>
     <h1 class="map-title">전국 아파트 관리비 지도</h1>
     <div class="filter-bar" aria-label="관리비 지도 필터">
       <a href="/" class="map-brand" aria-label="단지표 아파트 관리비 지도 홈">
@@ -133,7 +146,7 @@ const metrics = [
       </div>
     </section>
 
-    <section class="report-dialog" data-report-dialog role="dialog" aria-labelledby="report-dialog-title" hidden>
+    <section class="report-dialog" data-report-dialog role="dialog" aria-labelledby="report-dialog-title" hidden={!hasServerReport}>
       <div class="report-sheet">
         <header class="report-sheet-head">
           <div class="report-title-block">
@@ -154,8 +167,9 @@ const metrics = [
           </div>
         </header>
         <div class="report-frame-wrap" data-report-frame-wrap>
-          <div class="report-loading" data-report-loading><strong>월별 관리비를 불러오는 중</strong><span>최근 공개 내역과 비교 지표를 준비하고 있습니다.</span></div>
-          <iframe data-report-frame title="월별 관리비 리포트" loading="eager"></iframe>
+          {hasServerReport && <div class="server-report" data-server-report><slot name="report" /></div>}
+          <div class="report-loading" data-report-loading hidden={hasServerReport}><strong>월별 관리비를 불러오는 중</strong><span>최근 공개 내역과 비교 지표를 준비하고 있습니다.</span></div>
+          <iframe data-report-frame title="월별 관리비 리포트" loading="eager" hidden={hasServerReport}></iframe>
         </div>
       </div>
     </section>
@@ -214,17 +228,18 @@ const metrics = [
     const reportTitle = app?.querySelector('[data-report-title]');
     const reportSubtitle = app?.querySelector('[data-report-subtitle]');
     const reportFrame = app?.querySelector('[data-report-frame]');
+    const serverReport = app?.querySelector('[data-server-report]');
     const reportLoading = app?.querySelector('[data-report-loading]');
     const reportShare = app?.querySelector('[data-report-share]');
     const mapToast = app?.querySelector('[data-map-toast]');
     const metricButtons = [...(app?.querySelectorAll('[data-metric]') || [])];
     const initialParams = new URLSearchParams(window.location.search);
-    const initialSlug = initialParams.get('apt') || '';
+    const initialSlug = initialParams.get('apt') || app?.dataset.initialSlug || '';
     const initialProvince = initialParams.get('region') || '';
     const initialDistrict = initialParams.get('district') || '';
     const initialCompareSlugs = (initialParams.get('compare') || '').split(',').map((slug) => slug.trim()).filter(Boolean).slice(0, 4);
     const initialCompareOpen = initialParams.get('view') === 'compare';
-    const initialReportOpen = initialParams.get('report') === '1';
+    const initialReportOpen = initialParams.get('report') === '1' || app?.dataset.initialReport === '1';
 
     const provinceCenters = {
       '서울특별시': [37.5665, 126.978],
@@ -1015,7 +1030,7 @@ const metrics = [
     };
 
     const renderReportDialog = (apartment = null) => {
-      if (!reportDialog || !reportFrame) return;
+      if (!reportDialog || (!reportFrame && !serverReport)) return;
       const shouldOpen = reportDialogOpen && apartment?.q === 1;
       reportDialog.hidden = !shouldOpen;
       document.body.classList.toggle('report-dialog-open', shouldOpen);
@@ -1029,7 +1044,15 @@ const metrics = [
       if (reportSubtitle) reportSubtitle.textContent = isReport
         ? `${apartment.n} · ${apartment.lm || '최근 공개월'}`
         : isMethodology ? '원본 결합과 비교 방식' : '항목과 비교 기준';
-      reportFrame.title = isReport ? `${apartment.n} 월별 관리비 리포트` : isMethodology ? '관리비 산정 기준' : '아파트 관리비 읽는 법';
+      if (reportFrame) reportFrame.title = isReport ? `${apartment.n} 월별 관리비 리포트` : isMethodology ? '관리비 산정 기준' : '아파트 관리비 읽는 법';
+      const useServerReport = Boolean(serverReport && isReport && apartment.s === initialSlug);
+      if (serverReport) serverReport.hidden = !useServerReport;
+      if (useServerReport) {
+        if (reportLoading) reportLoading.hidden = true;
+        if (reportFrame) reportFrame.hidden = true;
+        return;
+      }
+      if (!reportFrame) return;
       const source = isReport
         ? `/apartments/${encodeURIComponent(apartment.s)}/?embed=map`
         : isMethodology ? '/methodology/?embed=map' : '/management-fee-guide/?embed=map';
@@ -2310,6 +2333,8 @@ const metrics = [
   .report-sheet-actions button { min-height: 40px; border: 1px solid #08765c; border-radius: 7px; background: #fff; color: #08765c; padding: 0 13px; font-size: .72rem; font-weight: 850; cursor: pointer; }
   .report-sheet-actions .report-sheet-close { width: 40px; border-color: #c8d5ce; color: #26352e; padding: 0; font-size: 1.2rem; }
   .report-frame-wrap { position: relative; min-height: 0; overflow: hidden; background: #f7f9f8; }
+  .server-report { width: 100%; height: 100%; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; background: #f7f9f8; }
+  .server-report[hidden] { display: none; }
   .report-frame-wrap iframe { width: 100%; height: 100%; display: block; border: 0; background: #f7f9f8; }
   .report-frame-wrap iframe[hidden] { display: none; }
   .report-loading { position: absolute; inset: 0; display: grid; place-content: center; gap: 5px; color: #6d7872; text-align: center; }
