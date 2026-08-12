@@ -85,7 +85,7 @@ export interface ApartmentPageData {
   nearby: Array<Pick<ApartmentEntry, 's' | 'n' | 'sg' | 'd' | 'h' | 'y' | 'tf' | 'ht'>>;
 }
 
-export const APARTMENT_REPORT_UPDATED = '2026-08-07';
+export const APARTMENT_REPORT_UPDATED = '2026-08-12';
 
 const manifestPath = resolve('public/data/apartments/manifest.json');
 let manifestPromise: Promise<ApartmentManifest> | undefined;

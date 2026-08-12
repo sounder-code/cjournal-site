@@ -118,6 +118,7 @@ const structuredData = [
   pageRobots={indexable ? 'index, follow' : 'noindex, follow'}
   pageUpdatedTime={`${pageModified}T00:00:00+09:00`}
   pageStructuredData={structuredData}
+  reportHeading={`${apartment.n} 관리비`}
   initialApartmentSlug={apartment.s}
   initialReport={true}
 >
@@ -153,7 +154,7 @@ const structuredData = [
     <header class="report-head">
       <div>
         <nav aria-label="경로"><a href="/apartments/">단지 찾기</a><span>/</span><a href={regionHubPath(apartment.sd)}>{apartment.sd}</a><span>/</span><a href={districtHubPath(apartment.sd, apartment.sg)}>{districtName}</a></nav>
-        <h1>{apartment.n} 관리비</h1>
+        <h2>{apartment.n} 관리비</h2>
         <p>{apartment.a}</p>
       </div>
       <div class="report-meta"><strong>{latest[0]}</strong><span>최근 공개월</span></div>

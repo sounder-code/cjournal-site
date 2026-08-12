@@ -6,7 +6,7 @@ import {
 } from '@/lib/apartmentBulk';
 import { districtHubPath, regionHubPath } from '@/lib/apartmentSeo';
 
-export const APARTMENT_SITEMAP_CHUNK_SIZE = 5_000;
+export const APARTMENT_SITEMAP_CHUNK_SIZE = 1_000;
 
 type ChangeFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
@@ -50,11 +50,25 @@ const sitemapLastmod = (sourceDate?: string, generatedAt?: string) => {
     ? validIsoDate(`${compact[1]}-${compact[2]}-${compact[3]}`)
     : undefined;
   const fromGeneration = validIsoDate(generatedAt?.slice(0, 10) ?? '');
-  return [fromSource, fromGeneration, APARTMENT_REPORT_UPDATED]
+  return [fromSource, fromGeneration]
     .filter((value): value is string => Boolean(value))
     .sort()
     .at(-1);
 };
+
+const latestDate = (...values: Array<string | undefined>) => values
+  .filter((value): value is string => Boolean(value))
+  .sort()
+  .at(-1);
+
+const apartmentLastmod = (
+  apartment: { lm?: string },
+  latestMonth: string,
+  sourceLastmod?: string
+) => latestDate(
+  APARTMENT_REPORT_UPDATED,
+  apartment.lm === latestMonth ? sourceLastmod : undefined
+);
 
 const comparePaths = (left: string, right: string) => left.localeCompare(right, 'ko');
 
@@ -77,7 +91,7 @@ export const loadSitemapInventory = () => {
       loadApartmentManifest(),
       loadApartmentPageData()
     ]);
-    const lastmod = sitemapLastmod(manifest.sourceDate, manifest.generatedAt);
+    const sourceLastmod = sitemapLastmod(manifest.sourceDate, manifest.generatedAt);
     const provincePaths = new Set<string>();
     const districtPaths = new Set<string>();
     const apartmentPaths = new Set<string>();
@@ -97,19 +111,24 @@ export const loadSitemapInventory = () => {
       districtPaths.add(districtHubPath(province, district));
     }
 
-    const core = corePages.map((entry) => ({ ...entry, lastmod }));
+    const core = corePages.map((entry) => ({
+      ...entry,
+      lastmod: entry.loc === '/'
+        ? APARTMENT_REPORT_UPDATED
+        : ['/apartments/', '/methodology/'].includes(entry.loc) ? sourceLastmod : undefined
+    }));
     const regions = [...provincePaths, ...districtPaths]
       .sort(comparePaths)
-      .map((loc) => ({ loc, lastmod, priority: '0.8', changefreq: 'monthly' as const }));
+      .map((loc) => ({ loc, lastmod: sourceLastmod, priority: '0.8', changefreq: 'monthly' as const }));
     const apartments = pages
       .filter((page) => page.indexable)
       .filter((page) => page?.apartment && apartmentPaths.has(`/apartments/${page.apartment.s}/`))
       .sort((left, right) => compareApartmentDiscoveryPriority(left.apartment, right.apartment))
       .map(({ apartment }) => ({
         loc: `/apartments/${apartment.s}/`,
-        lastmod,
+        lastmod: apartmentLastmod(apartment, manifest.latestMonth, sourceLastmod),
         priority: apartment.h >= 1_000 ? '0.8' : '0.7',
-        changefreq: 'weekly' as const
+        changefreq: 'monthly' as const
       }));
 
     assertUniqueCanonicalPaths([
@@ -118,6 +137,11 @@ export const loadSitemapInventory = () => {
       ['apartment sitemaps', apartments]
     ]);
 
+    const lastmod = latestDate(
+      ...core.map((entry) => entry.lastmod),
+      ...regions.map((entry) => entry.lastmod),
+      ...apartments.map((entry) => entry.lastmod)
+    );
     return { lastmod, core, regions, apartments };
   })();
 

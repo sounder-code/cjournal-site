@@ -6,3 +6,15 @@
   Permissions-Policy: geolocation=(), microphone=(), camera=()
   Cross-Origin-Opener-Policy: same-origin-allow-popups
   Cross-Origin-Resource-Policy: cross-origin
+
+/apartments/*
+  Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800
+
+/sitemap.xml
+  Cache-Control: public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400
+
+/sitemaps/*
+  Cache-Control: public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400
+
+/rss.xml
+  Cache-Control: public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400

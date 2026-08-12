@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { loadApartmentManifest } from '@/lib/apartmentBulk';
+import { regionHubPath } from '@/lib/apartmentSeo';
 
 const manifest = await loadApartmentManifest();
 const naverMapClientId = import.meta.env.PUBLIC_NAVER_MAP_CLIENT_ID || '8qq4ptrbjt';
@@ -12,10 +13,14 @@ const {
   pageRobots = manifest.stats.complexes > 0 ? 'index, follow' : 'noindex, nofollow',
   pageUpdatedTime,
   pageStructuredData,
+  pageHeading = '전국 아파트 관리비 지도',
+  reportHeading = '',
   initialApartmentSlug = '',
   initialReport = false
 } = Astro.props;
 const hasServerReport = Astro.slots.has('report');
+const crawlRegions = ['서울특별시', '경기도', '인천광역시', '부산광역시', '대구광역시']
+  .filter((name) => manifest.regions.some((region) => region.name === name));
 const metrics = [
   { key: 'tf', label: '총 관리비', shortLabel: '총액' },
   { key: 'cf', label: '공용관리비', shortLabel: '공용' },
@@ -33,7 +38,7 @@ const metrics = [
   hideHeader
 >
   <section class="map-shell" data-map-app data-initial-slug={initialApartmentSlug} data-initial-report={initialReport ? '1' : '0'}>
-    <h1 class="map-title">전국 아파트 관리비 지도</h1>
+    {!hasServerReport && <h1 class="map-title">{pageHeading}</h1>}
     <div class="filter-bar" aria-label="관리비 지도 필터">
       <a href="/" class="map-brand" aria-label="단지표 아파트 관리비 지도 홈">
         <span aria-hidden="true"><i></i></span>
@@ -156,7 +161,9 @@ const metrics = [
             </a>
             <div class="report-title-copy">
               <span data-report-kicker>월별 공개 내역</span>
-              <h2 id="report-dialog-title" data-report-title>월별 관리비 리포트</h2>
+              {hasServerReport
+                ? <h1 id="report-dialog-title" data-report-title>{reportHeading || '월별 관리비 리포트'}</h1>
+                : <h2 id="report-dialog-title" data-report-title>월별 관리비 리포트</h2>}
               <p data-report-subtitle></p>
             </div>
           </div>
@@ -178,6 +185,8 @@ const metrics = [
     <footer class="map-meta-footer">
       <span>&copy; {currentYear} 단지표</span>
       <nav aria-label="사이트 정보">
+        <a href="/apartments/">전국 단지</a>
+        {crawlRegions.map((region) => <a class="region-directory-link" href={regionHubPath(region)}>{region.replace(/(특별시|광역시|특별자치도|도)$/, '')}</a>)}
         <a href="/about/">서비스 정보</a>
         <a href="/methodology/">산정 기준</a>
         <a href="/privacy/">개인정보</a>
@@ -1030,15 +1039,17 @@ const metrics = [
       if (!shouldOpen) return;
       const isReport = reportContentMode === 'report';
       const isMethodology = reportContentMode === 'methodology';
+      const useServerReport = Boolean(serverReport && isReport && apartment.s === initialSlug);
       if (reportBack) reportBack.hidden = isReport;
       if (reportShare) reportShare.hidden = !isReport;
       if (reportKicker) reportKicker.textContent = isReport ? '월별 공개 내역' : isMethodology ? '데이터 기준' : '관리비 도움말';
-      if (reportTitle) reportTitle.textContent = isReport ? '월별 관리비 리포트' : isMethodology ? '관리비 산정 기준' : '관리비 읽는 법';
+      if (reportTitle) reportTitle.textContent = useServerReport
+        ? `${apartment.n} 관리비`
+        : isReport ? '월별 관리비 리포트' : isMethodology ? '관리비 산정 기준' : '관리비 읽는 법';
       if (reportSubtitle) reportSubtitle.textContent = isReport
         ? `${apartment.n} · ${apartment.lm || '최근 공개월'}`
         : isMethodology ? '원본 결합과 비교 방식' : '항목과 비교 기준';
       if (reportFrame) reportFrame.title = isReport ? `${apartment.n} 월별 관리비 리포트` : isMethodology ? '관리비 산정 기준' : '아파트 관리비 읽는 법';
-      const useServerReport = Boolean(serverReport && isReport && apartment.s === initialSlug);
       if (serverReport) serverReport.hidden = !useServerReport;
       if (useServerReport) {
         if (reportLoading) reportLoading.hidden = true;
@@ -2320,7 +2331,7 @@ const metrics = [
   .report-brand { flex: 0 0 auto; padding-right: 13px; border-right: 1px solid #d9e1dc; }
   .report-title-copy { min-width: 0; }
   .report-title-copy > span { color: #08765c; font-size: .62rem; font-weight: 850; }
-  .report-title-copy h2 { display: inline; margin: 0 8px 0 0; color: var(--ink); font-size: 1.05rem; letter-spacing: 0; }
+  .report-title-copy :is(h1, h2) { display: inline; margin: 0 8px 0 0; color: var(--ink); font-size: 1.05rem; letter-spacing: 0; }
   .report-title-copy p { display: inline; margin: 0; color: #6d7872; font-size: .7rem; }
   .report-sheet-actions { display: flex; align-items: center; gap: 7px; }
   .report-sheet-actions button { min-height: 40px; border: 1px solid #08765c; border-radius: 7px; background: #fff; color: #08765c; padding: 0 13px; font-size: .72rem; font-weight: 850; cursor: pointer; }
@@ -2625,6 +2636,7 @@ const metrics = [
     }
     .map-meta-footer { right: 8px; bottom: 6px; gap: 6px; padding: 4px 6px; font-size: .54rem; }
     .map-meta-footer nav { gap: 6px; }
+    .map-meta-footer .region-directory-link { display: none; }
     .detail-head h2 { font-size: 1.08rem; }
     .score-box section { padding: 11px; }
     .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2667,7 +2679,7 @@ const metrics = [
     .report-title-block { gap: 8px; }
     .report-brand { padding-right: 8px; }
     .report-brand strong { display: none; }
-    .report-title-copy h2 { display: block; font-size: .98rem; line-height: 1.25; }
+    .report-title-copy :is(h1, h2) { display: block; font-size: .98rem; line-height: 1.25; }
     .report-title-copy p { display: block; max-width: 185px; overflow: hidden; margin-top: 2px; text-overflow: ellipsis; white-space: nowrap; }
     .report-title-copy > span { display: none; }
     .report-sheet-actions button:first-child { min-height: 36px; padding: 0 9px; font-size: .68rem; }
