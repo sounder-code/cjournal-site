@@ -33,6 +33,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </p>
     </section>
 
+    <section class="policy-block public-data-case">
+      <div>
+        <p class="section-label">공공데이터 활용사례</p>
+        <h2>공공데이터포털에 공개된 서비스입니다.</h2>
+      </div>
+      <p>
+        단지표의 서비스 개요, 활용 데이터와 주요 기능은 공공데이터포털 활용사례에서 확인할 수 있습니다.
+        활용사례 등록번호는 1087474입니다.
+      </p>
+      <a
+        href="https://www.data.go.kr/tcs/puc/selectPublicUseCaseView.do?prcuseCaseSn=1087474"
+        target="_blank"
+        rel="external noopener"
+      >공공데이터포털에서 확인</a>
+    </section>
+
     <section class="policy-block">
       <h2>문의와 수정 요청</h2>
       <p>
@@ -89,7 +105,29 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--ink);
     font: 950 1.15rem/1.2 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
   }
+  .public-data-case {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.5fr) auto;
+    align-items: center;
+    gap: 20px;
+  }
+  .public-data-case h2 { margin: 5px 0 0; }
+  .section-label {
+    color: var(--green-strong) !important;
+    font-size: 0.76rem !important;
+    font-weight: 900 !important;
+    line-height: 1.2 !important;
+  }
+  .public-data-case a {
+    color: var(--green-strong);
+    font-size: 0.86rem;
+    font-weight: 900;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    white-space: nowrap;
+  }
   @media (max-width: 760px) {
     .grid { grid-template-columns: 1fr; }
+    .public-data-case { grid-template-columns: 1fr; gap: 12px; }
   }
 </style>
