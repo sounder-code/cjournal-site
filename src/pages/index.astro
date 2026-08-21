@@ -1,4 +1,27 @@
 ---
 import MapPage from './map.astro';
+
+const siteUrl = 'https://danjipyo.kr/';
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${siteUrl}#organization`,
+      name: '단지표',
+      url: siteUrl,
+      logo: `${siteUrl}favicon.svg`
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${siteUrl}#website`,
+      url: siteUrl,
+      name: '단지표',
+      description: '전국 아파트 관리비 지도와 단지 비교 서비스',
+      publisher: { '@id': `${siteUrl}#organization` },
+      inLanguage: 'ko-KR'
+    }
+  ]
+};
 ---
-<MapPage />
+<MapPage pageStructuredData={structuredData} />

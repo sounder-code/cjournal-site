@@ -11,3 +11,4 @@ coverage
 tmp/
 !tmp/.gitkeep
 data/kapt/raw/
+docker/apartment-redirects.map

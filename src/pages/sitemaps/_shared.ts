@@ -44,16 +44,11 @@ const validIsoDate = (value: string) => {
     : undefined;
 };
 
-const sitemapLastmod = (sourceDate?: string, generatedAt?: string) => {
+const sitemapLastmod = (sourceDate?: string) => {
   const compact = sourceDate?.match(/^(\d{4})(\d{2})(\d{2})$/);
-  const fromSource = compact
+  return compact
     ? validIsoDate(`${compact[1]}-${compact[2]}-${compact[3]}`)
     : undefined;
-  const fromGeneration = validIsoDate(generatedAt?.slice(0, 10) ?? '');
-  return [fromSource, fromGeneration]
-    .filter((value): value is string => Boolean(value))
-    .sort()
-    .at(-1);
 };
 
 const latestDate = (...values: Array<string | undefined>) => values
@@ -62,12 +57,11 @@ const latestDate = (...values: Array<string | undefined>) => values
   .at(-1);
 
 const apartmentLastmod = (
-  apartment: { lm?: string },
-  latestMonth: string,
+  apartment: { md?: string },
   sourceLastmod?: string
 ) => latestDate(
   APARTMENT_REPORT_UPDATED,
-  apartment.lm === latestMonth ? sourceLastmod : undefined
+  validIsoDate(apartment.md ?? '') ?? sourceLastmod
 );
 
 const comparePaths = (left: string, right: string) => left.localeCompare(right, 'ko');
@@ -91,10 +85,11 @@ export const loadSitemapInventory = () => {
       loadApartmentManifest(),
       loadApartmentPageData()
     ]);
-    const sourceLastmod = sitemapLastmod(manifest.sourceDate, manifest.generatedAt);
+    const sourceLastmod = sitemapLastmod(manifest.sourceDate);
     const provincePaths = new Set<string>();
     const districtPaths = new Set<string>();
     const apartmentPaths = new Set<string>();
+    const regionLastmods = new Map<string, string | undefined>();
 
     for (const page of pages) {
       const apartment = page?.apartment;
@@ -105,28 +100,45 @@ export const loadSitemapInventory = () => {
 
       const province = typeof apartment.sd === 'string' ? apartment.sd.trim() : '';
       if (!province) continue;
-      provincePaths.add(regionHubPath(province));
+      const provincePath = regionHubPath(province);
+      provincePaths.add(provincePath);
+      regionLastmods.set(provincePath, latestDate(
+        regionLastmods.get(provincePath),
+        validIsoDate(apartment.md ?? '') ?? sourceLastmod
+      ));
 
       const district = typeof apartment.sg === 'string' ? apartment.sg.trim() : '';
-      districtPaths.add(districtHubPath(province, district));
+      const districtPath = districtHubPath(province, district);
+      districtPaths.add(districtPath);
+      regionLastmods.set(districtPath, latestDate(
+        regionLastmods.get(districtPath),
+        validIsoDate(apartment.md ?? '') ?? sourceLastmod
+      ));
     }
+
+    const dataLastmod = latestDate(
+      sourceLastmod,
+      ...pages.map(({ apartment }) => validIsoDate(apartment.md ?? ''))
+    );
 
     const core = corePages.map((entry) => ({
       ...entry,
       lastmod: entry.loc === '/'
-        ? APARTMENT_REPORT_UPDATED
-        : ['/apartments/', '/methodology/'].includes(entry.loc) ? sourceLastmod : undefined
+        ? latestDate(APARTMENT_REPORT_UPDATED, dataLastmod)
+        : entry.loc === '/apartments/'
+          ? dataLastmod
+          : entry.loc === '/methodology/' ? APARTMENT_REPORT_UPDATED : undefined
     }));
     const regions = [...provincePaths, ...districtPaths]
       .sort(comparePaths)
-      .map((loc) => ({ loc, lastmod: sourceLastmod, priority: '0.8', changefreq: 'monthly' as const }));
+      .map((loc) => ({ loc, lastmod: regionLastmods.get(loc) ?? sourceLastmod, priority: '0.8', changefreq: 'monthly' as const }));
     const apartments = pages
       .filter((page) => page.indexable)
       .filter((page) => page?.apartment && apartmentPaths.has(`/apartments/${page.apartment.s}/`))
       .sort((left, right) => compareApartmentDiscoveryPriority(left.apartment, right.apartment))
       .map(({ apartment }) => ({
         loc: `/apartments/${apartment.s}/`,
-        lastmod: apartmentLastmod(apartment, manifest.latestMonth, sourceLastmod),
+        lastmod: apartmentLastmod(apartment, sourceLastmod),
         priority: apartment.h >= 1_000 ? '0.8' : '0.7',
         changefreq: 'monthly' as const
       }));

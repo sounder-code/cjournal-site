@@ -61,6 +61,7 @@ export interface ApartmentEntry {
   tf: number;
   cf: number;
   rf: number;
+  md?: string;
   q?: number;
   la?: number;
   lo?: number;

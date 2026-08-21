@@ -53,11 +53,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Check whether search documents changed
+      - name: Check whether the K-apt change set changed
         id: search-documents
         shell: bash
         run: |
-          if git diff-tree --no-commit-id --name-only -r HEAD | grep -Eq '^(public/dd31d55254614118988122a86e38eb19\.txt|public/data/apartments/|public/robots\.txt|scripts/submit-indexnow\.mjs|src/pages/apartments/|src/pages/sitemaps/|src/pages/sitemap\.xml\.ts|src/pages/robots\.txt\.ts|src/lib/apartment|src/layouts/BaseLayout\.astro)'; then
+          if git diff-tree --no-commit-id --name-only -r HEAD | grep -Fxq 'data/kapt/indexnow-changes.json'; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -79,9 +79,11 @@ jobs:
           echo "Production did not expose commit ${EXPECTED_COMMIT} within 10 minutes" >&2
           exit 1
 
-      - name: Notify Naver IndexNow
+      - name: Notify Naver and Bing with IndexNow
         if: steps.search-documents.outputs.changed == 'true'
+        continue-on-error: true
         env:
           PUBLIC_SITE_URL: https://danjipyo.kr
           INDEXNOW_RELEASE_ID: ${{ github.event.workflow_run.head_sha || github.sha }}
+          INDEXNOW_URL_FILE: data/kapt/indexnow-changes.json
         run: node scripts/submit-indexnow.mjs

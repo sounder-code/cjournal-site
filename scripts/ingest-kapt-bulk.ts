@@ -1,4 +1,5 @@
 import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ExcelJS from 'exceljs';
@@ -11,6 +12,7 @@ import {
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifestPath = resolve(rootDir, process.env.KAPT_BULK_MANIFEST || 'data/kapt/raw/latest.json');
 const outputDir = resolve(rootDir, process.env.KAPT_BULK_OUTPUT || 'public/data/apartments');
+const indexNowChangeSetPath = resolve(rootDir, process.env.KAPT_INDEXNOW_CHANGESET || 'data/kapt/indexnow-changes.json');
 const feeRootDir = resolve(rootDir, process.env.KAPT_FEE_ROOT || 'data/kapt/raw');
 const coordinateThresholdKm = Number(process.env.KAPT_COORDINATE_MAX_KM || 80);
 const maxPublishableComplexes = Number(process.env.KAPT_MAX_PUBLISHABLE_COMPLEXES || 19000);
@@ -99,8 +101,22 @@ interface ApartmentSummary {
   tf: number;
   cf: number;
   rf: number;
+  md?: string;
   la?: number;
   lo?: number;
+}
+
+interface PreviousApartmentSnapshot {
+  fingerprint: string;
+  slug: string;
+  province: string;
+  district: string;
+  publishable: boolean;
+  modifiedDate: string;
+}
+
+interface CurrentApartmentSnapshot extends PreviousApartmentSnapshot {
+  code: string;
 }
 
 type HouseholdBand = 'under-300' | '300-499' | '500-999' | '1000-1499' | 'over-1500';
@@ -146,6 +162,24 @@ const slugify = (name: string, code: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9가-힣]+/g, '-')
     .replace(/^-+|-+$/g, '');
+
+const isoDateFromCompact = (value: string) => {
+  const match = String(value || '').match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (!match) return '';
+  const iso = `${match[1]}-${match[2]}-${match[3]}`;
+  const parsed = new Date(`${iso}T00:00:00Z`);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().startsWith(iso) ? iso : '';
+};
+
+const apartmentFingerprint = (entry: Record<string, unknown>) => {
+  const fields = [
+    'c', 's', 'q', 'n', 'sd', 'sg', 'd', 'a', 'h', 'b', 'y', 'ht', 'mt',
+    'ma', 'lm', 'tf', 'cf', 'rf', 'p', 'e', 'f'
+  ];
+  return createHash('sha256')
+    .update(JSON.stringify(fields.map((field) => entry[field] ?? null)))
+    .digest('hex');
+};
 
 const rowObject = (headers: string[], values: CellValue[]) =>
   Object.fromEntries(headers.map((header, index) => [header, values[index + 1]])) as Record<string, CellValue>;
@@ -197,6 +231,37 @@ const configuredFeeFiles = (process.env.KAPT_FEE_FILES || '')
   .map((path) => resolve(rootDir, path));
 
 const rawManifest = JSON.parse(await readFile(manifestPath, 'utf8')) as RawManifest;
+const sourceModifiedDate = isoDateFromCompact(rawManifest.sourceDate) || new Date().toISOString().slice(0, 10);
+const previousManifest = await readFile(resolve(outputDir, 'manifest.json'), 'utf8')
+  .then((value) => JSON.parse(value) as {
+    generatedAt?: string;
+    sourceDate?: string;
+    regions?: Array<{ key: string }>;
+  })
+  .catch(() => undefined);
+const previousFallbackModifiedDate = isoDateFromCompact(previousManifest?.sourceDate || '') || sourceModifiedDate;
+const previousApartments = new Map<string, PreviousApartmentSnapshot>();
+
+for (const region of previousManifest?.regions ?? []) {
+  const entries = await readFile(resolve(outputDir, 'regions', `${region.key}.json`), 'utf8')
+    .then((value) => JSON.parse(value) as Array<Record<string, unknown>>)
+    .catch(() => []);
+  for (const entry of entries) {
+    const code = String(entry.c || '').trim();
+    if (!code) continue;
+    previousApartments.set(code, {
+      fingerprint: apartmentFingerprint(entry),
+      slug: String(entry.s || ''),
+      province: String(entry.sd || ''),
+      district: String(entry.sg || ''),
+      publishable: entry.q === 1,
+      modifiedDate: /^\d{4}-\d{2}-\d{2}$/.test(String(entry.md || ''))
+        ? String(entry.md)
+        : previousFallbackModifiedDate
+    });
+  }
+}
+
 const coordinates = JSON.parse(
   await readFile(resolve(rootDir, 'src/data/apartment-coordinates.json'), 'utf8')
 ) as Record<string, Coordinate>;
@@ -416,6 +481,7 @@ const publishableCodes = new Set(
 const byRegion = new Map<string, Array<Record<string, unknown>>>();
 const byDistrict = new Map<string, ApartmentSummary[]>();
 const index: ApartmentSummary[] = [];
+const currentApartments = new Map<string, CurrentApartmentSnapshot>();
 let complexesWithArea = 0;
 let complexesWithFees = 0;
 let publishedFeeRows = 0;
@@ -451,34 +517,54 @@ for (const complex of eligibleComplexes) {
     cf: latest?.commonFeePerM2 ?? 0,
     rf: latest?.reserveFeePerM2 ?? 0
   };
+  const feeTuples = monthlyFees.map((fee) => [
+    fee.month,
+    fee.totalFeePerM2,
+    fee.commonFeePerM2,
+    fee.individualFeePerM2,
+    fee.reserveFeePerM2,
+    fee.generalFeePerM2,
+    fee.securityFeePerM2,
+    fee.cleaningFeePerM2,
+    fee.maintenanceFeePerM2,
+    fee.elevatorFeePerM2,
+    fee.electricityFeePerM2,
+    fee.waterFeePerM2,
+    fee.heatingFeePerM2,
+    fee.hotWaterFeePerM2
+  ]);
+  const detail = {
+    ...summary,
+    p: complex.parking,
+    e: complex.elevators,
+    f: feeTuples
+  };
+  const fingerprint = apartmentFingerprint(detail);
+  const previous = previousApartments.get(complex.code);
+  const modifiedDate = previous?.fingerprint === fingerprint
+    ? previous.modifiedDate
+    : sourceModifiedDate;
   const indexedSummary: ApartmentSummary = {
     ...summary,
+    md: modifiedDate,
     ...(coordinate ? { la: coordinate.latitude, lo: coordinate.longitude } : {})
   };
+  currentApartments.set(complex.code, {
+    code: complex.code,
+    fingerprint,
+    slug: summary.s,
+    province: summary.sd,
+    district: summary.sg,
+    publishable: summary.q === 1,
+    modifiedDate
+  });
   index.push(indexedSummary);
   const districtKey = `${complex.sido}\u001f${complex.sigungu}`;
   byDistrict.set(districtKey, [...(byDistrict.get(districtKey) ?? []), indexedSummary]);
   const details = byRegion.get(regionKey) ?? [];
   details.push({
-    ...summary,
-    p: complex.parking,
-    e: complex.elevators,
-    f: monthlyFees.map((fee) => [
-      fee.month,
-      fee.totalFeePerM2,
-      fee.commonFeePerM2,
-      fee.individualFeePerM2,
-      fee.reserveFeePerM2,
-      fee.generalFeePerM2,
-      fee.securityFeePerM2,
-      fee.cleaningFeePerM2,
-      fee.maintenanceFeePerM2,
-      fee.elevatorFeePerM2,
-      fee.electricityFeePerM2,
-      fee.waterFeePerM2,
-      fee.heatingFeePerM2,
-      fee.hotWaterFeePerM2
-    ])
+    ...detail,
+    md: modifiedDate
   });
   byRegion.set(regionKey, details);
 }
@@ -546,9 +632,24 @@ for (const [compositeKey, entries] of [...byDistrict].sort(([a], [b]) => a.local
 }
 
 const sortedMonths = [...months].sort();
+const hasPreviousDataset = previousApartments.size > 0;
+const changedApartments = hasPreviousDataset
+  ? [...currentApartments.values()].filter((current) =>
+      previousApartments.get(current.code)?.fingerprint !== current.fingerprint
+    )
+  : [];
+const removedApartments = hasPreviousDataset
+  ? [...previousApartments.entries()]
+      .filter(([code]) => !currentApartments.has(code))
+      .map(([code, previous]) => ({ code, ...previous }))
+  : [];
+const hasDatasetChanges = changedApartments.length > 0 || removedApartments.length > 0;
+const generatedAt = hasDatasetChanges || !previousManifest?.generatedAt
+  ? new Date().toISOString()
+  : previousManifest.generatedAt;
 const outputManifest = {
   version: 2,
-  generatedAt: new Date().toISOString(),
+  generatedAt,
   sourceDate: rawManifest.sourceDate,
   source: 'K-apt 주간 일괄 공개자료',
   units: { fee: '원/m2', area: 'm2' },
@@ -617,7 +718,71 @@ const outputManifest = {
 };
 await writeFile(resolve(outputDir, 'manifest.json'), `${JSON.stringify(outputManifest, null, 2)}\n`);
 
+const changedUrls = new Set<string>();
+const removedUrls = new Set<string>();
+const affectedProvinces = new Set<string>();
+const affectedDistricts = new Set<string>();
+const regionPath = (province: string) =>
+  `/apartments/regions/${encodeURIComponent(province)}/`;
+const districtPath = (province: string, district: string) =>
+  `/apartments/regions/${encodeURIComponent(province)}/${encodeURIComponent(district || '전체')}/`;
+const apartmentPath = (slug: string) => `/apartments/${encodeURIComponent(slug)}/`;
+
+if (hasPreviousDataset && hasDatasetChanges) {
+  changedUrls.add('/');
+  for (const current of changedApartments) {
+    const previous = previousApartments.get(current.code);
+    if (current.publishable) {
+      changedUrls.add(apartmentPath(current.slug));
+      affectedProvinces.add(current.province);
+      affectedDistricts.add(`${current.province}\u001f${current.district}`);
+    }
+    if (previous?.publishable) {
+      affectedProvinces.add(previous.province);
+      affectedDistricts.add(`${previous.province}\u001f${previous.district}`);
+      if (!current.publishable || previous.slug !== current.slug) {
+        removedUrls.add(apartmentPath(previous.slug));
+      }
+    }
+  }
+  for (const previous of removedApartments) {
+    if (!previous.publishable) continue;
+    removedUrls.add(apartmentPath(previous.slug));
+    affectedProvinces.add(previous.province);
+    affectedDistricts.add(`${previous.province}\u001f${previous.district}`);
+  }
+  if (affectedProvinces.size || affectedDistricts.size) changedUrls.add('/apartments/');
+  for (const province of affectedProvinces) changedUrls.add(regionPath(province));
+  for (const composite of affectedDistricts) {
+    const [province, district] = composite.split('\u001f');
+    changedUrls.add(districtPath(province, district));
+  }
+}
+
+const changeSet = {
+  version: 1,
+  generatedAt,
+  sourceDate: rawManifest.sourceDate,
+  baselineOnly: !hasPreviousDataset,
+  urls: [...changedUrls].sort(),
+  removedUrls: [...removedUrls].sort(),
+  stats: {
+    changedApartments: changedApartments.length,
+    removedApartments: removedApartments.length,
+    affectedDistricts: affectedDistricts.size,
+    affectedProvinces: affectedProvinces.size
+  }
+};
+await mkdir(dirname(indexNowChangeSetPath), { recursive: true });
+const hasExistingChangeSet = await stat(indexNowChangeSetPath)
+  .then((value) => value.isFile())
+  .catch(() => false);
+if (!hasExistingChangeSet || !hasPreviousDataset || hasDatasetChanges) {
+  await writeFile(indexNowChangeSetPath, `${JSON.stringify(changeSet, null, 2)}\n`);
+}
+
 console.log(JSON.stringify(outputManifest.stats, null, 2));
+console.log(JSON.stringify({ indexNow: changeSet.stats, submittedUrls: changeSet.urls.length, removedUrls: changeSet.removedUrls.length }, null, 2));
 console.log(JSON.stringify({ coordinateValidation: outputManifest.coordinateValidation }, null, 2));
 console.log(
   `전국 ${index.length.toLocaleString('ko-KR')}개 단지, 원본 ${feeRows.toLocaleString('ko-KR')}개/병합 ${publishedFeeRows.toLocaleString('ko-KR')}개 관리비 행 변환 완료` +

@@ -21,11 +21,12 @@ ENV PUBLIC_GA_ID=${PUBLIC_GA_ID}
 ENV PUBLIC_GTM_ID=${PUBLIC_GTM_ID}
 ENV PUBLIC_NAVER_ANALYTICS_ID=${PUBLIC_NAVER_ANALYTICS_ID}
 ENV PUBLIC_SITE_URL=${PUBLIC_SITE_URL}
-RUN npm run typecheck && npm run build
+RUN npm run seo:redirect-map && npm run typecheck && npm run build && npm run quality:seo
 
 FROM nginx:1.27-alpine AS production
 COPY docker/security-headers.conf /etc/nginx/security-headers.conf
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/docker/apartment-redirects.map /etc/nginx/apartment-redirects.map
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

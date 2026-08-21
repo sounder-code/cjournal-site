@@ -46,15 +46,16 @@ jobs:
         run: |
           npm run typecheck
           npm run build
+          npm run quality:seo
 
       - name: Commit and push when data changed
         run: |
-          if git diff --quiet -- public/data/apartments src/data/apartment-coordinates.json; then
+          if git diff --quiet -- public/data/apartments src/data/apartment-coordinates.json data/kapt/indexnow-changes.json; then
             echo "K-apt data is already current"
             exit 0
           fi
           git config user.name "data-bot"
           git config user.email "data-bot@users.noreply.github.com"
-          git add public/data/apartments src/data/apartment-coordinates.json
+          git add public/data/apartments src/data/apartment-coordinates.json data/kapt/indexnow-changes.json
           git commit -m "chore(data): refresh K-apt dataset"
           git push origin main
