@@ -21,7 +21,7 @@ ENV PUBLIC_GA_ID=${PUBLIC_GA_ID}
 ENV PUBLIC_GTM_ID=${PUBLIC_GTM_ID}
 ENV PUBLIC_NAVER_ANALYTICS_ID=${PUBLIC_NAVER_ANALYTICS_ID}
 ENV PUBLIC_SITE_URL=${PUBLIC_SITE_URL}
-RUN npm run seo:redirect-map && npm run typecheck && npm run build && npm run quality:seo
+RUN npm run typecheck && npm run build && npm run quality:seo
 
 FROM nginx:1.27-alpine AS production
 COPY docker/security-headers.conf /etc/nginx/security-headers.conf

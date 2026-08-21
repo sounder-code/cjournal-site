@@ -12,3 +12,4 @@ tmp/
 !tmp/.gitkeep
 data/kapt/raw/
 docker/apartment-redirects.map
+functions/generated-apartment-redirects.js

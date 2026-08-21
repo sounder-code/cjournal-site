@@ -1,3 +1,5 @@
+import apartmentCanonicalPaths from './generated-apartment-redirects.js';
+
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   const naverVerificationPath = '/naver692408c2a6023501bbb744a3d0dbe9dd.html';
@@ -21,6 +23,14 @@ export async function onRequest(context) {
         'x-robots-tag': 'noindex, nofollow'
       }
     });
+  }
+
+  const apartmentMatch = url.pathname.match(/^\/apartments\/[^/]+-([a-z][a-z0-9]+)\/?$/i);
+  if (apartmentMatch) {
+    const canonicalPath = apartmentCanonicalPaths[apartmentMatch[1].toLowerCase()];
+    if (canonicalPath && url.pathname !== canonicalPath) {
+      return Response.redirect(new URL(canonicalPath, url.origin), 308);
+    }
   }
 
   return context.next();
