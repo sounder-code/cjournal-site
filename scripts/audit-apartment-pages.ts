@@ -25,6 +25,7 @@ assert(publishedIndex.length === pages.length, '전국 인덱스 상세 링크 �
 assert(publishedIndex.every((item) => slugs.has(item.s)), '인덱스가 존재하지 않는 상세 페이지를 가리킴');
 assert(indexablePages.length >= 1_000, '검색 노출 가능한 핵심 단지가 너무 적음');
 assert(indexablePages.length < pages.length, '검색 노출 품질 기준이 전체 상세 페이지를 구분하지 못함');
+assert(indexablePages.length === pages.filter((page) => page.comparisonEligible).length, '정상 비교 데이터와 색인 대상 수 불일치');
 
 for (const page of pages) {
   const { apartment, nearby, peerCount, percentiles } = page;
@@ -35,9 +36,6 @@ for (const page of pages) {
   assert(nearby.every((item) => slugs.has(item.s)), `${apartment.c}: 관련 단지 링크 오류`);
   if (page.indexable) {
     assert(page.comparisonEligible, `${apartment.c}: 비교 제외 단지가 검색 노출 대상으로 지정됨`);
-    assert(apartment.f.length >= 6, `${apartment.c}: 검색 노출 단지 공개월 부족`);
-    assert(apartment.h >= 500, `${apartment.c}: 검색 노출 단지 세대수 기준 미달`);
-    assert(peerCount >= 10 && nearby.length >= 8, `${apartment.c}: 검색 노출 단지 비교 표본 부족`);
   }
 }
 

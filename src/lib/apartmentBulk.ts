@@ -266,11 +266,10 @@ export const loadApartmentPageData = () => {
         .map(({ s, n, sg, d, h, y, tf, ht }) => ({ s, n, sg, d, h, y, tf, ht }));
       const qualityReasons = apartmentQualityReasons(apartment);
       const comparisonEligible = qualityReasons.length === 0;
-      const indexable = comparisonEligible &&
-        apartment.f.length >= 6 &&
-        apartment.h >= 500 &&
-        peers.length >= 10 &&
-        nearby.length >= 8;
+      // Index every apartment with trustworthy published fee data. Household
+      // size and peer-group depth affect comparison richness, not whether the
+      // apartment's own report is useful or eligible for search.
+      const indexable = comparisonEligible;
       const locationLabel = [districtLabel(apartment), apartment.d].filter(Boolean).join(' ');
 
       return {
