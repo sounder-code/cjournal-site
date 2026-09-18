@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generatedAt": "2026-09-18T07:21:43.197Z",
+  "generatedAt": "2026-09-18T22:40:53.071Z",
   "sourceDate": "20260918",
   "source": "K-apt 주간 일괄 공개자료",
   "units": {
@@ -37,7 +37,7 @@
   "stats": {
     "basicRows": 22547,
     "areaRows": 91480,
-    "feeRows": 505169,
+    "feeRows": 152281,
     "complexes": 21730,
     "sourceComplexes": 21730,
     "excludedInvalidRegionComplexes": 0,
@@ -46,13 +46,13 @@
     "duplicateComplexes": 817,
     "benignDuplicateComplexes": 817,
     "duplicateFeeRows": 0,
-    "supersededFeeRows": 350026,
-    "feeSourceFiles": 4,
+    "supersededFeeRows": 0,
+    "feeSourceFiles": 1,
     "areaConflicts": 0,
-    "feeRowsWithoutArea": 4182,
-    "feeRowsWithoutComplex": 30,
+    "feeRowsWithoutArea": 1322,
+    "feeRowsWithoutComplex": 2,
     "invalidFeeMonths": 0,
-    "publishedFeeRows": 150959,
+    "publishedFeeRows": 150957,
     "publishableCandidates": 21272,
     "publishableLimit": 19000,
     "publishableComplexes": 19000,
@@ -4527,24 +4527,6 @@
   "feeHistory": {
     "discovery": "auto",
     "files": [
-      {
-        "sourceDate": "20260710",
-        "fileName": "fee.xlsx",
-        "path": "data/kapt/raw/20260710/fee.xlsx",
-        "rows": 104209
-      },
-      {
-        "sourceDate": "20260724",
-        "fileName": "fee.xlsx",
-        "path": "data/kapt/raw/20260724/fee.xlsx",
-        "rows": 115259
-      },
-      {
-        "sourceDate": "20260821",
-        "fileName": "fee.xlsx",
-        "path": "data/kapt/raw/20260821/fee.xlsx",
-        "rows": 133420
-      },
       {
         "sourceDate": "20260918",
         "fileName": "fee.xlsx",
