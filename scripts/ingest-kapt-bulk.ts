@@ -184,7 +184,7 @@ const apartmentFingerprint = (entry: Record<string, unknown>) => {
 const rowObject = (headers: string[], values: CellValue[]) =>
   Object.fromEntries(headers.map((header, index) => [header, values[index + 1]])) as Record<string, CellValue>;
 
-async function* rowsFromWorkbook(filePath: string) {
+async function* rowsFromWorkbook(filePath: string, requiredHeaders: string[]) {
   const workbook = new ExcelJS.stream.xlsx.WorkbookReader(filePath, {
     worksheets: 'emit',
     sharedStrings: 'cache',
@@ -197,7 +197,12 @@ async function* rowsFromWorkbook(filePath: string) {
     for await (const row of worksheet) {
       const values = row.values as CellValue[];
       if (row.number === 2) {
-        headers = values.slice(1).map(text);
+        headers = values.slice(1).map((value) => {
+          const header = text(value);
+          return header === '공용관리비(합계)' ? '공용관리비계' : header;
+        });
+        const missing = requiredHeaders.filter((header) => !headers.includes(header));
+        if (missing.length) throw new Error(`${filePath} 필수 열 누락: ${missing.join(', ')}`);
         continue;
       }
       if (row.number > 2 && headers.length) yield rowObject(headers, values);
@@ -302,13 +307,26 @@ if (!configuredFeeFiles.length) {
 }
 
 const complexes = new Map<string, BasicComplex>();
+const basicSourceRows = new Map<string, Record<string, CellValue>>();
 let basicRows = 0;
 let duplicateComplexes = 0;
-for await (const row of rowsFromWorkbook(basicPath)) {
+let benignDuplicateComplexes = 0;
+for await (const row of rowsFromWorkbook(basicPath, [
+  '단지코드', '단지명', '시도', '시군구', '도로명주소', '법정동주소', '세대수', '동수',
+  '사용승인일', '난방방식', '관리방식', '총주차대수', '승강기(승객용)',
+  '승강기(화물용)', '승강기(승객+화물)'
+])) {
   basicRows += 1;
   const code = text(row['단지코드']);
   if (!code || !text(row['단지명'])) continue;
-  if (complexes.has(code)) duplicateComplexes += 1;
+  const previousRow = basicSourceRows.get(code);
+  if (previousRow) {
+    duplicateComplexes += 1;
+    if (Object.keys(row).every((field) =>
+      field === '도로명주소' || field === '우편번호' || previousRow[field] === row[field]
+    )) benignDuplicateComplexes += 1;
+  }
+  basicSourceRows.set(code, row);
   const rawSido = text(row['시도']);
   const sigungu = text(row['시군구']);
   const rawAddress = text(row['도로명주소']) || text(row['법정동주소']);
@@ -337,7 +355,7 @@ for await (const row of rowsFromWorkbook(basicPath)) {
 const managementAreas = new Map<string, number>();
 let areaRows = 0;
 let areaConflicts = 0;
-for await (const row of rowsFromWorkbook(areaPath)) {
+for await (const row of rowsFromWorkbook(areaPath, ['단지코드', '관리비부과면적'])) {
   areaRows += 1;
   const code = text(row['단지코드']);
   const area = number(row['관리비부과면적']);
@@ -357,7 +375,13 @@ let feeRowsWithoutComplex = 0;
 let invalidFeeMonths = 0;
 for (const source of feeSourceFiles) {
   const seenInSource = new Set<string>();
-  for await (const row of rowsFromWorkbook(source.path)) {
+  for await (const row of rowsFromWorkbook(source.path, [
+    '단지코드', '발생년월(YYYYMM)', '공용관리비계', '개별사용료계', '장충금 월부과액',
+    '인건비', '제사무비', '제세공과금', '피복비', '교육훈련비', '차량유지비',
+    '그밖의부대비용', '경비비', '청소비', '수선비', '시설유지비',
+    '승강기유지비', '전기료(공용)', '전기료(전용)', '수도료(공용)', '수도료(전용)',
+    '난방비(공용)', '난방비(전용)', '급탕비(공용)', '급탕비(전용)'
+  ])) {
     source.rows += 1;
     feeRows += 1;
     const code = text(row['단지코드']);
@@ -681,6 +705,7 @@ const outputManifest = {
     complexesWithArea,
     complexesWithFees,
     duplicateComplexes,
+    benignDuplicateComplexes,
     duplicateFeeRows,
     supersededFeeRows,
     feeSourceFiles: feeSourceFiles.length,

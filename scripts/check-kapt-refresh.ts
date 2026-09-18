@@ -11,6 +11,7 @@ interface Manifest {
     publishableComplexes: number;
     publishedFeeRows: number;
     duplicateComplexes: number;
+    benignDuplicateComplexes?: number;
     duplicateFeeRows: number;
     areaConflicts: number;
     invalidFeeMonths?: number;
@@ -47,7 +48,7 @@ for (const month of previous.months ?? []) {
   if (!(current.months ?? []).includes(month)) errors.push(`기존 관리비 월 이력이 사라졌습니다: ${month}`);
 }
 if (
-  current.stats.duplicateComplexes ||
+  current.stats.duplicateComplexes !== (current.stats.benignDuplicateComplexes ?? 0) ||
   current.stats.duplicateFeeRows ||
   current.stats.areaConflicts ||
   current.stats.invalidFeeMonths

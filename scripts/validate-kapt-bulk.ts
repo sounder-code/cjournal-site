@@ -127,7 +127,10 @@ assert(new Set(index.map((item) => item.s)).size === index.length, '인덱스 �
 assert(index.filter((item) => item.q === 1).length === manifest.stats.publishableComplexes, '상세 페이지 대상 수 불일치');
 assert(manifest.stats.publishableComplexes <= manifest.stats.publishableLimit, '상세 페이지 발행 상한 초과');
 assert(manifest.stats.publishableCandidates >= manifest.stats.publishableComplexes, '상세 페이지 후보 수 불일치');
-assert(manifest.stats.duplicateComplexes === 0, '기본정보 단지코드 중복 발생');
+assert(
+  manifest.stats.duplicateComplexes === (manifest.stats.benignDuplicateComplexes ?? 0),
+  '기본정보 단지코드 중복에 주소·우편번호 외 충돌 발생'
+);
 assert(manifest.stats.duplicateFeeRows === 0, '같은 원본 안에 단지-월 관리비 중복 발생');
 assert(manifest.stats.invalidFeeMonths === 0, '원본 관리비 월 형식 오류 발생');
 assert(manifest.stats.areaConflicts === 0, '동일 단지의 관리비부과면적 충돌');
