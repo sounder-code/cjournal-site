@@ -62,19 +62,22 @@ const driverCopy = secondDriver
 const trendCopy = `공개 기간 중 가장 높았던 달은 ${monthLabel(peak[0])} ${won(peak[1])}/㎡, 가장 낮았던 달은 ${monthLabel(low[0])} ${won(low[1])}/㎡입니다.`;
 const description = `${apartment.n} ${latest[0]} 관리비는 ㎡당 ${won(latest[1])}입니다. 최근 ${apartment.f.length}개월 추이와 ${displayPeerLabel} 비교, 공용관리비·장기수선충당금을 확인하세요.`;
 const trendValues = apartment.f.map((fee) => fee[1]);
-const minTrend = Math.min(...trendValues);
 const maxTrend = Math.max(...trendValues);
-const trendPoints = apartment.f.map((fee, index) => {
-  const x = 24 + (index / Math.max(apartment.f.length - 1, 1)) * 552;
-  const y = 142 - ((fee[1] - minTrend) / Math.max(maxTrend - minTrend, 1)) * 104;
-  return `${x.toFixed(1)},${y.toFixed(1)}`;
-}).join(' ');
-const kpis = [
-  ['총 관리비', latest[1], previous[1]],
-  ['공용관리비', latest[2], previous[2]],
-  ['개별사용료', latest[3], previous[3]],
-  ['장기수선충당금', latest[4], previous[4]]
-] as const;
+const trendBars = apartment.f.map((fee) => ({
+  fee,
+  height: Math.max(18, Math.round((fee[1] / Math.max(maxTrend, 1)) * 100))
+}));
+const estimatorArea = 84;
+const compositionTotal = Math.max(latest[2] + latest[3] + latest[4], 1);
+const composition = [
+  { label: '공용관리비', value: latest[2], prior: previous[2], className: 'common', share: latest[2] / compositionTotal * 100 },
+  { label: '개별사용료', value: latest[3], prior: previous[3], className: 'individual', share: latest[3] / compositionTotal * 100 },
+  { label: '장기수선충당금', value: latest[4], prior: previous[4], className: 'reserve', share: latest[4] / compositionTotal * 100 }
+];
+const monthIndex = (month: string) => Number(month.slice(0, 4)) * 12 + Number(month.slice(5));
+const hasPreviousMonth = apartment.f.length > 1 && monthIndex(latest[0]) - monthIndex(previous[0]) === 1;
+const signedWon = (value: number) => `${value > 0 ? '+' : ''}${won(value)}`;
+const changeRemainder = latestDelta - composition.reduce((sum, item) => sum + item.value - item.prior, 0);
 const comparisons = [
   ['총 관리비', latest[1], percentiles.total],
   ['공용관리비', latest[2], percentiles.common],
@@ -170,10 +173,44 @@ const structuredData = [
       <div><span>관리비부과면적</span><strong>{apartment.ma.toLocaleString('ko-KR')}㎡</strong></div>
     </section>
 
-    <section class="summary-panel">
-      <div><span>{comparisonEligible ? trendLabel : '원본 공개값 확인 필요'}</span><h2>{headline}</h2><p>{overview} {driverCopy}</p></div>
-      <dl><div><dt>비교 기준</dt><dd>{displayPeerLabel}</dd></div><div><dt>낮은 금액 순</dt><dd>{comparisonEligible ? `${peerRank.toLocaleString('ko-KR')}위 / ${peerCount.toLocaleString('ko-KR')}개` : '순위 제외'}</dd></div><div><dt>비교군 중앙값</dt><dd>{won(peerMedianTotal)}/㎡</dd></div></dl>
-    </section>
+    <div class="overview-stack" data-fee-estimator data-total={latest[1]} data-common={latest[2]} data-individual={latest[3]} data-reserve={latest[4]}>
+      <section class="overview-grid" aria-label="최근 관리비 핵심 요약">
+        <div class="answer-card">
+          <span>{monthLabel(latest[0])} · {comparisonEligible ? (hasPreviousMonth ? trendLabel : '최근 공개 관리비') : '원본 공개값 확인 필요'}</span>
+          <div class="answer-total"><strong>{won(latest[1])}</strong><small>/㎡</small></div>
+          <p>{averageCopy}</p>
+          {hasPreviousMonth && <div class="change-summary" aria-label="전월 대비 관리비 변화">
+            <strong>전월 대비 {signedWon(latestDelta)}/㎡</strong>
+            <div>{composition.map((item) => <span>{item.label} <b>{signedWon(item.value - item.prior)}</b></span>)}</div>
+            {changeRemainder !== 0 && <small>항목 합계와 총액의 반올림·집계 차이 {signedWon(changeRemainder)}/㎡</small>}
+          </div>}
+          {!hasPreviousMonth && <p>직전 공개월 {previous[0]} · 전월 자료가 없어 전월 증감을 표시하지 않습니다.</p>}
+          <div class="answer-chips">
+            {comparisonEligible && <b>{peerCount.toLocaleString('ko-KR')}개 중 낮은 금액 순 {peerRank.toLocaleString('ko-KR')}위</b>}
+            {comparisonEligible && <b>중앙값보다 {Math.abs(medianDelta).toLocaleString('ko-KR')}원 {medianDelta > 0 ? '높음' : medianDelta < 0 ? '낮음' : '같음'}</b>}
+          </div>
+        </div>
+        <div class="quick-facts">
+          <div>
+            <span><label for={`fee-area-${apartment.s}`}>부과면적</label><input id={`fee-area-${apartment.s}`} type="number" min="1" max="500" step="1" value={estimatorArea} inputmode="decimal" data-estimator-area aria-label="관리비 부과면적"/><b>㎡</b></span>
+            <small>입력 면적 환산액</small><strong data-estimator-total>{won(latest[1] * estimatorArea)}</strong><small>전용면적이 아닌 고지서 부과면적</small>
+          </div>
+          <div><small>비교 기준</small><strong>{displayPeerLabel}</strong><span>중앙값 {won(peerMedianTotal)}/㎡</span></div>
+        </div>
+      </section>
+
+      <section class="panel composition-panel" aria-label="이번 달 관리비 구성">
+        <header><div><h2>이번 달 비용 구성</h2><p>공개 단가의 구성과 입력 면적 기준 환산액을 함께 봅니다.</p></div><strong>{headline}</strong></header>
+        <div class="composition-bar" aria-hidden="true">{composition.map((item) => <i class={item.className} style={`width:${item.share}%`}></i>)}</div>
+        <div class="composition-grid">
+          {composition.map((item) => {
+            const delta = item.value - item.prior;
+            return <div><span>{item.label}</span><strong>{won(item.value)}<small>/㎡</small></strong><em>{item.share.toFixed(1)}%{hasPreviousMonth ? ` · ${delta === 0 ? '전월과 동일' : `전월 대비 ${signedWon(delta)}`}` : ''}</em></div>;
+          })}
+        </div>
+        <div class="estimate-breakdown"><span>공용 <b data-estimator-common>{won(latest[2] * estimatorArea)}</b></span><span>개별 <b data-estimator-individual>{won(latest[3] * estimatorArea)}</b></span><span>장기수선 <b data-estimator-reserve>{won(latest[4] * estimatorArea)}</b></span><p>고지서의 관리비 부과면적을 기준으로 한 단순 환산값이며, 실제 청구액은 사용량·할인·정산에 따라 달라집니다.</p></div>
+      </section>
+    </div>
 
     {!comparisonEligible && (
       <section class="quality-notice" aria-label="공개 데이터 확인 안내">
@@ -182,46 +219,21 @@ const structuredData = [
       </section>
     )}
 
-    <section class="kpi-grid" aria-label="최근 관리비 요약">
-      {kpis.map(([label, value, prior]) => {
-        const delta = value - prior;
-        return <div><span>{label}</span><strong>{won(value)}<small>/㎡</small></strong><em class:list={[delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat']}>{delta === 0 ? '전월과 동일' : `전월 대비 ${delta > 0 ? '+' : ''}${delta.toLocaleString('ko-KR')}원`}</em></div>;
-      })}
-    </section>
-
-    <section class="panel estimator-panel" data-fee-estimator data-total={latest[1]} data-common={latest[2]} data-individual={latest[3]} data-reserve={latest[4]}>
-      <header>
-        <div><h2>관리비 부과면적별 단순 환산</h2><p>{latest[0]} 공개 단가에 관리비 부과면적을 곱해 항목별 금액을 확인합니다.</p></div>
-        <label><span>부과면적</span><input type="number" min="1" max="500" step="1" value="84" inputmode="decimal" data-estimator-area aria-label="관리비 부과면적"/><b>㎡</b></label>
-      </header>
-      <div class="estimator-results">
-        <div><span>총 관리비</span><strong data-estimator-total>{won(latest[1] * 84)}</strong></div>
-        <div><span>공용관리비</span><strong data-estimator-common>{won(latest[2] * 84)}</strong></div>
-        <div><span>개별사용료</span><strong data-estimator-individual>{won(latest[3] * 84)}</strong></div>
-        <div><span>장기수선충당금</span><strong data-estimator-reserve>{won(latest[4] * 84)}</strong></div>
-      </div>
-      <p>단순 환산값입니다. 입력값은 전용면적이 아니라 고지서에 표시된 관리비 부과면적을 사용해야 하며, 세대별 사용량·할인·정산에 따라 실제 청구액은 달라집니다.</p>
-    </section>
-
     <div class="content-grid">
       <main>
         <section class="panel trend-panel">
           <header><div><h2>최근 관리비 추이</h2><p>{trendCopy}</p></div><strong>평균 {won(averageTotal)}/㎡</strong></header>
-          <div class="chart">
-            <svg viewBox="0 0 600 170" role="img" aria-label={`${apartment.n} 최근 ${apartment.f.length}개월 총 관리비 추이`}>
-              <line x1="24" y1="38" x2="576" y2="38"/><line x1="24" y1="90" x2="576" y2="90"/><line x1="24" y1="142" x2="576" y2="142"/>
-              <polyline points={trendPoints}/>
-              {apartment.f.map((_, index) => { const [x, y] = trendPoints.split(' ')[index].split(','); return <circle cx={x} cy={y} r={index === apartment.f.length - 1 ? 5 : 3}/>; })}
-            </svg>
-            <div>{apartment.f.map((fee) => <span>{Number(fee[0].slice(5))}월</span>)}</div>
+          <div class="trend-bars" role="img" aria-label={`${apartment.n} 최근 ${apartment.f.length}개월 총 관리비 추이`}>
+            {trendBars.map(({ fee, height }, index) => <div><strong>{fee[1].toLocaleString('ko-KR')}</strong><i class:list={[index === trendBars.length - 1 && 'latest']} style={`height:${height}%`}></i><span>{Number(fee[0].slice(5))}월</span></div>)}
           </div>
         </section>
 
         <section class="panel table-panel">
           <header><div><h2>월별 관리비 내역</h2><p>단지 전체 금액을 관리비부과면적으로 나눈 ㎡당 금액입니다.</p></div></header>
-          <div class="table-wrap"><table><thead><tr><th>발생월</th><th>총액</th><th>공용</th><th>개별</th><th>경비</th><th>청소</th><th>수선·시설</th><th>난방</th><th>충당금</th></tr></thead><tbody>
-            {[...apartment.f].reverse().map((fee: FeeTuple) => <tr><td><strong>{fee[0]}</strong></td><td><strong>{fee[1].toLocaleString('ko-KR')}</strong></td><td>{fee[2].toLocaleString('ko-KR')}</td><td>{fee[3].toLocaleString('ko-KR')}</td><td>{fee[6].toLocaleString('ko-KR')}</td><td>{fee[7].toLocaleString('ko-KR')}</td><td>{fee[8].toLocaleString('ko-KR')}</td><td>{fee[12].toLocaleString('ko-KR')}</td><td>{fee[4].toLocaleString('ko-KR')}</td></tr>)}
+          <div class="table-wrap"><table class="summary-table" aria-label="월별 관리비 요약, 원/㎡"><thead><tr><th scope="col">발생월</th><th scope="col">총액</th><th scope="col">공용</th><th scope="col">개별</th><th scope="col">충당금</th></tr></thead><tbody>
+            {[...apartment.f].reverse().map((fee: FeeTuple) => <tr><th scope="row">{fee[0]}</th><td><strong>{fee[1].toLocaleString('ko-KR')}</strong></td><td>{fee[2].toLocaleString('ko-KR')}</td><td>{fee[3].toLocaleString('ko-KR')}</td><td>{fee[4].toLocaleString('ko-KR')}</td></tr>)}
           </tbody></table></div>
+          <details class="fee-details"><summary>경비·청소·수선·난방 세부 내역</summary><div class="table-wrap" tabindex="0" aria-label="월별 세부 관리비 표, 가로 스크롤 가능"><table aria-label="월별 세부 관리비, 원/㎡"><thead><tr><th scope="col">발생월</th>{metricNames.map((name) => <th scope="col">{name}</th>)}</tr></thead><tbody>{[...apartment.f].reverse().map((fee: FeeTuple) => <tr><th scope="row">{fee[0]}</th>{metricIndexes.map((index) => <td>{Number(fee[index]).toLocaleString('ko-KR')}</td>)}</tr>)}</tbody></table></div></details>
         </section>
 
         <section class="panel reading-panel">
@@ -234,7 +246,8 @@ const structuredData = [
         {comparisonEligible ? (
           <section class="panel comparison-panel">
             <header><div><h2>비슷한 규모 단지 대비</h2><p>{displayPeerLabel} · {peerCount.toLocaleString('ko-KR')}개 단지</p></div></header>
-            <ul>{comparisons.map(([label, value, rank]) => <li><div><span>{label}</span><strong>{won(value)}/㎡</strong></div><i><b style={`width:${rank}%`}></b></i><em>{rank}</em></li>)}</ul>
+            <div class="comparison-lead"><strong>낮은 금액 순 {peerRank.toLocaleString('ko-KR')}위</strong><span>{levelLabel(percentiles.total)}</span></div>
+            <ul>{comparisons.map(([label, value, rank]) => <li><div><span>{label}</span><strong>{won(value)}/㎡</strong></div><div class="comparison-scale" aria-label={`${label}: ${levelLabel(rank)}`}><span>낮음</span><i aria-hidden="true"><b style={`left:${rank}%`}></b></i><span>높음</span></div><em>{levelLabel(rank)}</em></li>)}</ul>
             <p>총 관리비는 낮은 금액 순 {peerRank.toLocaleString('ko-KR')}위입니다. {medianComparison} 금액 순위는 품질이나 서비스 수준을 뜻하지 않습니다.</p>
           </section>
         ) : (
@@ -279,8 +292,9 @@ const structuredData = [
       const render = () => {
         const area = Math.max(0, Math.min(500, Number(input.value) || 0));
         Object.entries(fees).forEach(([key, fee]) => {
-          const target = root.querySelector(`[data-estimator-${key}]`);
-          if (target) target.textContent = `${formatter.format(Math.round(fee * area))}원`;
+          root.querySelectorAll(`[data-estimator-${key}]`).forEach((target) => {
+            target.textContent = `${formatter.format(Math.round(fee * area))}원`;
+          });
         });
       };
       input.addEventListener('input', render);
@@ -309,37 +323,56 @@ const structuredData = [
   .fact-strip div:last-child { border: 0; }
   .fact-strip span, .method-note dt { color: #7b847f; font-size: .66rem; font-weight: 700; }
   .fact-strip strong { font-size: .78rem; }
-  .summary-panel { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 24px; align-items: center; border: 1px solid #d7e1dc; border-radius: 7px; background: #fff; padding: 20px 22px; }
+  .overview-stack { min-width: 0; display: grid; gap: 10px; }
+  .overview-grid { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 10px; }
+  .answer-card { min-width: 0; border: 1px solid #c9ded4; border-radius: 7px; background: linear-gradient(135deg, #fff 0%, #f1f8f5 100%); padding: 20px 22px; }
+  .answer-card > span { color: #08765c; font-size: .7rem; font-weight: 850; }
+  .answer-total { display: flex; align-items: baseline; gap: 5px; margin: 8px 0 6px; }
+  .answer-total strong { font-size: 2rem; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+  .answer-total small { color: #64716a; font-size: .72rem; font-weight: 750; }
+  .answer-card > p { margin: 0; color: #4e5c55; font-size: .78rem; line-height: 1.65; }
+  .change-summary { margin-top: 12px; border-top: 1px solid #dbe8e1; padding-top: 12px; }
+  .change-summary > strong { font-size: .8rem; }
+  .change-summary > div { display: flex; flex-wrap: wrap; gap: 7px 16px; margin-top: 7px; }
+  .change-summary span, .change-summary small { color: #59685f; font-size: .69rem; }
+  .change-summary b { margin-left: 4px; color: #253d30; font-variant-numeric: tabular-nums; }
+  .change-summary small { display: block; margin-top: 6px; }
+  .answer-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 13px; }
+  .answer-chips b { border-radius: 999px; background: #e5f3ed; color: #176c54; padding: 6px 9px; font-size: .65rem; font-weight: 800; }
+  .quick-facts { display: grid; gap: 10px; }
+  .quick-facts > div { min-width: 0; display: grid; align-content: center; gap: 5px; border: 1px solid #dfe4e1; border-radius: 7px; background: #fff; padding: 14px 16px; }
+  .quick-facts small { color: #748079; font-size: .65rem; font-weight: 720; }
+  .quick-facts strong { overflow: hidden; font-size: .96rem; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .quick-facts > div:nth-child(2) strong { line-height: 1.35; white-space: normal; }
+  .quick-facts > div > span { color: #748079; font-size: .63rem; }
+  .quick-facts > div:first-child > span { justify-self: start; display: flex; align-items: center; gap: 5px; border: 1px solid #d8dfdb; border-radius: 5px; padding: 4px 7px; }
+  .quick-facts label { font-weight: 750; }
+  .quick-facts input { width: 48px; border: 0; outline: 0; color: #17211d; font: inherit; font-size: .72rem; font-weight: 850; text-align: right; }
+  .quick-facts b { color: #657069; font-size: .64rem; }
+  .composition-panel > header > strong { max-width: 46%; overflow: hidden; color: #59655f; font-size: .67rem; text-overflow: ellipsis; white-space: nowrap; }
+  .composition-bar { height: 11px; display: flex; overflow: hidden; margin: 16px 16px 6px; border-radius: 999px; background: #e8eeeb; }
+  .composition-bar i { display: block; min-width: 0; }
+  .composition-bar .common { background: #1b765c; }
+  .composition-bar .individual { background: #75ad9c; }
+  .composition-bar .reserve { background: #bed6ce; }
+  .composition-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .composition-grid > div { min-width: 0; min-height: 92px; display: grid; align-content: center; gap: 6px; border-right: 1px solid #e8ebe9; padding: 12px 16px; }
+  .composition-grid > div:last-child { border: 0; }
+  .composition-grid span { color: #68736d; font-size: .68rem; font-weight: 730; }
+  .composition-grid strong { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  .composition-grid strong small { margin-left: 2px; color: #7a847f; font-size: .61rem; }
+  .composition-grid em { overflow: hidden; color: #77817b; font-size: .61rem; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+  .composition-grid .estimate-total { background: #f5f9f7; }
+  .estimate-breakdown { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; border-top: 1px solid #e8ebe9; color: #707b75; padding: 9px 16px; font-size: .63rem; }
+  .estimate-breakdown span { white-space: nowrap; }
+  .estimate-breakdown b { margin-left: 4px; color: #3f4d46; font-size: .68rem; }
+  .estimate-breakdown p { flex: 1 1 360px; margin: 0; text-align: right; line-height: 1.5; }
   .quality-notice { border: 1px solid #e7cba2; border-radius: 7px; background: #fff9ef; padding: 14px 16px; }
   .quality-notice strong { color: #8a5b16; font-size: .78rem; }
   .quality-notice p { margin: 5px 0 0; color: #6d6355; font-size: .7rem; line-height: 1.65; }
   .comparison-unavailable { padding: 18px; }
   .comparison-unavailable h2 { margin: 0 0 8px; }
   .comparison-unavailable p { margin: 0; color: #6d756f; font-size: .72rem; line-height: 1.65; }
-  .summary-panel > div > span { color: #13795b; font-size: .7rem; font-weight: 800; }
-  .summary-panel h2 { margin: 5px 0 8px; font-size: 1.18rem; line-height: 1.35; }
-  .summary-panel p { margin: 0; color: #58625d; font-size: .8rem; line-height: 1.7; }
-  .summary-panel dl { margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); }
-  .summary-panel dl div { display: grid; gap: 5px; border-left: 1px solid #e5e9e7; padding-left: 14px; }
-  .summary-panel dt { color: #7c8580; font-size: .64rem; }
-  .summary-panel dd { margin: 0; font-size: .75rem; font-weight: 800; }
-  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .kpi-grid > div { min-height: 112px; display: grid; align-content: space-between; border: 1px solid #dfe4e1; border-radius: 7px; background: #fff; padding: 15px; }
-  .kpi-grid span { color: #68726d; font-size: .72rem; font-weight: 700; }
-  .kpi-grid strong { margin: 9px 0; font-size: 1.24rem; font-variant-numeric: tabular-nums; }
-  .kpi-grid small { margin-left: 3px; color: #79827d; font-size: .65rem; }
-  .kpi-grid em { color: #747d78; font-size: .66rem; font-style: normal; font-weight: 700; }
-  .kpi-grid em.up { color: #ad433c; } .kpi-grid em.down { color: #17745a; }
-  .estimator-panel > header label { min-width: 150px; display: flex; align-items: center; gap: 7px; border: 1px solid #d8dfdb; border-radius: 6px; background: #fff; padding: 7px 10px; }
-  .estimator-panel > header label span { color: #727c76; font-size: .68rem; font-weight: 750; }
-  .estimator-panel > header input { width: 62px; border: 0; outline: 0; color: #17211d; font: inherit; font-size: .82rem; font-weight: 800; text-align: right; }
-  .estimator-panel > header label b { color: #68726d; font-size: .7rem; }
-  .estimator-results { display: grid; grid-template-columns: repeat(4, 1fr); }
-  .estimator-results div { min-height: 74px; display: grid; align-content: center; gap: 7px; border-right: 1px solid #e8ebe9; padding: 12px 16px; }
-  .estimator-results div:last-child { border: 0; }
-  .estimator-results span { color: #707a75; font-size: .68rem; font-weight: 720; }
-  .estimator-results strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
-  .estimator-panel > p { margin: 0; border-top: 1px solid #e8ebe9; color: #727c76; padding: 10px 16px; font-size: .66rem; line-height: 1.6; }
   .content-grid { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 10px; align-items: start; }
   main, aside { min-width: 0; display: grid; gap: 10px; }
   .panel { min-width: 0; border: 1px solid #dfe4e1; border-radius: 7px; background: #fff; }
@@ -347,29 +380,40 @@ const structuredData = [
   .panel h2 { margin: 0; font-size: .92rem; }
   .panel header p { margin: 4px 0 0; color: #77807b; font-size: .67rem; }
   .panel header > strong { font-size: .72rem; white-space: nowrap; }
-  .chart { padding: 16px 20px 12px; }
-  .chart svg { width: 100%; height: 210px; }
-  .chart line { stroke: #e8ecea; stroke-width: 1; }
-  .chart polyline { fill: none; stroke: #13795b; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
-  .chart circle { fill: #fff; stroke: #13795b; stroke-width: 3; }
-  .chart > div { display: flex; justify-content: space-between; color: #7c8580; font-size: .65rem; padding: 0 8px; }
+  .trend-bars { height: 242px; display: flex; align-items: end; gap: clamp(5px, 1.4vw, 14px); border-bottom: 1px solid #dfe6e2; margin: 20px 20px 30px; padding: 28px 4px 0; }
+  .trend-bars > div { height: 100%; min-width: 0; flex: 1; display: flex; align-items: stretch; justify-content: end; flex-direction: column; gap: 5px; text-align: center; }
+  .trend-bars strong { color: #44524b; font-size: .63rem; font-variant-numeric: tabular-nums; }
+  .trend-bars i { width: 100%; min-height: 18%; display: block; border-radius: 5px 5px 0 0; background: #93bdaf; }
+  .trend-bars i.latest { background: #18755a; }
+  .trend-bars span { position: relative; top: 21px; height: 0; color: #748079; font-size: .62rem; }
   .table-wrap { overflow-x: auto; }
   table { width: 100%; min-width: 820px; border-collapse: collapse; }
   th { height: 36px; background: #f7f9f8; color: #707a75; font-size: .65rem; text-align: right; padding: 0 12px; }
   td { height: 44px; border-top: 1px solid #e9edeb; color: #424b46; font-size: .72rem; text-align: right; padding: 0 12px; font-variant-numeric: tabular-nums; }
   th:first-child, td:first-child { text-align: left; }
+  th:first-child { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 #e2e8e4; white-space: nowrap; }
+  tbody th { background: #fff; border-top: 1px solid #e9edeb; font-variant-numeric: tabular-nums; }
+  .summary-table { min-width: 0; }
+  .fee-details { border-top: 1px solid #e2e8e4; }
+  .fee-details summary { padding: 14px 16px; cursor: pointer; color: #176c54; font-size: .74rem; font-weight: 750; }
   .reading-panel > div { display: grid; grid-template-columns: repeat(3, 1fr); }
   .reading-panel article { padding: 16px; border-right: 1px solid #e8ebe9; }
   .reading-panel article:last-child { border: 0; }
   .reading-panel article strong { font-size: .75rem; }
   .reading-panel article p { margin: 8px 0 0; color: #59635e; font-size: .73rem; line-height: 1.65; }
-  .comparison-panel ul { list-style: none; margin: 0; padding: 8px 16px 4px; }
-  .comparison-panel li { display: grid; grid-template-columns: 1fr 28px; gap: 5px 8px; padding: 9px 0; border-bottom: 1px solid #edf0ee; }
+  .comparison-lead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 14px 16px 2px; border-radius: 6px; background: #edf7f3; color: #176c54; padding: 10px 11px; }
+  .comparison-lead strong { font-size: .74rem; }
+  .comparison-lead span { font-size: .65rem; font-weight: 800; }
+  .comparison-panel ul { list-style: none; margin: 0; padding: 7px 16px 4px; }
+  .comparison-panel li { display: grid; grid-template-columns: 1fr 70px; gap: 8px; padding: 12px 0; border-bottom: 1px solid #edf0ee; }
+  .comparison-panel li > div:first-child { grid-column: 1 / -1; }
   .comparison-panel li div { display: flex; justify-content: space-between; gap: 8px; }
   .comparison-panel li span, .comparison-panel li strong { font-size: .69rem; }
-  .comparison-panel li i { height: 4px; border-radius: 3px; background: #e8ecea; overflow: hidden; }
-  .comparison-panel li i b { display: block; height: 100%; background: #13795b; }
-  .comparison-panel li em { grid-row: 1 / 3; grid-column: 2; align-self: center; color: #13795b; font-size: .78rem; font-style: normal; font-weight: 800; text-align: right; }
+  .comparison-panel li .comparison-scale { align-items: center; gap: 10px; }
+  .comparison-panel .comparison-scale span { color: #77807b; font-size: .6rem; }
+  .comparison-panel li i { position: relative; flex: 1; height: 4px; border-radius: 3px; background: #e1e9e5; }
+  .comparison-panel li i b { position: absolute; top: -3px; width: 10px; height: 10px; border-radius: 50%; background: #13795b; transform: translateX(-50%); }
+  .comparison-panel li em { grid-row: 2; grid-column: 2; align-self: center; color: #13795b; font-size: .62rem; font-style: normal; font-weight: 800; text-align: right; }
   .comparison-panel > p { margin: 8px 16px 15px; color: #747d78; font-size: .66rem; line-height: 1.55; }
   .related-panel > div { padding: 4px 15px 10px; }
   .related-panel a { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #222925; text-decoration: none; border-bottom: 1px solid #e9edeb; }
@@ -405,17 +449,26 @@ const structuredData = [
   :global(html.report-embed .report) { gap: 12px; }
   @media (max-width: 980px) { .content-grid { grid-template-columns: 1fr; } aside { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 760px) {
+    .overview-stack { order: -2; }
+    .quality-notice { order: -1; }
     .server-report-content { padding: 10px 10px 24px; }
     .report-head { align-items: flex-start; } .report-head h1 { font-size: 1.4rem; } .report-meta { display: none; }
     .fact-strip { grid-template-columns: repeat(2, 1fr); } .fact-strip div { border-bottom: 1px solid #e8ebe9; }
-    .summary-panel { grid-template-columns: 1fr; padding: 17px; } .summary-panel dl { border-top: 1px solid #e8ebe9; padding-top: 12px; }
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); } .kpi-grid > div { min-height: 105px; }
-    .estimator-panel > header { align-items: flex-start; flex-direction: column; }
-    .estimator-panel > header label { width: 100%; box-sizing: border-box; }
-    .estimator-results { grid-template-columns: repeat(2, 1fr); }
-    .estimator-results div:nth-child(2) { border-right: 0; }
-    .estimator-results div:nth-child(-n + 2) { border-bottom: 1px solid #e8ebe9; }
-    aside { grid-template-columns: 1fr; } .chart svg { height: 165px; }
+    .overview-grid { grid-template-columns: 1fr; }
+    .quick-facts { grid-template-columns: repeat(2, 1fr); }
+    .answer-card { padding: 17px; }
+    .answer-total strong { font-size: 1.75rem; }
+    .composition-panel > header > strong { display: none; }
+    .composition-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .composition-grid > div { padding: 12px 9px; }
+    .composition-grid strong { font-size: .9rem; }
+    .composition-grid span { font-size: .62rem; }
+    .composition-grid em { white-space: normal; line-height: 1.5; }
+    .summary-table :is(th, td) { padding: 0 5px; font-size: .66rem; }
+    .estimate-breakdown p { flex-basis: 100%; text-align: left; }
+    aside { grid-template-columns: 1fr; }
+    .trend-bars { height: 200px; gap: 4px; margin-right: 12px; margin-left: 12px; }
+    .trend-bars strong { font-size: .56rem; }
     .reading-panel > div { grid-template-columns: 1fr; } .reading-panel article { border-right: 0; border-bottom: 1px solid #e8ebe9; }
     .method-note { grid-template-columns: 1fr; gap: 16px; } .method-note dl { grid-template-columns: 1fr; }
     :global(html.report-embed .server-report-content) { padding: 10px 10px 24px; }
