@@ -98,6 +98,10 @@ bash scripts/setup-gh-runner-macos.sh sounder-code/cjournal-site <RUNNER_TOKEN>
 - 수동 실행: `npm run seo:indexnow`
 
 ## 배포
+
+실제 `danjipyo.kr` 운영 도메인은 Cloudflare Pages의 `cjournal-site` 프로젝트에 연결되어 있다. GitHub Docker 이미지 발행 성공만으로 운영 반영을 판단하지 않고 Pages 배포 상태와 `/deployment.json`을 함께 확인한다.
+
+Pages 빌드에서는 `CF_PAGES=1`일 때 생성 HTML 일부를 8개씩 묶어 20,000개 파일 제한 안에 배포한다. 기존 미들웨어가 묶인 원본 HTML을 동일 URL·상태 코드로 반환하며, 단지 페이지나 사이트맵 URL을 제외하지 않는다. 묶기 전후 내용 일치와 GET/HEAD/리다이렉트/오류 응답을 빌드에서 검증한다. 로컬·Docker 빌드는 개별 HTML을 그대로 유지한다.
 - `main` 브랜치가 CI를 통과하면 GitHub Actions가 `ghcr.io/sounder-code/cjournal-site:main` 이미지를 발행합니다.
 - Docker 서버에서는 `compose.prod.yaml`로 이미지 전체를 교체합니다.
 

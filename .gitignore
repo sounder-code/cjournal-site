@@ -13,3 +13,4 @@ tmp/
 data/kapt/raw/
 docker/apartment-redirects.map
 functions/generated-apartment-redirects.js
+functions/generated-apartment-packs.js

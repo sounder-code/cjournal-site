@@ -10,6 +10,7 @@
     "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev",
     "prebuild": "npm run seo:redirect-map",
     "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "postbuild": "node scripts/pack-pages.mjs",
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
     "typecheck": "ASTRO_TELEMETRY_DISABLED=1 astro check",
     "gen:keywords": "tsx scripts/generate-keywords.ts",
