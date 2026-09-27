@@ -199,6 +199,7 @@ const metrics = [
 
   <script>
     // @ts-nocheck
+    import { commonMonthComparison } from '@/lib/commonMonthComparison';
     const payload = await fetch('/data/map-payload.json', { credentials: 'same-origin' }).then((response) => {
       if (!response.ok) throw new Error(`Map payload HTTP ${response.status}`);
       return response.json();
@@ -571,8 +572,8 @@ const metrics = [
     };
     const metricLabel = () => payload.metrics.find((metric) => metric.key === activeMetric)?.label || '총 관리비';
     const householdBand = (value) => value < 300 ? 'under-300' : value < 500 ? '300-499' : value < 1000 ? '500-999' : value < 1500 ? '1000-1499' : 'over-1500';
-    const bandFor = (percentile) => percentile >= 85 ? 'very-high' : percentile >= 65 ? 'high' : percentile <= 35 ? 'low' : 'average';
-    const bandLabel = (band) => ({ low: '낮은 편', average: '평균권', high: '높은 편', 'very-high': '매우 높음' })[band];
+    const bandFor = (percentile) => percentile == null ? 'unavailable' : percentile >= 85 ? 'very-high' : percentile >= 65 ? 'high' : percentile <= 35 ? 'low' : 'average';
+    const bandLabel = (band) => ({ unavailable: '비교 자료 없음', low: '낮은 편', average: '평균권', high: '높은 편', 'very-high': '매우 높음' })[band];
     const normalizeDistrict = (value) => String(value || '').replaceAll('시', '');
     const normalizeDong = (value) => String(value || '').replace(/제?\d+(?=동$)/g, '');
     const districtKey = (province, district) => `${province}|${normalizeDistrict(district)}`;
@@ -662,7 +663,7 @@ const metrics = [
       const summary = districtSummaryByKey.get(key);
       if (!summary?.file) return ensureLegacyData();
       if (!districtLoads.has(key)) {
-        districtLoads.set(key, fetchJson(summary.file)
+        districtLoads.set(key, fetchJson(summary.file.replace('/data/apartments/maps/', '/data/comparisons/'))
           .then((items) => addApartments(items, key))
           .catch((error) => {
             districtLoads.delete(key);
@@ -859,11 +860,16 @@ const metrics = [
 
     const renderComparisonDialog = () => {
       if (!compareDialog || !compareContent) return;
-      const items = comparedApartments();
-      compareDialog.hidden = !compareDialogOpen || items.length < 2;
+      const selectedItems = comparedApartments();
+      const { month, items } = commonMonthComparison(selectedItems);
+      compareDialog.hidden = !compareDialogOpen || selectedItems.length < 2;
       document.body.classList.toggle('compare-dialog-open', !compareDialog.hidden);
       if (compareDialog.hidden) return;
-      if (compareSubtitle) compareSubtitle.textContent = `${formatNumber(items.length)}개 단지 · K-apt 월별 공개금액 기준`;
+      if (compareSubtitle) compareSubtitle.textContent = `${formatNumber(selectedItems.length)}개 단지 · ${month || '공통월 없음'}`;
+      if (!month) {
+        compareContent.innerHTML = '<p class="empty-result">선택한 단지에 공통으로 공개된 월별 관리비가 없어 순위를 계산하지 않습니다.</p>';
+        return;
+      }
       const metricStats = new Map(feeComparisonRows.map((row) => [row.key, rankedMetric(row, items)]));
       const totalStats = metricStats.get('tf');
       const lowestApartment = totalStats?.ranked[0];
@@ -949,7 +955,7 @@ const metrics = [
             </tbody>
           </table>
         </div>
-        <p class="compare-caption">순위와 차이는 선택한 단지 안에서만 계산합니다. 관리비는 관리비부과면적 ㎡당 공개금액이며, 세대별 실제 청구액은 전용면적과 사용량에 따라 달라질 수 있습니다.</p>
+        <p class="compare-caption">순위와 차이는 선택한 단지의 같은 월 자료로 계산합니다. 관리비는 관리비부과면적 ㎡당 공개금액이며, 세대별 실제 청구액은 고지서 부과면적과 사용량에 따라 달라질 수 있습니다.</p>
       `;
       compareContent.querySelectorAll('[data-compare-remove]').forEach((button) => {
         button.addEventListener('click', () => toggleCompare(button.dataset.compareRemove));
@@ -1088,17 +1094,7 @@ const metrics = [
     };
 
     const percentileFor = (items, apartment) => {
-      const values = items.map((item) => Number(item[activeMetric] || 0)).filter((value) => value > 0).sort((a, b) => a - b);
-      const value = Number(apartment?.[activeMetric] || 0);
-      if (!value || values.length < 2) return 50;
-      let low = 0;
-      let high = values.length;
-      while (low < high) {
-        const middle = Math.floor((low + high) / 2);
-        if (values[middle] <= value) low = middle + 1;
-        else high = middle;
-      }
-      return Math.max(1, Math.min(99, Math.round((low / values.length) * 100)));
+      return Number(apartment?.[activeMetric]) > 0 ? apartment?.comparison?.[activeMetric] ?? null : null;
     };
 
     const representativeValue = (items) => {
@@ -1500,7 +1496,7 @@ const metrics = [
             <span>${escapeHtml(item.sd)} ${escapeHtml(displayDistrictName(item.sd, item.sg))}</span>
             <strong>${escapeHtml(item.n)}</strong>
             <small>${escapeHtml(item.ht || '난방 미확인')} · ${formatNumber(item.h)}세대</small>
-            <b>${percentile}p</b>
+            <b>${percentile == null ? '비교 자료 없음' : `${percentile}p`}</b>
             <em>${formatWon(item[activeMetric])}/㎡</em>
           </button>
           <button type="button" class="result-compare${isCompared ? ' active' : ''}" data-compare-slug="${escapeHtml(item.s)}" aria-pressed="${isCompared}"><i aria-hidden="true"></i><span>${isCompared ? '선택됨' : '비교'}</span></button>
@@ -1584,10 +1580,10 @@ const metrics = [
           <button type="button" data-detail-share>단지 공유</button>
         </div>
         <div class="score-box ${band}">
-          <section><span>${metricLabel()} 수준</span><strong>${bandLabel(band)}</strong><p>비슷한 규모 ${formatNumber(comparison.length)}개 단지 중 백분위 ${percentile}</p></section>
+          <section><span>${metricLabel()} 수준</span><strong>${bandLabel(band)}</strong><p>${percentile == null ? '공개 자료가 충분하지 않습니다' : `${escapeHtml(apartment.comparison.month)} · ${formatNumber(apartment.comparison.count)}개 단지 중 백분위 ${percentile}`}</p></section>
           <section><span>기준월 금액</span><strong>${formatWon(apartment[activeMetric])}</strong><p>관리비부과면적 ㎡당</p></section>
         </div>
-        <p class="comparison-note">${escapeHtml(displayDistrictName(apartment.sd, apartment.sg))} 공개 단지와 비교한 참고값입니다. 세대별 실제 청구액은 전용면적과 사용량에 따라 달라집니다.</p>
+        <p class="comparison-note">${apartment.comparison ? `${escapeHtml(apartment.comparison.label)}의 같은 월 공개값 기준입니다.` : '공개된 금액만 표시합니다.'} 세대별 실제 청구액은 고지서 부과면적과 사용량에 따라 달라집니다.</p>
         <dl class="facts">
           <div><dt>세대수</dt><dd>${formatNumber(apartment.h)}세대</dd></div>
           <div><dt>사용승인</dt><dd>${apartment.y ? `${apartment.y}년` : '미확인'}</dd></div>
@@ -2131,7 +2127,7 @@ const metrics = [
   .legend { display: flex; gap: 10px; }
   .legend span { display: inline-flex; align-items: center; gap: 5px; }
   .legend i { width: 9px; height: 9px; border-radius: 50%; }
-  .low { --band: #15956b; } .average { --band: #68766f; } .high { --band: #c77b17; } .very-high { --band: #c7473c; }
+  .unavailable { --band: #7c8580; } .low { --band: #15956b; } .average { --band: #68766f; } .high { --band: #c77b17; } .very-high { --band: #c7473c; }
   .legend i.low { background: #15956b; } .legend i.average { background: #68766f; } .legend i.high { background: #c77b17; } .legend i.very-high { background: #c7473c; }
   .map-canvas { min-height: 500px; background: #edf3ef; }
   .map-canvas, .map-canvas * { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; }

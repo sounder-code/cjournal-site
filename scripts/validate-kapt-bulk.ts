@@ -127,6 +127,7 @@ assert(new Set(index.map((item) => item.s)).size === index.length, '인덱스 �
 assert(index.filter((item) => item.q === 1).length === manifest.stats.publishableComplexes, '상세 페이지 대상 수 불일치');
 assert(manifest.stats.publishableComplexes <= manifest.stats.publishableLimit, '상세 페이지 발행 상한 초과');
 assert(manifest.stats.publishableCandidates >= manifest.stats.publishableComplexes, '상세 페이지 후보 수 불일치');
+assert(manifest.stats.publishableCandidates === manifest.stats.publishableComplexes, '정상 관리비가 있는 단지가 발행 대상에서 누락되었습니다.');
 assert(
   manifest.stats.duplicateComplexes === (manifest.stats.benignDuplicateComplexes ?? 0),
   '기본정보 단지코드 중복에 주소·우편번호 외 충돌 발생'

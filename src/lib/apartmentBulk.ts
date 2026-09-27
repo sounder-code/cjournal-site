@@ -86,7 +86,7 @@ export interface ApartmentPageData {
   nearby: Array<Pick<ApartmentEntry, 's' | 'n' | 'sg' | 'd' | 'h' | 'y' | 'tf' | 'ht'>>;
 }
 
-export const APARTMENT_REPORT_UPDATED = '2026-08-12';
+export const APARTMENT_REPORT_UPDATED = '2026-09-27';
 
 const manifestPath = resolve('public/data/apartments/manifest.json');
 let manifestPromise: Promise<ApartmentManifest> | undefined;
@@ -137,8 +137,7 @@ export const isPublishableApartment = (entry: ApartmentEntry) =>
 
 const latestFee = (entry: ApartmentEntry) => entry.f.at(-1);
 
-export const apartmentQualityReasons = (entry: ApartmentEntry) => {
-  const fee = latestFee(entry);
+export const apartmentQualityReasons = (entry: ApartmentEntry, fee = latestFee(entry)) => {
   if (!fee) return ['최근 관리비가 공개되지 않았습니다.'];
 
   const reasons: string[] = [];
@@ -189,7 +188,11 @@ const percentile = (sorted: number[], value: number) => {
 export const loadApartmentPageData = () => {
   pageDataPromise ??= (async () => {
     const entries = (await loadApartmentEntries()).filter(isPublishableApartment);
-    const comparisonEntries = entries.filter(isComparableApartment);
+    // Keep each comparison cohort on one calendar month. A delayed report must
+    // not be compared against other apartments' summer/winter bills.
+    const comparisonEntries = entries.flatMap((entry) => entry.f
+      .filter((fee) => apartmentQualityReasons(entry, fee).length === 0)
+      .map((fee) => ({ ...entry, lm: fee[0], tf: fee[1], cf: fee[2], rf: fee[4], f: [fee] as FeeTuple[] })));
     const districtGroups = new Map<string, ApartmentEntry[]>();
     const peerGroups = new Map<string, ApartmentEntry[]>();
     const provinceGroups = new Map<string, ApartmentEntry[]>();
@@ -197,12 +200,13 @@ export const loadApartmentPageData = () => {
     const titleCounts = new Map<string, number>();
 
     for (const entry of comparisonEntries) {
-      const districtKey = `${entry.sd}|${entry.sg}`;
+      const districtKey = `${entry.lm}|${entry.sd}|${entry.sg}`;
       const peerKey = `${districtKey}|${householdBand(entry.h)}`;
       districtGroups.set(districtKey, [...(districtGroups.get(districtKey) ?? []), entry]);
       peerGroups.set(peerKey, [...(peerGroups.get(peerKey) ?? []), entry]);
-      provinceGroups.set(entry.sd, [...(provinceGroups.get(entry.sd) ?? []), entry]);
-      const provinceBandKey = `${entry.sd}|${householdBand(entry.h)}`;
+      const provinceKey = `${entry.lm}|${entry.sd}`;
+      provinceGroups.set(provinceKey, [...(provinceGroups.get(provinceKey) ?? []), entry]);
+      const provinceBandKey = `${provinceKey}|${householdBand(entry.h)}`;
       provinceBandGroups.set(provinceBandKey, [...(provinceBandGroups.get(provinceBandKey) ?? []), entry]);
     }
 
@@ -215,19 +219,19 @@ export const loadApartmentPageData = () => {
       entry.sg || (entry.sd === '세종특별자치시' ? '세종시' : entry.sd);
 
     const selectPeers = (entry: ApartmentEntry) => {
-      const districtKey = `${entry.sd}|${entry.sg}`;
+      const districtKey = `${entry.lm}|${entry.sd}|${entry.sg}`;
       const direct = peerGroups.get(`${districtKey}|${householdBand(entry.h)}`) ?? [];
       const district = districtGroups.get(districtKey) ?? direct;
-      const provinceBand = provinceBandGroups.get(`${entry.sd}|${householdBand(entry.h)}`) ?? [];
+      const provinceBand = provinceBandGroups.get(`${entry.lm}|${entry.sd}|${householdBand(entry.h)}`) ?? [];
       if (direct.length >= 10) return { peers: direct, label: `${districtLabel(entry)} · ${householdBand(entry.h)}` };
       if (district.length >= 2) return { peers: district, label: `${districtLabel(entry)} 전체` };
       if (provinceBand.length >= 2) return { peers: provinceBand, label: `${entry.sd} · ${householdBand(entry.h)}` };
-      return { peers: provinceGroups.get(entry.sd) ?? district, label: `${entry.sd} 전체` };
+      return { peers: provinceGroups.get(`${entry.lm}|${entry.sd}`) ?? district, label: `${entry.sd} 전체` };
     };
 
     const sortedMetrics = new Map<string, Record<ComparisonMetric, number[]>>();
     return entries.map((apartment) => {
-      const districtKey = `${apartment.sd}|${apartment.sg}`;
+      const districtKey = `${apartment.lm}|${apartment.sd}|${apartment.sg}`;
       const peerKey = `${districtKey}|${householdBand(apartment.h)}`;
       const selected = selectPeers(apartment);
       const peers = selected.peers;
@@ -265,11 +269,11 @@ export const loadApartmentPageData = () => {
         .slice(0, 8)
         .map(({ s, n, sg, d, h, y, tf, ht }) => ({ s, n, sg, d, h, y, tf, ht }));
       const qualityReasons = apartmentQualityReasons(apartment);
-      const comparisonEligible = qualityReasons.length === 0;
+      const comparisonEligible = qualityReasons.length === 0 && peers.length >= 2;
       // Index every apartment with trustworthy published fee data. Household
       // size and peer-group depth affect comparison richness, not whether the
       // apartment's own report is useful or eligible for search.
-      const indexable = comparisonEligible;
+      const indexable = qualityReasons.length === 0;
       const locationLabel = [districtLabel(apartment), apartment.d].filter(Boolean).join(' ');
 
       return {

@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ExcelJS from 'exceljs';
+import { assertPublishedUrlsPreserved } from './publication-safety';
 import {
   type AdminCenter,
   type Coordinate,
@@ -15,7 +16,9 @@ const outputDir = resolve(rootDir, process.env.KAPT_BULK_OUTPUT || 'public/data/
 const indexNowChangeSetPath = resolve(rootDir, process.env.KAPT_INDEXNOW_CHANGESET || 'data/kapt/indexnow-changes.json');
 const feeRootDir = resolve(rootDir, process.env.KAPT_FEE_ROOT || 'data/kapt/raw');
 const coordinateThresholdKm = Number(process.env.KAPT_COORDINATE_MAX_KM || 80);
-const maxPublishableComplexes = Number(process.env.KAPT_MAX_PUBLISHABLE_COMPLEXES || 19000);
+// Docker hosting does not need the legacy static-host file budget. Never rotate
+// valid public URLs out of the site merely because newer fee rows arrived.
+const maxPublishableComplexes = Number(process.env.KAPT_MAX_PUBLISHABLE_COMPLEXES || Number.MAX_SAFE_INTEGER);
 if (!Number.isFinite(coordinateThresholdKm) || coordinateThresholdKm <= 0) {
   throw new Error('KAPT_COORDINATE_MAX_KM는 0보다 큰 숫자여야 합니다.');
 }
@@ -487,6 +490,9 @@ const isPublishableCandidate = (complex: BasicComplex) => {
     complex.name.length >= 2;
 };
 const publishableCandidates = eligibleComplexes.filter(isPublishableCandidate);
+if (publishableCandidates.length > maxPublishableComplexes) {
+  throw new Error(`발행 대상 ${publishableCandidates.length}개가 설정 상한 ${maxPublishableComplexes}개를 초과했습니다. 기존 URL을 삭제하지 않도록 데이터 갱신을 중단합니다.`);
+}
 const publishableCodes = new Set(
   [...publishableCandidates]
     .sort((a, b) => {
@@ -498,7 +504,6 @@ const publishableCodes = new Set(
         b.households - a.households ||
         a.code.localeCompare(b.code);
     })
-    .slice(0, maxPublishableComplexes)
     .map((complex) => complex.code)
 );
 
@@ -594,6 +599,12 @@ for (const complex of eligibleComplexes) {
 }
 
 index.sort((a, b) => String(a.sd).localeCompare(String(b.sd), 'ko') || String(a.n).localeCompare(String(b.n), 'ko'));
+// Count-only checks cannot detect replacement of old public URLs by new ones.
+// Stop before touching the currently published files.
+assertPublishedUrlsPreserved(
+  [...previousApartments].map(([code, item]) => ({ c: code, s: item.slug, q: Number(item.publishable) })),
+  index
+);
 await rm(outputDir, { recursive: true, force: true });
 await mkdir(resolve(outputDir, 'regions'), { recursive: true });
 await mkdir(resolve(outputDir, 'maps'), { recursive: true });

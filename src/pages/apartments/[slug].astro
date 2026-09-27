@@ -245,7 +245,7 @@ const structuredData = [
       <aside>
         {comparisonEligible ? (
           <section class="panel comparison-panel">
-            <header><div><h2>비슷한 규모 단지 대비</h2><p>{displayPeerLabel} · {peerCount.toLocaleString('ko-KR')}개 단지</p></div></header>
+            <header><div><h2>같은 월 관리비 비교</h2><p>{latest[0]} · {displayPeerLabel} · {peerCount.toLocaleString('ko-KR')}개 단지</p></div></header>
             <div class="comparison-lead"><strong>낮은 금액 순 {peerRank.toLocaleString('ko-KR')}위</strong><span>{levelLabel(percentiles.total)}</span></div>
             <ul>{comparisons.map(([label, value, rank]) => <li><div><span>{label}</span><strong>{won(value)}/㎡</strong></div><div class="comparison-scale" aria-label={`${label}: ${levelLabel(rank)}`}><span>낮음</span><i aria-hidden="true"><b style={`left:${rank}%`}></b></i><span>높음</span></div><em>{levelLabel(rank)}</em></li>)}</ul>
             <p>총 관리비는 낮은 금액 순 {peerRank.toLocaleString('ko-KR')}위입니다. {medianComparison} 금액 순위는 품질이나 서비스 수준을 뜻하지 않습니다.</p>
