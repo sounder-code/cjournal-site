@@ -9,6 +9,7 @@ import {
 } from '@/lib/apartmentBulk';
 import { displayDistrictName, districtHubPath, regionHubPath } from '@/lib/apartmentSeo';
 import { siteUrl } from '@/lib/site';
+import { apartmentReportDescription, hasPriorCalendarMonth, previousFeeCopy } from '@/lib/apartmentReportCopy';
 
 export const getStaticPaths = async () =>
   (await loadApartmentPageData()).map((data) => ({ params: { slug: data.apartment.s }, props: { data } }));
@@ -52,15 +53,13 @@ const headline = comparisonEligible
 const averageCopy = averageDelta === 0
   ? `최근 ${apartment.f.length}개월 평균 ${won(averageTotal)}/㎡와 같습니다.`
   : `최근 ${apartment.f.length}개월 평균 ${won(averageTotal)}/㎡보다 ${Math.abs(averageDelta).toLocaleString('ko-KR')}원 ${averageDelta > 0 ? '높습니다' : '낮습니다'}.`;
-const previousCopy = latestDelta === 0
-  ? '전월과 비교해 변동이 없습니다.'
-  : `전월과 비교하면 ${Math.abs(latestDelta).toLocaleString('ko-KR')}원 ${latestDelta > 0 ? '올랐습니다' : '내렸습니다'}.`;
+const previousCopy = previousFeeCopy(apartment.f);
 const overview = `${apartment.n}의 총 관리비는 ${averageCopy} ${previousCopy}`;
 const driverCopy = secondDriver
   ? `세부 항목 중 ${topDriver.name} ${won(topDriver.value)}/㎡와 ${secondDriver.name} ${won(secondDriver.value)}/㎡의 비중이 큽니다.`
   : `현재 공개된 세부 항목에서는 ${topDriver.name}이 ㎡당 ${won(topDriver.value)}으로 가장 큽니다.`;
 const trendCopy = `공개 기간 중 가장 높았던 달은 ${monthLabel(peak[0])} ${won(peak[1])}/㎡, 가장 낮았던 달은 ${monthLabel(low[0])} ${won(low[1])}/㎡입니다.`;
-const description = `${apartment.n} ${latest[0]} 관리비는 ㎡당 ${won(latest[1])}입니다. 최근 ${apartment.f.length}개월 추이와 ${displayPeerLabel} 비교, 공용관리비·장기수선충당금을 확인하세요.`;
+const description = apartmentReportDescription(apartment.n, apartment.f, comparisonEligible, displayPeerLabel);
 const trendValues = apartment.f.map((fee) => fee[1]);
 const maxTrend = Math.max(...trendValues);
 const trendBars = apartment.f.map((fee) => ({
@@ -74,8 +73,7 @@ const composition = [
   { label: '개별사용료', value: latest[3], prior: previous[3], className: 'individual', share: latest[3] / compositionTotal * 100 },
   { label: '장기수선충당금', value: latest[4], prior: previous[4], className: 'reserve', share: latest[4] / compositionTotal * 100 }
 ];
-const monthIndex = (month: string) => Number(month.slice(0, 4)) * 12 + Number(month.slice(5));
-const hasPreviousMonth = apartment.f.length > 1 && monthIndex(latest[0]) - monthIndex(previous[0]) === 1;
+const hasPreviousMonth = hasPriorCalendarMonth(apartment.f);
 const signedWon = (value: number) => `${value > 0 ? '+' : ''}${won(value)}`;
 const changeRemainder = latestDelta - composition.reduce((sum, item) => sum + item.value - item.prior, 0);
 const comparisons = [
@@ -184,7 +182,7 @@ const structuredData = [
             <div>{composition.map((item) => <span>{item.label} <b>{signedWon(item.value - item.prior)}</b></span>)}</div>
             {changeRemainder !== 0 && <small>항목 합계와 총액의 반올림·집계 차이 {signedWon(changeRemainder)}/㎡</small>}
           </div>}
-          {!hasPreviousMonth && <p>직전 공개월 {previous[0]} · 전월 자료가 없어 전월 증감을 표시하지 않습니다.</p>}
+          {!hasPreviousMonth && <p>{apartment.f.length > 1 ? `직전 공개월 ${previous[0]} · ` : ''}전월 자료가 없어 전월 증감을 표시하지 않습니다.</p>}
           <div class="answer-chips">
             {comparisonEligible && <b>{peerCount.toLocaleString('ko-KR')}개 중 낮은 금액 순 {peerRank.toLocaleString('ko-KR')}위</b>}
             {comparisonEligible && <b>중앙값보다 {Math.abs(medianDelta).toLocaleString('ko-KR')}원 {medianDelta > 0 ? '높음' : medianDelta < 0 ? '낮음' : '같음'}</b>}
@@ -193,9 +191,9 @@ const structuredData = [
         <div class="quick-facts">
           <div>
             <span><label for={`fee-area-${apartment.s}`}>부과면적</label><input id={`fee-area-${apartment.s}`} type="number" min="1" max="500" step="1" value={estimatorArea} inputmode="decimal" data-estimator-area aria-label="관리비 부과면적"/><b>㎡</b></span>
-            <small>입력 면적 환산액</small><strong data-estimator-total>{won(latest[1] * estimatorArea)}</strong><small>전용면적이 아닌 고지서 부과면적</small>
+            <small><span data-estimator-area-label>{estimatorArea}㎡</span> 입력 기준 환산액</small><strong data-estimator-total>{won(latest[1] * estimatorArea)}</strong><small>전용면적이 아닌 고지서 부과면적</small>
           </div>
-          <div><small>비교 기준</small><strong>{displayPeerLabel}</strong><span>중앙값 {won(peerMedianTotal)}/㎡</span></div>
+          <div><small>비교 기준</small><strong>{displayPeerLabel}</strong><span>{comparisonEligible ? `중앙값 ${won(peerMedianTotal)}/㎡` : '비교 가능한 자료 부족으로 순위·중앙값 미표시'}</span></div>
         </div>
       </section>
 
@@ -238,7 +236,7 @@ const structuredData = [
 
         <section class="panel reading-panel">
           <header><div><h2>이 단지 관리비 읽는 법</h2><p>공개 수치에서 확인되는 특징만 정리했습니다.</p></div></header>
-          <div><article><strong>최근 흐름</strong><p>{overview}</p></article><article><strong>비용 구성</strong><p>{driverCopy}</p></article><article><strong>기간 내 범위</strong><p>{trendCopy}</p></article></div>
+          <div><article><strong>최근 흐름</strong><p>{overview}</p></article><article><strong>비용 구성</strong><p>{driverCopy}</p></article></div>
         </section>
       </main>
 
@@ -258,8 +256,8 @@ const structuredData = [
         )}
 
         <section class="panel related-panel">
-          <header><div><h2>함께 비교할 단지</h2><p>같은 지역에서 세대수가 가까운 순</p></div></header>
-          <div>{nearby.map((item) => <a href={`/apartments/${item.s}/`}><span><strong>{item.n}</strong><small>{item.d} · {item.h.toLocaleString('ko-KR')}세대 · {item.ht}</small></span><b>{item.tf.toLocaleString('ko-KR')}원</b></a>)}</div>
+          <header><div><h2>함께 비교할 단지</h2><p>{latest[0]} · {displayPeerLabel} · 세대수가 가까운 순</p></div></header>
+          <div>{nearby.map((item) => <a href={`/apartments/${item.s}/`}><span><strong>{item.n}</strong><small>{item.d} · {item.h.toLocaleString('ko-KR')}세대 · {item.ht}</small></span><b>{item.tf.toLocaleString('ko-KR')}원/㎡</b></a>)}</div>
         </section>
       </aside>
     </div>
@@ -275,7 +273,9 @@ const structuredData = [
       <h2>확인할 점</h2>
       <details open><summary>세대별 고지서 금액과 왜 다른가요?</summary><p>이 페이지는 단지 전체 관리비를 관리비부과면적으로 나눈 비교 단가입니다. 세대별 고지서는 전용면적, 난방·전기·수도 사용량, 할인과 정산에 따라 달라집니다.</p></details>
       <details><summary>음수 금액이 표시될 수 있나요?</summary><p>관리주체의 환급이나 이전 달 정산이 반영되면 일부 사용료 항목이 음수로 공개될 수 있습니다. 원본 값을 임의로 0원 처리하지 않습니다.</p></details>
-      <details><summary>비교 순위는 어떻게 계산하나요?</summary><p>{districtName}에서 세대수 구간이 같은 단지를 우선 비교합니다. 표본이 10개 미만이면 {districtName} 전체 단지로 범위를 넓힙니다. 현재 총 관리비는 {peerCount.toLocaleString('ko-KR')}개 중 낮은 금액 순 {peerRank.toLocaleString('ko-KR')}위이며, {medianComparison}</p></details>
+      <details><summary>비교 순위는 어떻게 계산하나요?</summary><p>{comparisonEligible
+        ? `${latest[0]}의 ${displayPeerLabel} ${peerCount.toLocaleString('ko-KR')}개 단지를 비교합니다. 현재 총 관리비는 낮은 금액 순 ${peerRank.toLocaleString('ko-KR')}위이며, ${medianComparison}`
+        : '이 단지는 비교 가능한 자료가 충분하지 않아 순위와 중앙값 비교를 표시하지 않습니다.'}</p></details>
     </section>
   </article>
   <script is:inline>
@@ -291,6 +291,9 @@ const structuredData = [
       const formatter = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
       const render = () => {
         const area = Math.max(0, Math.min(500, Number(input.value) || 0));
+        root.querySelectorAll('[data-estimator-area-label]').forEach((target) => {
+          target.textContent = `${formatter.format(area)}㎡`;
+        });
         Object.entries(fees).forEach(([key, fee]) => {
           root.querySelectorAll(`[data-estimator-${key}]`).forEach((target) => {
             target.textContent = `${formatter.format(Math.round(fee * area))}원`;
@@ -396,7 +399,7 @@ const structuredData = [
   .summary-table { min-width: 0; }
   .fee-details { border-top: 1px solid #e2e8e4; }
   .fee-details summary { padding: 14px 16px; cursor: pointer; color: #176c54; font-size: .74rem; font-weight: 750; }
-  .reading-panel > div { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .reading-panel > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .reading-panel article { padding: 16px; border-right: 1px solid #e8ebe9; }
   .reading-panel article:last-child { border: 0; }
   .reading-panel article strong { font-size: .75rem; }
