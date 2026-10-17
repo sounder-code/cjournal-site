@@ -1,7 +1,7 @@
-type Comparable = { comparisonMonths?: Array<[string, number, number, number]> };
+type Comparable = { st?: unknown; comparisonMonths?: Array<[string, number, number, number]> };
 
 export function commonMonthComparison<T extends Comparable>(items: T[]) {
-  if (!items.length) return { month: null, items: [] };
+  if (!items.length || items.some((item) => item.st)) return { month: null, items: [] };
   const month = (items[0].comparisonMonths || []).map((fee) => fee[0])
     .filter((month) => items.every((item) => item.comparisonMonths?.some((fee) => fee[0] === month)))
     .sort().at(-1);

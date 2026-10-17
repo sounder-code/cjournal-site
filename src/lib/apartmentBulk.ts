@@ -1,3 +1,5 @@
+import type { RetainedPublication } from './apartmentFreshness';
+import { retentionNotice } from './apartmentFreshness';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
@@ -48,6 +50,7 @@ export interface ApartmentEntry {
   s: string;
   n: string;
   an?: string[];
+  st?: RetainedPublication;
   sd: string;
   sg: string;
   d: string;
@@ -139,6 +142,7 @@ export const isPublishableApartment = (entry: ApartmentEntry) =>
 const latestFee = (entry: ApartmentEntry) => entry.f.at(-1);
 
 export const apartmentQualityReasons = (entry: ApartmentEntry, fee = latestFee(entry)) => {
+  if (entry.st) return [retentionNotice(entry.st)];
   if (!fee) return ['최근 관리비가 공개되지 않았습니다.'];
 
   const reasons: string[] = [];
@@ -233,8 +237,8 @@ export const loadApartmentPageData = () => {
     const sortedMetrics = new Map<string, Record<ComparisonMetric, number[]>>();
     return entries.map((apartment) => {
       const districtKey = `${apartment.lm}|${apartment.sd}|${apartment.sg}`;
-      const peerKey = `${districtKey}|${householdBand(apartment.h)}`;
-      const selected = selectPeers(apartment);
+      const peerKey = `${districtKey}|${householdBand(apartment.h)}|${apartment.st ? 'retained' : 'fresh'}`;
+      const selected = apartment.st ? { peers: [], label: '갱신 지연 · 비교 제외' } : selectPeers(apartment);
       const peers = selected.peers;
       if (!sortedMetrics.has(peerKey)) {
         sortedMetrics.set(
@@ -257,7 +261,7 @@ export const loadApartmentPageData = () => {
       const medianIndex = Math.floor(totalValues.length / 2);
       const peerMedianTotal = totalValues.length % 2
         ? totalValues[medianIndex]
-        : Math.round((totalValues[medianIndex - 1] + totalValues[medianIndex]) / 2);
+        : Math.round((totalValues[medianIndex - 1] + totalValues[medianIndex]) / 2) || 0;
       const percentiles = Object.fromEntries(
         Object.entries(metricIndexes).map(([metric, index]) => [
           metric,
@@ -274,7 +278,7 @@ export const loadApartmentPageData = () => {
       // Index every apartment with trustworthy published fee data. Household
       // size and peer-group depth affect comparison richness, not whether the
       // apartment's own report is useful or eligible for search.
-      const indexable = qualityReasons.length === 0;
+      const indexable = apartmentQualityReasons({ ...apartment, st: undefined }).length === 0;
       const locationLabel = [districtLabel(apartment), apartment.d].filter(Boolean).join(' ');
 
       return {

@@ -20,7 +20,7 @@ interface BulkManifest {
 const manifestPath = resolve('public/data/apartments/manifest.json');
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as BulkManifest;
 const apartmentPages = await loadApartmentPageData();
-const indexablePages = apartmentPages.filter((page) => page.indexable);
+const indexablePages = apartmentPages.filter((page) => page.indexable && !page.apartment.st);
 const sourceDate = `${manifest.sourceDate.slice(0, 4)}.${manifest.sourceDate.slice(4, 6)}.${manifest.sourceDate.slice(6, 8)}`;
 const latestMonth = manifest.latestMonth.replace('-', '.');
 const regionSummaries = manifest.regions.map((region) => {
@@ -57,7 +57,7 @@ const featuredByRegion = regionSummaries.map((region) => ({
 
     <section class="summary-strip" aria-label="데이터 요약">
       <div><span>전국 단지</span><strong>{manifest.stats.complexes.toLocaleString('ko-KR')}</strong><small>개</small></div>
-      <div><span>관리비 공개</span><strong>{manifest.stats.complexesWithFees.toLocaleString('ko-KR')}</strong><small>개</small></div>
+      <div><span>관리비 공개·보존</span><strong>{manifest.stats.complexesWithFees.toLocaleString('ko-KR')}</strong><small>개</small></div>
       <div><span>관리비 내역</span><strong>{manifest.stats.publishedFeeRows.toLocaleString('ko-KR')}</strong><small>건</small></div>
       <div><span>데이터 범위</span><strong>{manifest.months.length}</strong><small>개월</small></div>
     </section>
@@ -163,6 +163,7 @@ const featuredByRegion = regionSummaries.map((region) => ({
 
   <script>
     // @ts-nocheck
+    import { retentionNotice } from '@/lib/apartmentFreshness';
     import { apartmentSearchText } from '@/lib/apartmentSearch';
     {
       const root = document.querySelector('[data-directory]');
@@ -206,6 +207,7 @@ const featuredByRegion = regionSummaries.map((region) => ({
               ${item.q === 1
                 ? `<a class="complex-name" href="/apartments/${escapeHtml(item.s)}/">${escapeHtml(item.n)}</a>`
                 : `<strong class="complex-name">${escapeHtml(item.n)}</strong>`}
+              ${item.st ? `<span>${escapeHtml(retentionNotice(item.st))}</span>` : ''}
               <span>${escapeHtml(item.a || `${item.sd} ${item.sg} ${item.d}`)}</span>
             </td>
             <td>

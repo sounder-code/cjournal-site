@@ -1,3 +1,6 @@
+import { hasNegativeFeeAggregate } from './kapt-fee-quality';
+import type { RetainedPublication } from '../src/lib/apartmentFreshness';
+import { assertRetentionBudget } from './kapt-retention';
 import { apartmentIdentity } from '../src/lib/apartmentIdentity';
 import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
@@ -72,7 +75,7 @@ interface FeeRow {
 
 interface RawManifest {
   sourceDate: string;
-  sources: Record<'basic' | 'area' | 'fee', { path: string; fileName: string }>;
+  sources: Record<'basic' | 'area' | 'fee', { path: string; fileName: string; sourceDate?: string }>;
 }
 
 interface AdminCenterFile {
@@ -92,6 +95,7 @@ interface ApartmentSummary {
   q: number;
   n: string;
   an?: string[];
+  st?: RetainedPublication;
   sd: string;
   sg: string;
   d: string;
@@ -175,7 +179,7 @@ const isoDateFromCompact = (value: string) => {
 
 const apartmentFingerprint = (entry: Record<string, unknown>) => {
   const fields = [
-    'c', 's', 'q', 'n', 'an', 'sd', 'sg', 'd', 'a', 'h', 'b', 'y', 'ht', 'mt',
+    'c', 's', 'q', 'n', 'an', 'st', 'sd', 'sg', 'd', 'a', 'h', 'b', 'y', 'ht', 'mt',
     'ma', 'lm', 'tf', 'cf', 'rf', 'p', 'e', 'f'
   ];
   return createHash('sha256')
@@ -238,24 +242,29 @@ const configuredFeeFiles = (process.env.KAPT_FEE_FILES || '')
   .map((path) => resolve(rootDir, path));
 
 const rawManifest = JSON.parse(await readFile(manifestPath, 'utf8')) as RawManifest;
+if (!isoDateFromCompact(rawManifest.sourceDate) || Object.values(rawManifest.sources).some((source) => source.sourceDate && source.sourceDate !== rawManifest.sourceDate)) throw new Error('K-apt 원본 기준일이 유효하지 않거나 일치하지 않습니다.');
 const sourceModifiedDate = isoDateFromCompact(rawManifest.sourceDate) || new Date().toISOString().slice(0, 10);
 const previousManifest = await readFile(resolve(outputDir, 'manifest.json'), 'utf8')
   .then((value) => JSON.parse(value) as {
     generatedAt?: string;
     sourceDate?: string;
+    source?: string;
+    months?: string[];
+    stats?: { complexes: number; publishableComplexes: number; publishedFeeRows: number };
     regions?: Array<{ key: string }>;
   })
-  .catch(() => undefined);
+  .catch((error) => { if (error.code === 'ENOENT') return undefined; throw error; });
 const previousFallbackModifiedDate = isoDateFromCompact(previousManifest?.sourceDate || '') || sourceModifiedDate;
+const previousDetails = new Map<string, Record<string, any>>();
 const previousApartments = new Map<string, PreviousApartmentSnapshot>();
 
 for (const region of previousManifest?.regions ?? []) {
   const entries = await readFile(resolve(outputDir, 'regions', `${region.key}.json`), 'utf8')
-    .then((value) => JSON.parse(value) as Array<Record<string, unknown>>)
-    .catch(() => []);
+    .then((value) => JSON.parse(value) as Array<Record<string, unknown>>);
   for (const entry of entries) {
     const code = String(entry.c || '').trim();
     if (!code) continue;
+    previousDetails.set(code, entry);
     previousApartments.set(code, {
       fingerprint: apartmentFingerprint(entry),
       slug: String(entry.s || ''),
@@ -270,6 +279,8 @@ for (const region of previousManifest?.regions ?? []) {
     });
   }
 }
+
+if (previousManifest?.stats && previousApartments.size !== previousManifest.stats.complexes) throw new Error('기존 공개 자료의 단지 수가 manifest와 다릅니다.');
 
 const coordinates = JSON.parse(
   await readFile(resolve(rootDir, 'src/data/apartment-coordinates.json'), 'utf8')
@@ -311,6 +322,7 @@ if (!configuredFeeFiles.length) {
 }
 
 const complexes = new Map<string, BasicComplex>();
+const basicSourceCodes = new Set<string>();
 const basicSourceRows = new Map<string, Record<string, CellValue>>();
 let basicRows = 0;
 let duplicateComplexes = 0;
@@ -322,6 +334,7 @@ for await (const row of rowsFromWorkbook(basicPath, [
 ])) {
   basicRows += 1;
   const code = text(row['단지코드']);
+  if (code) basicSourceCodes.add(code);
   if (!code || !text(row['단지명'])) continue;
   const previousRow = basicSourceRows.get(code);
   if (previousRow) {
@@ -369,6 +382,7 @@ for await (const row of rowsFromWorkbook(areaPath, ['단지코드', '관리비�
   managementAreas.set(code, area);
 }
 
+const currentFeeCodes = new Set<string>();
 const feeRowsByKey = new Map<string, FeeRow>();
 const feeSourceByKey = new Map<string, string>();
 let feeRows = 0;
@@ -393,6 +407,7 @@ for (const source of feeSourceFiles) {
     const rawMonth = rawMonthDigits.slice(0, 6);
     const monthNumber = Number(rawMonth.slice(4, 6));
     if (!code) continue;
+    if (source.path === manifestFeePath) currentFeeCodes.add(code);
     if (rawMonthDigits.length !== 6 || monthNumber < 1 || monthNumber > 12) {
       invalidFeeMonths += 1;
       continue;
@@ -469,7 +484,7 @@ const eligibleComplexes = [...complexes.values()].filter((complex) => {
 });
 const excludedInvalidRegionComplexes = complexes.size - eligibleComplexes.length;
 
-const coordinateValidation = validateApartmentCoordinates({
+let coordinateValidation = validateApartmentCoordinates({
   apartments: eligibleComplexes.map((complex) => ({
     code: complex.code,
     sido: complex.sido,
@@ -484,6 +499,7 @@ const isPublishableCandidate = (complex: BasicComplex) => {
   const monthlyFees = fees.get(complex.code) ?? [];
   const latest = monthlyFees.at(-1);
   return monthlyFees.length >= 5 &&
+    monthlyFees.every((fee) => !hasNegativeFeeAggregate(fee.totalFeePerM2, fee.commonFeePerM2)) &&
     (managementAreas.get(complex.code) ?? 0) > 0 &&
     Number(latest?.totalFeePerM2 ?? 0) > 0 &&
     complex.households > 0 &&
@@ -508,97 +524,99 @@ const publishableCodes = new Set(
     .map((complex) => complex.code)
 );
 
+// Check source health BEFORE any last-good records can inflate the totals.
+const freshPublished = eligibleComplexes.filter((complex) => publishableCodes.has(complex.code) && currentFeeCodes.has(complex.code)).length;
+const freshFeeRows = eligibleComplexes.reduce((sum, complex) => sum + (fees.get(complex.code)?.length ?? 0), 0);
+if (previousManifest?.stats) {
+  const old = previousManifest.stats;
+  if (eligibleComplexes.length < old.complexes * 0.97 || freshPublished < old.publishableComplexes * 0.95 || freshFeeRows < old.publishedFeeRows * 0.9) {
+    throw new Error('K-apt 갱신 중단: 보존 전 원본 단지·공개 대상·관리비 행 수가 허용 범위보다 감소했습니다.');
+  }
+  if ((previousManifest.months ?? []).some((month) => !months.has(month))) {
+    throw new Error('K-apt 갱신 중단: 보존 전 원본에서 기존 관리비 월 이력이 사라졌습니다.');
+  }
+}
+if (rawManifest.sourceDate < (previousManifest?.sourceDate ?? '') || duplicateComplexes !== benignDuplicateComplexes || duplicateFeeRows || areaConflicts || invalidFeeMonths) {
+  throw new Error('K-apt 갱신 중단: 원본 기준일·중복·면적 충돌·관리비 월 형식을 확인하세요.');
+}
+const detailsByCode = new Map<string, Record<string, any>>();
+for (const complex of eligibleComplexes) {
+  const monthlyFees = fees.get(complex.code) ?? [];
+  const latest = monthlyFees.at(-1);
+  const detail = {
+    c: complex.code,
+    ...apartmentIdentity(complex.name, complex.code, previousApartments.get(complex.code)),
+    q: publishableCodes.has(complex.code) && currentFeeCodes.has(complex.code) ? 1 : 0,
+    n: complex.name, sd: complex.sido, sg: complex.sigungu, d: complex.dong,
+    a: complex.address, h: complex.households, b: complex.buildings,
+    y: complex.approvalYear, ht: complex.heatingType, mt: complex.managementType,
+    ma: rounded(managementAreas.get(complex.code) ?? 0),
+    lm: latest?.month ?? '', tf: latest?.totalFeePerM2 ?? 0,
+    cf: latest?.commonFeePerM2 ?? 0, rf: latest?.reserveFeePerM2 ?? 0,
+    p: complex.parking, e: complex.elevators,
+    f: monthlyFees.map((fee) => [fee.month, fee.totalFeePerM2, fee.commonFeePerM2,
+      fee.individualFeePerM2, fee.reserveFeePerM2, fee.generalFeePerM2,
+      fee.securityFeePerM2, fee.cleaningFeePerM2, fee.maintenanceFeePerM2,
+      fee.elevatorFeePerM2, fee.electricityFeePerM2, fee.waterFeePerM2,
+      fee.heatingFeePerM2, fee.hotWaterFeePerM2])
+  };
+  const previous = previousApartments.get(complex.code);
+  detailsByCode.set(complex.code, { ...detail,
+    md: previous?.fingerprint === apartmentFingerprint(detail) ? previous.modifiedDate : sourceModifiedDate });
+}
+let retainedComplexes = 0;
+for (const [code, previous] of previousApartments) {
+  if (!previous.publishable) continue;
+  const current = detailsByCode.get(code);
+  if (current?.q === 1 && currentFeeCodes.has(code)) continue;
+  const lastGood = previousDetails.get(code)!;
+  if (!Array.isArray(lastGood.f) || lastGood.f.length < 5 || lastGood.ma <= 0 || lastGood.tf <= 0 || lastGood.h <= 0 || String(lastGood.a ?? '').length < 5 || String(lastGood.n ?? '').length < 2 || lastGood.f.at(-1)?.[0] !== lastGood.lm || lastGood.f.at(-1)?.[1] !== lastGood.tf) {
+    throw new Error(`K-apt 보존 중단: ${code}의 마지막 정상 자료를 검증할 수 없습니다.`);
+  }
+  const sourceDate = lastGood.st?.sourceDate ?? previousManifest?.sourceDate;
+  if (!/^\d{8}$/.test(sourceDate ?? '')) throw new Error(`K-apt 보존 중단: ${code}의 원본 기준일이 없습니다.`);
+  const reason: RetainedPublication['reason'] = !basicSourceCodes.has(code) ? 'basic-missing'
+    : !current ? 'quality-failed' : !currentFeeCodes.has(code) ? 'fees-missing' : 'quality-failed';
+  const st: RetainedPublication = { reason, sourceDate: sourceDate!,
+    source: lastGood.st?.source ?? previousManifest?.source ?? 'K-apt 주간 일괄 공개자료',
+    since: lastGood.st?.since ?? rawManifest.sourceDate, checkedDate: rawManifest.sourceDate };
+  // Keep the entire last-good record, including real fee months, name and modified date.
+  detailsByCode.set(code, { ...lastGood, st });
+  retainedComplexes++;
+}
+assertRetentionBudget([...previousApartments.values()].filter((item) => item.publishable).length, retainedComplexes);
+if (freshPublished + retainedComplexes > maxPublishableComplexes) throw new Error('보존 포함 공개 단지가 발행 상한을 초과했습니다.');
+coordinateValidation = validateApartmentCoordinates({
+  apartments: [...detailsByCode.values()].map((item) => ({ code: item.c, sido: item.sd, sigungu: item.sg })),
+  coordinates, adminCenters: adminCenters.districts, thresholdKm: coordinateThresholdKm
+});
 const byRegion = new Map<string, Array<Record<string, unknown>>>();
 const byDistrict = new Map<string, ApartmentSummary[]>();
 const index: ApartmentSummary[] = [];
 const currentApartments = new Map<string, CurrentApartmentSnapshot>();
-let complexesWithArea = 0;
-let complexesWithFees = 0;
-let publishedFeeRows = 0;
-let publishableComplexes = 0;
-for (const complex of eligibleComplexes) {
-  const area = managementAreas.get(complex.code) ?? 0;
-  const monthlyFees = fees.get(complex.code) ?? [];
-  const latest = monthlyFees.at(-1);
-  if (area > 0) complexesWithArea += 1;
-  if (monthlyFees.length) complexesWithFees += 1;
-  publishedFeeRows += monthlyFees.length;
-  const isPublishable = publishableCodes.has(complex.code);
-  if (isPublishable) publishableComplexes += 1;
-  const regionKey = keyForRegion(complex.sido) || 'unknown';
-  const coordinate = coordinateValidation.validCoordinates.get(complex.code);
-  const summary = {
-    c: complex.code,
-    ...apartmentIdentity(complex.name, complex.code, previousApartments.get(complex.code)),
-    q: isPublishable ? 1 : 0,
-    n: complex.name,
-    sd: complex.sido,
-    sg: complex.sigungu,
-    d: complex.dong,
-    a: complex.address,
-    h: complex.households,
-    b: complex.buildings,
-    y: complex.approvalYear,
-    ht: complex.heatingType,
-    mt: complex.managementType,
-    ma: rounded(area),
-    lm: latest?.month ?? '',
-    tf: latest?.totalFeePerM2 ?? 0,
-    cf: latest?.commonFeePerM2 ?? 0,
-    rf: latest?.reserveFeePerM2 ?? 0
-  };
-  const feeTuples = monthlyFees.map((fee) => [
-    fee.month,
-    fee.totalFeePerM2,
-    fee.commonFeePerM2,
-    fee.individualFeePerM2,
-    fee.reserveFeePerM2,
-    fee.generalFeePerM2,
-    fee.securityFeePerM2,
-    fee.cleaningFeePerM2,
-    fee.maintenanceFeePerM2,
-    fee.elevatorFeePerM2,
-    fee.electricityFeePerM2,
-    fee.waterFeePerM2,
-    fee.heatingFeePerM2,
-    fee.hotWaterFeePerM2
-  ]);
-  const detail = {
-    ...summary,
-    p: complex.parking,
-    e: complex.elevators,
-    f: feeTuples
-  };
-  const fingerprint = apartmentFingerprint(detail);
-  const previous = previousApartments.get(complex.code);
-  const modifiedDate = previous?.fingerprint === fingerprint
-    ? previous.modifiedDate
-    : sourceModifiedDate;
-  const indexedSummary: ApartmentSummary = {
-    ...summary,
-    md: modifiedDate,
-    ...(coordinate ? { la: coordinate.latitude, lo: coordinate.longitude } : {})
-  };
-  currentApartments.set(complex.code, {
-    code: complex.code,
-    fingerprint,
-    slug: summary.s,
-    name: summary.n,
-    aliases: summary.an,
-    province: summary.sd,
-    district: summary.sg,
-    publishable: summary.q === 1,
-    modifiedDate
-  });
+let complexesWithArea = 0, complexesWithFees = 0, publishedFeeRows = 0, publishableComplexes = 0;
+// Recount output statistics independently; retained values are explicitly identified.
+negativeAdjustmentValues = 0;
+for (const detail of detailsByCode.values()) {
+  const { f, p, e, ...summary } = detail;
+  const coordinate = coordinateValidation.validCoordinates.get(detail.c);
+  const indexedSummary = { ...summary, ...(coordinate ? { la: coordinate.latitude, lo: coordinate.longitude } : {}) } as ApartmentSummary;
   index.push(indexedSummary);
-  const districtKey = `${complex.sido}\u001f${complex.sigungu}`;
-  byDistrict.set(districtKey, [...(byDistrict.get(districtKey) ?? []), indexedSummary]);
-  const details = byRegion.get(regionKey) ?? [];
-  details.push({
-    ...detail,
-    md: modifiedDate
-  });
-  byRegion.set(regionKey, details);
+  currentApartments.set(detail.c, { code: detail.c, fingerprint: apartmentFingerprint(detail),
+    slug: detail.s, name: detail.n, aliases: detail.an, province: detail.sd, district: detail.sg,
+    publishable: detail.q === 1, modifiedDate: detail.md });
+  const region = keyForRegion(detail.sd) || 'unknown';
+  byRegion.set(region, [...(byRegion.get(region) ?? []), detail]);
+  const district = `${detail.sd}\u001f${detail.sg}`;
+  byDistrict.set(district, [...(byDistrict.get(district) ?? []), indexedSummary]);
+  if (detail.ma > 0) complexesWithArea++;
+  if (f.length) complexesWithFees++;
+  if (detail.q === 1) publishableComplexes++;
+  publishedFeeRows += f.length;
+  for (const row of f) {
+    months.add(row[0]);
+    negativeAdjustmentValues += row.slice(1).filter((value: number) => value < 0).length;
+  }
 }
 
 index.sort((a, b) => String(a.sd).localeCompare(String(b.sd), 'ko') || String(a.n).localeCompare(String(b.n), 'ko'));
@@ -618,6 +636,7 @@ const searchRecords = index.map((entry) => ({
   s: entry.s,
   n: entry.n,
   ...(entry.an?.length ? { an: entry.an } : {}),
+  ...(entry.st ? { st: entry.st } : {}),
   sd: entry.sd,
   sg: entry.sg,
   d: entry.d,
@@ -729,7 +748,9 @@ const outputManifest = {
     feeRowsWithoutComplex,
     invalidFeeMonths,
     publishedFeeRows,
-    publishableCandidates: publishableCandidates.length,
+    publishableCandidates: freshPublished + retainedComplexes,
+    freshPublishableComplexes: freshPublished,
+    retainedComplexes,
     publishableLimit: maxPublishableComplexes,
     publishableComplexes,
     negativeAdjustmentValues,
@@ -741,7 +762,7 @@ const outputManifest = {
     file: '/data/apartments/search.json',
     count: searchRecords.length,
     withCoordinates: searchRecords.filter((entry) => entry.la !== undefined && entry.lo !== undefined).length,
-    fields: ['c', 's', 'n', 'sd', 'sg', 'd', 'a', 'h', 'tf', 'cf', 'rf', 'q', 'la?', 'lo?', 'an?']
+    fields: ['c', 's', 'n', 'sd', 'sg', 'd', 'a', 'h', 'tf', 'cf', 'rf', 'q', 'la?', 'lo?', 'an?', 'st?']
   },
   regions: regionManifest,
   districts: districtManifest,

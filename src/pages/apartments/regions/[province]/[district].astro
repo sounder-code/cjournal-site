@@ -1,4 +1,5 @@
 ---
+import { retentionNotice } from '@/lib/apartmentFreshness';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { loadApartmentPageData, type ApartmentEntry } from '@/lib/apartmentBulk';
 import { displayDistrictName, districtHubPath, districtSegment, latestTotal, regionHubPath, regionalFeeInsights } from '@/lib/apartmentSeo';
@@ -101,6 +102,7 @@ const structuredData = {
           <a href={`/apartments/${apartment.s}/`}>
             <span>{apartment.d || districtName}</span>
             <strong>{apartment.n}</strong>
+            {apartment.st && <small>{retentionNotice(apartment.st)}</small>}
             <small>{apartment.h.toLocaleString('ko-KR')}세대 · {apartment.y ? `${apartment.y}년` : '사용승인 미확인'} · {apartment.ht || '난방 미확인'}</small>
             <b>{latestTotal(apartment).toLocaleString('ko-KR')}원/㎡</b>
           </a>
