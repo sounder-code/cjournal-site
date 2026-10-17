@@ -24,6 +24,7 @@ interface ApartmentIndexEntry {
   s: string;
   q: number;
   n: string;
+  an?: string[];
   sd: string;
   sg: string;
   d: string;
@@ -44,7 +45,7 @@ interface ApartmentIndexEntry {
 
 type SearchEntry = Pick<
   ApartmentIndexEntry,
-  'c' | 's' | 'n' | 'sd' | 'sg' | 'd' | 'a' | 'h' | 'tf' | 'cf' | 'rf' | 'q' | 'la' | 'lo'
+  'c' | 's' | 'n' | 'sd' | 'sg' | 'd' | 'a' | 'h' | 'tf' | 'cf' | 'rf' | 'q' | 'la' | 'lo' | 'an'
 >;
 
 interface Manifest {
@@ -117,7 +118,7 @@ const sameScalarFields = (actual: Record<string, unknown>, expected: Record<stri
   const actualKeys = Object.keys(actual).sort();
   const expectedKeys = Object.keys(expected).sort();
   if (actualKeys.join('|') !== expectedKeys.join('|')) return false;
-  return expectedKeys.every((key) => actual[key] === expected[key]);
+  return expectedKeys.every((key) => JSON.stringify(actual[key]) === JSON.stringify(expected[key]));
 };
 
 assert(manifest.version >= 2, 'manifest 버전이 지연 로딩 계약을 반영하지 않음');
@@ -149,16 +150,19 @@ const indexByCode = new Map(index.map((entry) => [entry.c, entry]));
 for (const entry of index) {
   assert(Boolean(entry.sd && (entry.sg || entry.sd === '세종특별자치시')), `${entry.c} 지역 정보 누락`);
   assert(Object.hasOwn(entry, 'la') === Object.hasOwn(entry, 'lo'), `${entry.c} 전국 인덱스 좌표 쌍 불완전`);
+  if (entry.an !== undefined) {
+    assert(Array.isArray(entry.an) && entry.an.length > 0 && entry.an.every((name) => typeof name === 'string' && name.trim() === name && name.length > 0 && name !== entry.n) && new Set(entry.an).size === entry.an.length, `${entry.c} 이전 단지명 별칭 형식 오류`);
+  }
 }
 const searchRequiredFields = ['c', 's', 'n', 'sd', 'sg', 'd', 'a', 'h', 'tf', 'cf', 'rf', 'q'];
-const searchAllowedFields = new Set([...searchRequiredFields, 'la', 'lo']);
+const searchAllowedFields = new Set([...searchRequiredFields, 'la', 'lo', 'an']);
 assert(manifest.search === manifest.searchMeta.file, '검색 파일 URL과 메타데이터 경로 불일치');
 assert(search.length === manifest.searchMeta.count, '검색 파일 manifest 건수 불일치');
 assert(search.length === index.length, '검색 파일 전체 단지 수 불일치');
 assert(new Set(search.map((entry) => entry.c)).size === search.length, '검색 파일 단지코드 중복');
 assert(new Set(search.map((entry) => entry.s)).size === search.length, '검색 파일 슬러그 중복');
 assert(
-  manifest.searchMeta.fields.join('|') ===
+  manifest.searchMeta.fields.filter((field) => field !== 'an?').join('|') ===
     ['c', 's', 'n', 'sd', 'sg', 'd', 'a', 'h', 'tf', 'cf', 'rf', 'q', 'la?', 'lo?'].join('|'),
   '검색 파일 필드 선언 불일치'
 );
@@ -168,6 +172,7 @@ for (const entry of search) {
   assert(searchRequiredFields.every((field) => Object.hasOwn(entry, field)), `${entry.c} 검색 필수 필드 누락`);
   assert(Object.keys(entry).every((field) => searchAllowedFields.has(field)), `${entry.c} 검색 파일 불필요 필드 포함`);
   if (!expected) continue;
+  assert(JSON.stringify(entry.an) === JSON.stringify(expected.an), `${entry.c} 검색 별칭 불일치`);
   assert(Object.hasOwn(entry, 'la') === Object.hasOwn(entry, 'lo'), `${entry.c} 검색 좌표 쌍 불완전`);
   assert(hasCoordinate(entry) === hasCoordinate(expected), `${entry.c} 검색 좌표 유효성 불일치`);
   const expectedSearch = Object.fromEntries(
@@ -194,6 +199,7 @@ for (const region of manifest.regions) {
   for (const entry of entries) {
     assert(!regionCodes.has(entry.c), `${entry.c} 지역 파일 간 단지 중복`);
     regionCodes.add(entry.c);
+    assert(JSON.stringify(entry.an) === JSON.stringify(indexByCode.get(entry.c)?.an), `${entry.c} 지역 상세 별칭 불일치`);
     detailFeeRows += entry.f.length;
     const latest = entry.f.at(-1);
     if (latest) {

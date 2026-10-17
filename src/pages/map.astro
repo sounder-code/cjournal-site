@@ -199,6 +199,7 @@ const metrics = [
 
   <script>
     // @ts-nocheck
+    import { apartmentSearchText } from '@/lib/apartmentSearch';
     import { commonMonthComparison } from '@/lib/commonMonthComparison';
     const payload = await fetch('/data/map-payload.json', { credentials: 'same-origin' }).then((response) => {
       if (!response.ok) throw new Error(`Map payload HTTP ${response.status}`);
@@ -690,7 +691,7 @@ const metrics = [
       const selectedRegion = region?.value || 'all';
       const selectedHouseholds = households?.value || 'all';
       return entries.filter((item) => {
-        const text = `${item.n} ${item.sd} ${item.sg} ${item.d} ${item.a}`.toLowerCase();
+        const text = apartmentSearchText(item);
         return (!query || text.includes(query))
           && (selectedRegion === 'all' || item.sd === selectedRegion)
           && (selectedHouseholds === 'all' || householdBand(Number(item.h || 0)) === selectedHouseholds);
@@ -1522,11 +1523,11 @@ const metrics = [
         return;
       }
       const relevance = (item) => {
-        const name = String(item.n || '').toLowerCase();
+        const names = [item.n, ...(item.an || [])].map((name) => String(name).toLowerCase());
         const area = `${item.sg} ${item.d}`.toLowerCase();
-        if (name === query) return 0;
-        if (name.startsWith(query)) return 1;
-        if (name.includes(query)) return 2;
+        if (names.some((name) => name === query)) return 0;
+        if (names.some((name) => name.startsWith(query))) return 1;
+        if (names.some((name) => name.includes(query))) return 2;
         if (area.includes(query)) return 3;
         return 4;
       };

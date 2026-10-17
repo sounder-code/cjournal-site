@@ -161,7 +161,9 @@ const featuredByRegion = regionSummaries.map((region) => ({
     <p class="source-line">출처: 국토교통부 공동주택관리정보시스템(K-apt) 주간 일괄 공개자료 · 세대별 실제 청구액은 전용면적과 사용량에 따라 다릅니다.</p>
   </div>
 
-  <script is:inline>
+  <script>
+    // @ts-nocheck
+    import { apartmentSearchText } from '@/lib/apartmentSearch';
     {
       const root = document.querySelector('[data-directory]');
       const search = root?.querySelector('[data-search]');
@@ -228,7 +230,7 @@ const featuredByRegion = regionSummaries.map((region) => ({
         const query = (search?.value || '').trim().toLowerCase();
         const selectedRegion = region?.value || 'all';
         filtered = apartments.filter((item) => {
-          const searchable = `${item.n} ${item.a} ${item.sd} ${item.sg} ${item.d}`.toLowerCase();
+          const searchable = apartmentSearchText(item);
           return (!query || searchable.includes(query)) && (selectedRegion === 'all' || item.sd === selectedRegion);
         });
         filtered.sort((a, b) => {

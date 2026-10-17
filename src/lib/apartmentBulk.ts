@@ -47,6 +47,7 @@ export interface ApartmentEntry {
   c: string;
   s: string;
   n: string;
+  an?: string[];
   sd: string;
   sg: string;
   d: string;

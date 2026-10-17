@@ -1,3 +1,4 @@
+import { apartmentIdentity } from '../src/lib/apartmentIdentity';
 import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { basename, dirname, relative, resolve } from 'node:path';
@@ -90,6 +91,7 @@ interface ApartmentSummary {
   s: string;
   q: number;
   n: string;
+  an?: string[];
   sd: string;
   sg: string;
   d: string;
@@ -112,6 +114,8 @@ interface ApartmentSummary {
 interface PreviousApartmentSnapshot {
   fingerprint: string;
   slug: string;
+  name: string;
+  aliases?: string[];
   province: string;
   district: string;
   publishable: boolean;
@@ -160,11 +164,6 @@ const normalizeSido = (sido: string, sigungu: string, address: string) => {
   if (address.startsWith('전라남도')) return '전라남도';
   return ['광산구', '남구', '동구', '북구', '서구'].includes(sigungu) ? '광주광역시' : '전라남도';
 };
-const slugify = (name: string, code: string) =>
-  `${name}-${code}`
-    .toLowerCase()
-    .replace(/[^a-z0-9가-힣]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 
 const isoDateFromCompact = (value: string) => {
   const match = String(value || '').match(/^(\d{4})(\d{2})(\d{2})$/);
@@ -176,7 +175,7 @@ const isoDateFromCompact = (value: string) => {
 
 const apartmentFingerprint = (entry: Record<string, unknown>) => {
   const fields = [
-    'c', 's', 'q', 'n', 'sd', 'sg', 'd', 'a', 'h', 'b', 'y', 'ht', 'mt',
+    'c', 's', 'q', 'n', 'an', 'sd', 'sg', 'd', 'a', 'h', 'b', 'y', 'ht', 'mt',
     'ma', 'lm', 'tf', 'cf', 'rf', 'p', 'e', 'f'
   ];
   return createHash('sha256')
@@ -260,6 +259,8 @@ for (const region of previousManifest?.regions ?? []) {
     previousApartments.set(code, {
       fingerprint: apartmentFingerprint(entry),
       slug: String(entry.s || ''),
+      name: String(entry.n || ''),
+      aliases: Array.isArray(entry.an) ? entry.an.filter((value): value is string => typeof value === 'string') : [],
       province: String(entry.sd || ''),
       district: String(entry.sg || ''),
       publishable: entry.q === 1,
@@ -528,7 +529,7 @@ for (const complex of eligibleComplexes) {
   const coordinate = coordinateValidation.validCoordinates.get(complex.code);
   const summary = {
     c: complex.code,
-    s: slugify(complex.name, complex.code),
+    ...apartmentIdentity(complex.name, complex.code, previousApartments.get(complex.code)),
     q: isPublishable ? 1 : 0,
     n: complex.name,
     sd: complex.sido,
@@ -582,6 +583,8 @@ for (const complex of eligibleComplexes) {
     code: complex.code,
     fingerprint,
     slug: summary.s,
+    name: summary.n,
+    aliases: summary.an,
     province: summary.sd,
     district: summary.sg,
     publishable: summary.q === 1,
@@ -614,6 +617,7 @@ const searchRecords = index.map((entry) => ({
   c: entry.c,
   s: entry.s,
   n: entry.n,
+  ...(entry.an?.length ? { an: entry.an } : {}),
   sd: entry.sd,
   sg: entry.sg,
   d: entry.d,
@@ -737,7 +741,7 @@ const outputManifest = {
     file: '/data/apartments/search.json',
     count: searchRecords.length,
     withCoordinates: searchRecords.filter((entry) => entry.la !== undefined && entry.lo !== undefined).length,
-    fields: ['c', 's', 'n', 'sd', 'sg', 'd', 'a', 'h', 'tf', 'cf', 'rf', 'q', 'la?', 'lo?']
+    fields: ['c', 's', 'n', 'sd', 'sg', 'd', 'a', 'h', 'tf', 'cf', 'rf', 'q', 'la?', 'lo?', 'an?']
   },
   regions: regionManifest,
   districts: districtManifest,

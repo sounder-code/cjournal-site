@@ -158,6 +158,7 @@ const structuredData = [
         <nav aria-label="경로"><a href="/apartments/">단지 찾기</a><span>/</span><a href={regionHubPath(apartment.sd)}>{apartment.sd}</a><span>/</span><a href={districtHubPath(apartment.sd, apartment.sg)}>{districtName}</a></nav>
         <h2>{apartment.n} 관리비</h2>
         <p>{apartment.a}</p>
+        {Boolean(apartment.an?.length) && <p>이전 공개 자료의 단지명: {apartment.an?.join(', ')}. 현재 단지명은 {apartment.n}입니다.</p>}
       </div>
       <div class="report-meta"><strong>{latest[0]}</strong><span>최근 공개월</span></div>
     </header>
