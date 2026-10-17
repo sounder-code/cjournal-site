@@ -20,7 +20,7 @@ interface BulkManifest {
 const manifestPath = resolve('public/data/apartments/manifest.json');
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as BulkManifest;
 const apartmentPages = await loadApartmentPageData();
-const indexablePages = apartmentPages.filter((page) => page.indexable);
+const indexablePages = apartmentPages.filter((page) => page.indexable && !page.apartment.st);
 const sourceDate = `${manifest.sourceDate.slice(0, 4)}.${manifest.sourceDate.slice(4, 6)}.${manifest.sourceDate.slice(6, 8)}`;
 const latestMonth = manifest.latestMonth.replace('-', '.');
 const regionSummaries = manifest.regions.map((region) => {
@@ -57,7 +57,7 @@ const featuredByRegion = regionSummaries.map((region) => ({
 
     <section class="summary-strip" aria-label="데이터 요약">
       <div><span>전국 단지</span><strong>{manifest.stats.complexes.toLocaleString('ko-KR')}</strong><small>개</small></div>
-      <div><span>관리비 공개</span><strong>{manifest.stats.complexesWithFees.toLocaleString('ko-KR')}</strong><small>개</small></div>
+      <div><span>관리비 공개·보존</span><strong>{manifest.stats.complexesWithFees.toLocaleString('ko-KR')}</strong><small>개</small></div>
       <div><span>관리비 내역</span><strong>{manifest.stats.publishedFeeRows.toLocaleString('ko-KR')}</strong><small>건</small></div>
       <div><span>데이터 범위</span><strong>{manifest.months.length}</strong><small>개월</small></div>
     </section>
@@ -161,7 +161,10 @@ const featuredByRegion = regionSummaries.map((region) => ({
     <p class="source-line">출처: 국토교통부 공동주택관리정보시스템(K-apt) 주간 일괄 공개자료 · 세대별 실제 청구액은 전용면적과 사용량에 따라 다릅니다.</p>
   </div>
 
-  <script is:inline>
+  <script>
+    // @ts-nocheck
+    import { retentionNotice } from '@/lib/apartmentFreshness';
+    import { apartmentSearchText } from '@/lib/apartmentSearch';
     {
       const root = document.querySelector('[data-directory]');
       const search = root?.querySelector('[data-search]');
@@ -204,6 +207,7 @@ const featuredByRegion = regionSummaries.map((region) => ({
               ${item.q === 1
                 ? `<a class="complex-name" href="/apartments/${escapeHtml(item.s)}/">${escapeHtml(item.n)}</a>`
                 : `<strong class="complex-name">${escapeHtml(item.n)}</strong>`}
+              ${item.st ? `<span>${escapeHtml(retentionNotice(item.st))}</span>` : ''}
               <span>${escapeHtml(item.a || `${item.sd} ${item.sg} ${item.d}`)}</span>
             </td>
             <td>
@@ -228,7 +232,7 @@ const featuredByRegion = regionSummaries.map((region) => ({
         const query = (search?.value || '').trim().toLowerCase();
         const selectedRegion = region?.value || 'all';
         filtered = apartments.filter((item) => {
-          const searchable = `${item.n} ${item.a} ${item.sd} ${item.sg} ${item.d}`.toLowerCase();
+          const searchable = apartmentSearchText(item);
           return (!query || searchable.includes(query)) && (selectedRegion === 'all' || item.sd === selectedRegion);
         });
         filtered.sort((a, b) => {

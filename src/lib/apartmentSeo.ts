@@ -57,7 +57,7 @@ export const latestTotal = (apartment: ApartmentEntry) =>
   Number(apartment.f.at(-1)?.[1] ?? apartment.tf ?? 0);
 
 export const apartmentMedian = (apartments: ApartmentEntry[]) =>
-  median(apartments.map(latestTotal));
+  median(apartments.filter((apartment) => !apartment.st).map(latestTotal));
 
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -76,7 +76,7 @@ export const regionalFeeInsights = (
   apartments: ApartmentEntry[],
   itemLimit = 3
 ): RegionalFeeInsights => {
-  const histories = apartments.map((apartment) => {
+  const histories = apartments.filter((apartment) => !apartment.st).map((apartment) => {
     const fees = new Map<string, number>();
     for (const fee of apartment.f) {
       const month = String(fee?.[0] ?? '');

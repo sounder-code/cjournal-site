@@ -199,6 +199,8 @@ const metrics = [
 
   <script>
     // @ts-nocheck
+    import { retentionNotice } from '@/lib/apartmentFreshness';
+    import { apartmentSearchText } from '@/lib/apartmentSearch';
     import { commonMonthComparison } from '@/lib/commonMonthComparison';
     const payload = await fetch('/data/map-payload.json', { credentials: 'same-origin' }).then((response) => {
       if (!response.ok) throw new Error(`Map payload HTTP ${response.status}`);
@@ -690,7 +692,7 @@ const metrics = [
       const selectedRegion = region?.value || 'all';
       const selectedHouseholds = households?.value || 'all';
       return entries.filter((item) => {
-        const text = `${item.n} ${item.sd} ${item.sg} ${item.d} ${item.a}`.toLowerCase();
+        const text = apartmentSearchText(item);
         return (!query || text.includes(query))
           && (selectedRegion === 'all' || item.sd === selectedRegion)
           && (selectedHouseholds === 'all' || householdBand(Number(item.h || 0)) === selectedHouseholds);
@@ -867,7 +869,7 @@ const metrics = [
       if (compareDialog.hidden) return;
       if (compareSubtitle) compareSubtitle.textContent = `${formatNumber(selectedItems.length)}개 단지 · ${month || '공통월 없음'}`;
       if (!month) {
-        compareContent.innerHTML = '<p class="empty-result">선택한 단지에 공통으로 공개된 월별 관리비가 없어 순위를 계산하지 않습니다.</p>';
+        compareContent.innerHTML = selectedItems.some((item) => item.st) ? '<p class="empty-result">갱신 지연 단지가 포함되어 최신 비교·순위를 계산하지 않습니다. 각 단지 리포트에서 보존 자료의 원본 기준일을 확인하세요.</p>' : '<p class="empty-result">선택한 단지에 공통으로 공개된 월별 관리비가 없어 순위를 계산하지 않습니다.</p>';
         return;
       }
       const metricStats = new Map(feeComparisonRows.map((row) => [row.key, rankedMetric(row, items)]));
@@ -899,7 +901,7 @@ const metrics = [
         const rank = totalStats.rankFor(item);
         return `<article class="compare-rank-card${rank === 1 ? ' first' : ''}">
           <span class="rank-number">${rank}위</span>
-          <div><strong>${escapeHtml(item.n)}</strong><small>총 관리비 낮은 순</small></div>
+          <div><strong>${escapeHtml(item.n)}</strong>${item.st ? `<small>${escapeHtml(retentionNotice(item.st))}</small>` : ''}<small>총 관리비 낮은 순</small></div>
           <b>${formatWon(value)}/㎡</b>
           <p>선택 평균보다 <em class="${averageDelta > 0 ? 'cost-up' : averageDelta < 0 ? 'cost-down' : ''}">${signedAmount(averageDelta)} · ${signedPercent(averageRate)}</em></p>
           ${lowestMetrics.length ? `<small class="rank-strength">${lowestMetrics.join(' · ')} 최저</small>` : ''}
@@ -927,7 +929,7 @@ const metrics = [
                 ${items.map((item) => `<th scope="col">
                   <button type="button" class="compare-apartment" data-compare-select="${escapeHtml(item.s)}">
                     <span>${escapeHtml(item.sd)} ${escapeHtml(displayDistrictName(item.sd, item.sg))}</span>
-                    <strong>${escapeHtml(item.n)}</strong>
+                    <strong>${escapeHtml(item.n)}</strong>${item.st ? `<small>${escapeHtml(retentionNotice(item.st))}</small>` : ''}
                     <small>${escapeHtml(item.a)}</small>
                   </button>
                   <button type="button" class="compare-remove" data-compare-remove="${escapeHtml(item.s)}" aria-label="${escapeHtml(item.n)} 비교에서 빼기">빼기</button>
@@ -1098,7 +1100,7 @@ const metrics = [
     };
 
     const representativeValue = (items) => {
-      const values = items.map((item) => Number(item[activeMetric] || 0)).filter((value) => value > 0).sort((a, b) => a - b);
+      const values = items.filter((item) => !item.st).map((item) => Number(item[activeMetric] || 0)).filter((value) => value > 0).sort((a, b) => a - b);
       if (!values.length) return 0;
       const middle = Math.floor(values.length / 2);
       return values.length % 2 ? values[middle] : Math.round((values[middle - 1] + values[middle]) / 2);
@@ -1494,7 +1496,7 @@ const metrics = [
           <button type="button" class="result-card-main" data-slug="${escapeHtml(item.s)}">
             <i aria-hidden="true"></i>
             <span>${escapeHtml(item.sd)} ${escapeHtml(displayDistrictName(item.sd, item.sg))}</span>
-            <strong>${escapeHtml(item.n)}</strong>
+            <strong>${escapeHtml(item.n)}</strong>${item.st ? `<small>${escapeHtml(retentionNotice(item.st))}</small>` : ''}
             <small>${escapeHtml(item.ht || '난방 미확인')} · ${formatNumber(item.h)}세대</small>
             <b>${percentile == null ? '비교 자료 없음' : `${percentile}p`}</b>
             <em>${formatWon(item[activeMetric])}/㎡</em>
@@ -1522,11 +1524,11 @@ const metrics = [
         return;
       }
       const relevance = (item) => {
-        const name = String(item.n || '').toLowerCase();
+        const names = [item.n, ...(item.an || [])].map((name) => String(name).toLowerCase());
         const area = `${item.sg} ${item.d}`.toLowerCase();
-        if (name === query) return 0;
-        if (name.startsWith(query)) return 1;
-        if (name.includes(query)) return 2;
+        if (names.some((name) => name === query)) return 0;
+        if (names.some((name) => name.startsWith(query))) return 1;
+        if (names.some((name) => name.includes(query))) return 2;
         if (area.includes(query)) return 3;
         return 4;
       };
@@ -1538,7 +1540,7 @@ const metrics = [
       mobileSuggestions.innerHTML = `
         <div class="suggestion-heading"><strong>${query ? `${formatNumber(items.length)}개 검색 결과` : '저장·최근 본 단지'}</strong><button type="button" data-mobile-close>필터 보기</button></div>
         ${rows.map((item) => `<button type="button" class="suggestion-row" data-mobile-slug="${escapeHtml(item.s)}">
-          <span><strong>${escapeHtml(item.n)}</strong><small>${isApartmentSaved(item.s) ? '저장됨 · ' : ''}${escapeHtml(item.sd)} ${escapeHtml(displayDistrictName(item.sd, item.sg))} · ${formatNumber(item.h)}세대</small></span>
+          <span><strong>${escapeHtml(item.n)}</strong>${item.st ? `<small>${escapeHtml(retentionNotice(item.st))}</small>` : ''}<small>${isApartmentSaved(item.s) ? '저장됨 · ' : ''}${escapeHtml(item.sd)} ${escapeHtml(displayDistrictName(item.sd, item.sg))} · ${formatNumber(item.h)}세대</small></span>
           <em>${formatWon(item.tf)}/㎡</em>
         </button>`).join('')}
         ${rows.length ? '' : `<p>${query ? '조건에 맞는 단지가 없습니다.' : '최근 본 단지가 없습니다.'}</p>`}
@@ -1584,6 +1586,7 @@ const metrics = [
           <section><span>기준월 금액</span><strong>${formatWon(apartment[activeMetric])}</strong><p>관리비부과면적 ㎡당</p></section>
         </div>
         <p class="comparison-note">${apartment.comparison ? `${escapeHtml(apartment.comparison.label)}의 같은 월 공개값 기준입니다.` : '공개된 금액만 표시합니다.'} 세대별 실제 청구액은 고지서 부과면적과 사용량에 따라 달라집니다.</p>
+        ${apartment.st ? `<p>${escapeHtml(retentionNotice(apartment.st))}</p>` : ''}
         <dl class="facts">
           <div><dt>세대수</dt><dd>${formatNumber(apartment.h)}세대</dd></div>
           <div><dt>사용승인</dt><dd>${apartment.y ? `${apartment.y}년` : '미확인'}</dd></div>

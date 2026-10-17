@@ -1,4 +1,5 @@
 ---
+import { retentionNotice, sourceDateLabel } from '@/lib/apartmentFreshness';
 import MapPage from '@/pages/map.astro';
 import {
   loadApartmentManifest,
@@ -27,7 +28,7 @@ const latestDelta = latest[1] - previous[1];
 const averageDelta = latest[1] - averageTotal;
 const peak = apartment.f.reduce((highest, fee) => fee[1] > highest[1] ? fee : highest, apartment.f[0]);
 const low = apartment.f.reduce((lowest, fee) => fee[1] < lowest[1] ? fee : lowest, apartment.f[0]);
-const sourceDate = `${manifest.sourceDate.slice(0, 4)}-${manifest.sourceDate.slice(4, 6)}-${manifest.sourceDate.slice(6, 8)}`;
+const sourceDate = sourceDateLabel(apartment.st?.sourceDate ?? manifest.sourceDate);
 const dataModified = /^\d{4}-\d{2}-\d{2}$/.test(apartment.md || '') ? apartment.md! : sourceDate;
 const pageModified = dataModified > APARTMENT_REPORT_UPDATED ? dataModified : APARTMENT_REPORT_UPDATED;
 const monthLabel = (month: string) => `${month.slice(0, 4)}년 ${Number(month.slice(5))}월`;
@@ -59,7 +60,7 @@ const driverCopy = secondDriver
   ? `세부 항목 중 ${topDriver.name} ${won(topDriver.value)}/㎡와 ${secondDriver.name} ${won(secondDriver.value)}/㎡의 비중이 큽니다.`
   : `현재 공개된 세부 항목에서는 ${topDriver.name}이 ㎡당 ${won(topDriver.value)}으로 가장 큽니다.`;
 const trendCopy = `공개 기간 중 가장 높았던 달은 ${monthLabel(peak[0])} ${won(peak[1])}/㎡, 가장 낮았던 달은 ${monthLabel(low[0])} ${won(low[1])}/㎡입니다.`;
-const description = apartmentReportDescription(apartment.n, apartment.f, comparisonEligible, displayPeerLabel);
+const description = apartment.st ? `${apartment.n} 관리비 · 갱신 지연. ${sourceDate} 원본과 ${latest[0]} 관리비를 보존합니다. 최신 비교·집계에서 제외합니다.` : apartmentReportDescription(apartment.n, apartment.f, comparisonEligible, displayPeerLabel);
 const trendValues = apartment.f.map((fee) => fee[1]);
 const maxTrend = Math.max(...trendValues);
 const trendBars = apartment.f.map((fee) => ({
@@ -153,11 +154,13 @@ const structuredData = [
     }
   </script>
   <article class="report">
+    {apartment.st && <aside class="method-note" aria-label="자료 갱신 지연"><div><h2>자료 갱신 지연</h2><p>{retentionNotice(apartment.st)}</p><p>보존 자료 출처: {apartment.st.source} · 지연 시작: {sourceDateLabel(apartment.st.since)}</p></div></aside>}
     <header class="report-head">
       <div>
         <nav aria-label="경로"><a href="/apartments/">단지 찾기</a><span>/</span><a href={regionHubPath(apartment.sd)}>{apartment.sd}</a><span>/</span><a href={districtHubPath(apartment.sd, apartment.sg)}>{districtName}</a></nav>
         <h2>{apartment.n} 관리비</h2>
         <p>{apartment.a}</p>
+        {Boolean(apartment.an?.length) && <p>이전 공개 자료의 단지명: {apartment.an?.join(', ')}. 현재 단지명은 {apartment.n}입니다.</p>}
       </div>
       <div class="report-meta"><strong>{latest[0]}</strong><span>최근 공개월</span></div>
     </header>
@@ -264,7 +267,7 @@ const structuredData = [
 
     <section class="method-note">
       <div><h2>데이터와 산정 기준</h2><p>국토교통부 공동주택관리정보시스템(K-apt)이 공개한 단지 기본정보, 면적정보, 관리비정보를 단지코드로 결합했습니다. 금액은 단지 전체 공개액을 관리비부과면적으로 나누고 원 단위로 반올림했습니다.</p></div>
-      <dl><div><dt>원본 추출일</dt><dd>{sourceDate}</dd></div><div><dt>최근 공개월</dt><dd>{latest[0]}</dd></div><div><dt>단지코드</dt><dd>{apartment.c}</dd></div><div><dt>출처</dt><dd><a href="https://www.k-apt.go.kr/" rel="nofollow external">K-apt</a></dd></div></dl>
+      <dl><div><dt>원본 추출일</dt><dd>{sourceDate}</dd></div><div><dt>최근 공개월</dt><dd>{latest[0]}</dd></div><div><dt>단지코드</dt><dd>{apartment.c}</dd></div><div><dt>출처</dt><dd>{apartment.st?.source && <span>{apartment.st.source} · </span>}<a href="https://www.k-apt.go.kr/" rel="nofollow external">K-apt</a></dd></div></dl>
     </section>
 
     <p class="guide-link"><a href="/management-fee-guide/">공용관리비·개별사용료·장기수선충당금의 차이와 비교할 때 주의할 점 읽기</a></p>

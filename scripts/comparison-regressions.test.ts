@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { regionalFeeInsights, apartmentMedian } from '../src/lib/apartmentSeo';
 import { commonMonthComparison } from '../src/lib/commonMonthComparison';
 import { assertPublishedUrlsPreserved } from './publication-safety';
-import { loadApartmentPageData, loadApartmentEntries, apartmentQualityReasons, householdBand } from '../src/lib/apartmentBulk';
+import { loadApartmentPageData, loadApartmentEntries, apartmentQualityReasons, householdBand, isComparableApartment } from '../src/lib/apartmentBulk';
 
 test('direct comparison uses the latest common month, not latest individual bills', () => {
   const result = commonMonthComparison([
@@ -40,4 +41,18 @@ test('restored Parkrio compares June to June; all published pages retain one-mon
   assert.equal(page.peerMedianTotal, median);
   assert.equal(page.peerCount, peers.length);
   assert.ok(pages.every((page) => !page.comparisonEligible || page.peerCount >= 2));
+});
+
+
+test('retained history stays accessible but never enters comparison months or regional fee statistics', async () => {
+  const healthy = (await loadApartmentEntries()).find(isComparableApartment)!;
+  const retained = { ...healthy, st: { reason: 'fees-missing' as const, sourceDate: '20260918', source: 'K-apt 주간 일괄 공개자료', since: '20261016', checkedDate: '20261023' } };
+  assert.ok(retained.f.length >= 5);
+  assert.equal(isComparableApartment(retained), false);
+  assert.ok(retained.f.every((fee) => apartmentQualityReasons(retained, fee).length > 0));
+  assert.equal(isComparableApartment({ ...retained, st: undefined }), true);
+  const normal = [healthy, { ...healthy, c: 'fresh-test' }];
+  const withRetained = [...normal, { ...retained, c: 'retained-test', tf: 999999 }];
+  assert.equal(apartmentMedian(withRetained), apartmentMedian(normal));
+  assert.deepEqual(regionalFeeInsights(withRetained), regionalFeeInsights(normal));
 });

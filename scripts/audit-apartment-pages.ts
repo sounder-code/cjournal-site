@@ -25,16 +25,16 @@ assert(publishedIndex.length === pages.length, '전국 인덱스 상세 링크 �
 assert(publishedIndex.every((item) => slugs.has(item.s)), '인덱스가 존재하지 않는 상세 페이지를 가리킴');
 assert(indexablePages.length >= 1_000, '검색 노출 가능한 핵심 단지가 너무 적음');
 assert(indexablePages.length < pages.length, '검색 노출 품질 기준이 전체 상세 페이지를 구분하지 못함');
-assert(indexablePages.length === pages.filter((page) => page.comparisonEligible).length, '정상 비교 데이터와 색인 대상 수 불일치');
+assert(indexablePages.filter((page) => !page.apartment.st).length === pages.filter((page) => page.comparisonEligible).length, '정상 비교 데이터와 색인 대상 수 불일치');
 
 for (const page of pages) {
   const { apartment, nearby, peerCount, percentiles } = page;
   assert(apartment.f.length >= 5, `${apartment.c}: 공개월 부족`);
   assert(apartment.f.every((fee, index) => index === 0 || fee[0] > apartment.f[index - 1][0]), `${apartment.c}: 발생월 정렬 오류`);
-  assert(peerCount >= 2, `${apartment.c}: 비교군 부족`);
+  assert(apartment.st ? peerCount === 0 && !page.comparisonEligible : peerCount >= 2, `${apartment.c}: 비교군 부족`);
   assert(Object.values(percentiles).every((value) => value >= 1 && value <= 99), `${apartment.c}: 백분위 범위 오류`);
   assert(nearby.every((item) => slugs.has(item.s)), `${apartment.c}: 관련 단지 링크 오류`);
-  if (page.indexable) {
+  if (page.indexable && !apartment.st) {
     assert(page.comparisonEligible, `${apartment.c}: 비교 제외 단지가 검색 노출 대상으로 지정됨`);
   }
 }
