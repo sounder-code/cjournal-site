@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "generatedAt": "2026-10-17T09:38:18.540Z",
-  "sourceDate": "20261016",
+  "generatedAt": "2026-10-23T23:34:45.535Z",
+  "sourceDate": "20261023",
   "source": "K-apt 주간 일괄 공개자료",
   "units": {
     "fee": "원/m2",
@@ -36,38 +36,38 @@
   ],
   "latestMonth": "2026-09",
   "stats": {
-    "basicRows": 22558,
-    "areaRows": 91562,
-    "feeRows": 170978,
-    "complexes": 21749,
-    "sourceComplexes": 21742,
+    "basicRows": 22565,
+    "areaRows": 91586,
+    "feeRows": 179193,
+    "complexes": 21757,
+    "sourceComplexes": 21750,
     "excludedInvalidRegionComplexes": 0,
-    "complexesWithArea": 21444,
-    "complexesWithFees": 21419,
-    "duplicateComplexes": 816,
-    "benignDuplicateComplexes": 816,
+    "complexesWithArea": 21446,
+    "complexesWithFees": 21421,
+    "duplicateComplexes": 815,
+    "benignDuplicateComplexes": 815,
     "duplicateFeeRows": 0,
     "supersededFeeRows": 0,
     "feeSourceFiles": 1,
     "areaConflicts": 0,
-    "feeRowsWithoutArea": 1473,
+    "feeRowsWithoutArea": 1558,
     "feeRowsWithoutComplex": 40,
     "invalidFeeMonths": 0,
-    "publishedFeeRows": 169506,
-    "publishableCandidates": 21322,
-    "freshPublishableComplexes": 21311,
-    "retainedComplexes": 11,
+    "publishedFeeRows": 177639,
+    "publishableCandidates": 21337,
+    "freshPublishableComplexes": 21324,
+    "retainedComplexes": 13,
     "publishableLimit": 9007199254740991,
-    "publishableComplexes": 21322,
-    "negativeAdjustmentValues": 1724,
+    "publishableComplexes": 21337,
+    "negativeAdjustmentValues": 1838,
     "districtFiles": 253
   },
   "index": "/data/apartments/index.json",
   "search": "/data/apartments/search.json",
   "searchMeta": {
     "file": "/data/apartments/search.json",
-    "count": 21749,
-    "withCoordinates": 21715,
+    "count": 21757,
+    "withCoordinates": 21723,
     "fields": [
       "c",
       "s",
@@ -98,14 +98,14 @@
     {
       "key": "경기",
       "name": "경기도",
-      "count": 5576,
+      "count": 5579,
       "withFees": 5502,
       "file": "/data/apartments/regions/경기.json"
     },
     {
       "key": "경상남",
       "name": "경상남도",
-      "count": 1443,
+      "count": 1444,
       "withFees": 1436,
       "file": "/data/apartments/regions/경상남.json"
     },
@@ -147,8 +147,8 @@
     {
       "key": "서울",
       "name": "서울특별시",
-      "count": 3195,
-      "withFees": 3115,
+      "count": 3197,
+      "withFees": 3116,
       "file": "/data/apartments/regions/서울.json"
     },
     {
@@ -168,7 +168,7 @@
     {
       "key": "인천",
       "name": "인천광역시",
-      "count": 1128,
+      "count": 1129,
       "withFees": 1100,
       "file": "/data/apartments/regions/인천.json"
     },
@@ -196,8 +196,8 @@
     {
       "key": "충청남",
       "name": "충청남도",
-      "count": 993,
-      "withFees": 983,
+      "count": 994,
+      "withFees": 984,
       "file": "/data/apartments/regions/충청남.json"
     },
     {
@@ -792,11 +792,11 @@
       "province": "경기도",
       "district": "성남수정구",
       "label": "성남수정구",
-      "count": 57,
+      "count": 58,
       "withFees": 55,
-      "withCoordinates": 57,
+      "withCoordinates": 58,
       "householdBands": {
-        "under-300": 20,
+        "under-300": 21,
         "300-499": 10,
         "500-999": 16,
         "1000-1499": 5,
@@ -1149,13 +1149,13 @@
       "province": "경기도",
       "district": "의정부시",
       "label": "의정부시",
-      "count": 246,
+      "count": 247,
       "withFees": 242,
-      "withCoordinates": 246,
+      "withCoordinates": 247,
       "householdBands": {
         "under-300": 90,
         "300-499": 51,
-        "500-999": 79,
+        "500-999": 80,
         "1000-1499": 15,
         "over-1500": 11
       },
@@ -1183,12 +1183,12 @@
       "province": "경기도",
       "district": "파주시",
       "label": "파주시",
-      "count": 206,
+      "count": 207,
       "withFees": 202,
-      "withCoordinates": 206,
+      "withCoordinates": 207,
       "householdBands": {
         "under-300": 50,
-        "300-499": 40,
+        "300-499": 41,
         "500-999": 57,
         "1000-1499": 42,
         "over-1500": 17
@@ -1404,11 +1404,11 @@
       "province": "경상남도",
       "district": "밀양시",
       "label": "밀양시",
-      "count": 43,
+      "count": 44,
       "withFees": 43,
-      "withCoordinates": 43,
+      "withCoordinates": 44,
       "householdBands": {
-        "under-300": 20,
+        "under-300": 21,
         "300-499": 16,
         "500-999": 7,
         "1000-1499": 0,
@@ -2713,11 +2713,11 @@
       "province": "서울특별시",
       "district": "관악구",
       "label": "관악구",
-      "count": 87,
+      "count": 88,
       "withFees": 85,
-      "withCoordinates": 87,
+      "withCoordinates": 88,
       "householdBands": {
-        "under-300": 46,
+        "under-300": 47,
         "300-499": 13,
         "500-999": 14,
         "1000-1499": 5,
@@ -2816,7 +2816,7 @@
       "district": "동대문구",
       "label": "동대문구",
       "count": 128,
-      "withFees": 121,
+      "withFees": 122,
       "withCoordinates": 128,
       "householdBands": {
         "under-300": 57,
@@ -2849,11 +2849,11 @@
       "province": "서울특별시",
       "district": "마포구",
       "label": "마포구",
-      "count": 139,
+      "count": 140,
       "withFees": 135,
-      "withCoordinates": 139,
+      "withCoordinates": 140,
       "householdBands": {
-        "under-300": 61,
+        "under-300": 62,
         "300-499": 30,
         "500-999": 36,
         "1000-1499": 8,
@@ -3206,11 +3206,11 @@
       "province": "인천광역시",
       "district": "계양구",
       "label": "계양구",
-      "count": 142,
+      "count": 143,
       "withFees": 136,
-      "withCoordinates": 141,
+      "withCoordinates": 142,
       "householdBands": {
-        "under-300": 54,
+        "under-300": 55,
         "300-499": 43,
         "500-999": 30,
         "1000-1499": 10,
@@ -4124,12 +4124,12 @@
       "province": "충청남도",
       "district": "서산시",
       "label": "서산시",
-      "count": 80,
+      "count": 81,
       "withFees": 79,
-      "withCoordinates": 80,
+      "withCoordinates": 81,
       "householdBands": {
         "under-300": 27,
-        "300-499": 13,
+        "300-499": 14,
         "500-999": 34,
         "1000-1499": 5,
         "over-1500": 1
@@ -4193,7 +4193,7 @@
       "district": "천안동남구",
       "label": "천안동남구",
       "count": 129,
-      "withFees": 126,
+      "withFees": 127,
       "withCoordinates": 129,
       "householdBands": {
         "under-300": 43,
@@ -4513,8 +4513,8 @@
   ],
   "coordinateValidation": {
     "thresholdKm": 80,
-    "sourceCoordinates": 21746,
-    "validCoordinates": 21715,
+    "sourceCoordinates": 21754,
+    "validCoordinates": 21723,
     "missingCoordinates": 3,
     "malformedCoordinates": 0,
     "outOfBoundsCoordinates": 0,
@@ -4527,16 +4527,16 @@
     "suspiciousRepeatedCoordinateGroups": 2,
     "suspiciousRepeatedCoordinates": 18,
     "suspiciousRepeatedInvalidCoordinates": 17,
-    "orphanCoordinates": 814
+    "orphanCoordinates": 817
   },
   "feeHistory": {
     "discovery": "auto",
     "files": [
       {
-        "sourceDate": "20261016",
+        "sourceDate": "20261023",
         "fileName": "fee.xlsx",
-        "path": "data/kapt/raw/20261016/fee.xlsx",
-        "rows": 170978
+        "path": "data/kapt/raw/20261023/fee.xlsx",
+        "rows": 179193
       }
     ]
   }
